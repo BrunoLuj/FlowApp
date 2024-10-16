@@ -87,10 +87,6 @@ export const addMoneyToAccount = async (req, res) => {
     const { id } = req.params;
     const { amount } = req.body;
 
-    console.log(req.body.user);
-    console.log(req.params);
-    console.log(req.body);
-
     const newAmount = Number(amount);
 
     const result = await pool.query({
