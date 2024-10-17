@@ -1,4 +1,3 @@
-import { pool } from "../libs/database.js";
 import { accountExists, addMoneyToAccounts, createAccounts, getAccountByUserId, initialDeposit, updateUserAccounts } from "../models/accountModel.js";
 
 export const getAccounts = async (req, res) => {
