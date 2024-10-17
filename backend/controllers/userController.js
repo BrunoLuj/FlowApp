@@ -1,11 +1,9 @@
-import { comparePassword, hashPassword } from "../libs/index.js";
+import { comparePassword} from "../libs/index.js";
 import { changeUserPassword, getUserById, updateUserById } from "../models/userModel.js";
 
 export const getUser = async(req, res) =>{
     try{
-
         const {userId} = req.body.user;
-
         const user = await getUserById(userId);
 
         if(!user){
