@@ -1,11 +1,9 @@
-import {pool} from "../libs/database.js"
-import { comparePassword, createJWT, hashPassword } from "../libs/index.js";
+import { comparePassword, createJWT} from "../libs/index.js";
+import { createUser, findUserByEmail, userExist } from "../models/authModel.js";
 
 export const signupUser = async(req, res) =>{
     try{
         const {firstName, email, password} = req.body;
-
-        console.log(req.body);
 
         if(!(firstName || email || password)){
             return res.status(404).json({
@@ -14,34 +12,24 @@ export const signupUser = async(req, res) =>{
             });
         }
 
-        const userExist = await pool.query({
-            text: "SELECT EXISTS (SELECT * FROM users WHERE email = $1)",
-            values: [email],
-        });
+        const existingUser = await userExist(email);
 
-        if(userExist.rows[0].userExist){
+        if(existingUser.userExist){
             return res.status(409).json({
                 status: "Failed",
                 message: "Email Adress already exist. Try Login!",
             });
         }
 
-        const hashedPassword = await hashPassword(password);
-
-        const user = await pool.query({
-            text: `INSERT INTO users(firstname, email, password) VALUES ($1, $2, $3)`,
-            values: [firstName, email, hashedPassword],
-        });
-
-        user.rows[0].password = undefined;
+        const user = await createUser(firstName, email, password)
+        user.password = undefined;
 
         res.status(201).json({
             status: "Success",
             message: "User account created succesfully!",
-            user: user.rows[0],
+            user: user,
         });
         
-
     }catch(error){
         console.log(error);
         res.status(500).json({
@@ -55,13 +43,7 @@ export const signinUser = async(req, res) =>{
     try{
 
         const {email, password} = req.body;
-
-        const result = await pool.query({
-            text: `SELECT * FROM users WHERE email = $1`,
-            values: [email],
-        });
-
-        const user = result.rows[0];
+        const user = await findUserByEmail(email);
 
         if(!user){
             return res.status(404).json({
@@ -80,7 +62,6 @@ export const signinUser = async(req, res) =>{
         }
 
         const token = createJWT(user.id);
-
         user.password = undefined;
 
         res.status(200).json({
@@ -98,15 +79,3 @@ export const signinUser = async(req, res) =>{
         });
     }
 };
-
-// export const signinUser = async(req, res) =>{
-//     try{
-
-//     }catch(error){
-//         console.log(error);
-//         res.status(500).json({
-//             status: "Failed",
-//             message: error.message,
-//         });
-//     }
-// };
