@@ -1,18 +1,13 @@
 import { pool } from "../libs/database.js";
+import { accountExists, addMoneyToAccounts, createAccounts, getAccountByUserId, initialDeposit, updateUserAccounts } from "../models/accountModel.js";
 
 export const getAccounts = async (req, res) => {
   try {
     const { userId } = req.body.user;
 
-    const accounts = await pool.query({
-      text: `SELECT * FROM account WHERE user_id = $1`,
-      values: [userId],
-    });
+    const accounts = await getAccountByUserId(userId);
+    res.status(200).json({ status: "Success", data: accounts });
 
-    res.status(200).json({
-      status: "Success",
-      data: accounts.rows,
-    });
   } catch (error) {
     console.log(error);
     res.status(500).json({ status: "Failed", message: error.message });
@@ -25,14 +20,7 @@ export const createAccount = async (req, res) => {
 
     const { name, amount, account_number } = req.body;
 
-    const accountExistQuery = {
-      text: `SELECT * FROM account WHERE account_name = $1 AND user_id = $2`,
-      values: [name, userId],
-    };
-
-    const accountExistResult = await pool.query(accountExistQuery);
-
-    const accountExist = accountExistResult.rows[0];
+    const accountExist = await accountExists(userId, name);
 
     if (accountExist) {
       return res
@@ -40,35 +28,16 @@ export const createAccount = async (req, res) => {
         .json({ status: "Failed", message: "Account already created." });
     }
 
-    const createAccountResult = await pool.query({
-      text: `INSERT INTO account(user_id, account_name, account_number, account_balance) VALUES($1, $2, $3, $4) RETURNING *`,
-      values: [userId, name, account_number, amount],
-    });
-    const account = createAccountResult.rows[0];
+    const account = await createAccounts(userId, name, account_number, amount);
 
     const userAccounts = Array.isArray(name) ? name : [name];
 
-    const updateUserAccountQuery = {
-      text: `UPDATE users SET accounts = array_cat(accounts, $1), updatedat = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *`,
-      values: [userAccounts, userId],
-    };
-    await pool.query(updateUserAccountQuery);
+    await updateUserAccounts(userId, userAccounts);
 
     // Add initial deposit transaction
     const description = account.account_name + " (Initial Deposit)";
 
-    const initialDepositQuery = {
-      text: `INSERT INTO transaction(user_id, description, type, status, amount, source) VALUES($1, $2, $3, $4, $5, $6) RETURNING *`,
-      values: [
-        userId,
-        description,
-        "income",
-        "Completed",
-        amount,
-        account.account_name,
-      ],
-    };
-    await pool.query(initialDepositQuery);
+    await initialDeposit(userId, description, "income", "Completed", amount, account.account_name);
 
     res.status(201).json({
       status: "Success",
@@ -88,28 +57,10 @@ export const addMoneyToAccount = async (req, res) => {
     const { amount } = req.body;
 
     const newAmount = Number(amount);
-
-    const result = await pool.query({
-      text: `UPDATE account SET account_balance =(account_balance + $1), updatedat = CURRENT_TIMESTAMP  WHERE id = $2 RETURNING *`,
-      values: [newAmount, id],
-    });
-
-    const accountInformation = result.rows[0];
+    const accountInformation = await addMoneyToAccounts(id, newAmount);
 
     const description = accountInformation.account_name + " (Deposit)";
-
-    const transQuery = {
-      text: `INSERT INTO transaction(user_id, description, type, status, amount, source) VALUES($1, $2, $3, $4, $5, $6) RETURNING *`,
-      values: [
-        userId,
-        description,
-        "income",
-        "Completed",
-        amount,
-        accountInformation.account_name,
-      ],
-    };
-    await pool.query(transQuery);
+    await initialDeposit(userId, description, "income", "Completed", amount, accountInformation.account_name);
 
     res.status(200).json({
       status: "Success",
