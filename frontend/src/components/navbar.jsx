@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { RiCurrencyLine } from "react-icons/ri";
 import { Avatar } from "../assets";
-import { MdOutlineKeyboardArrowDown } from "react-icons/md";
+import { MdOutlineKeyboardArrowDown, MdMenu, MdClose } from "react-icons/md";
 import ThemeSwitch from "./switch.jsx";
-import { Link } from "react-router-dom"; // Uvezi Link iz react-router-dom
+import { Link } from "react-router-dom";
 
 const links = [
   { label: "Dashboard", link: "/overview" },
@@ -14,6 +14,11 @@ const links = [
 
 const Navbar = () => {
   const [selected, setSelected] = useState(0);
+  const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!isMobileMenuOpen);
+  };
 
   return (
     <div className='w-full flex items-center justify-between py-6'>
@@ -26,6 +31,14 @@ const Navbar = () => {
         </span>
       </div>
 
+      {/* Hamburger meni za mobilne uređaje */}
+      <div className='md:hidden'>
+        <button onClick={toggleMobileMenu}>
+          {isMobileMenuOpen ? <MdClose size={24} /> : <MdMenu size={24} />}
+        </button>
+      </div>
+
+      {/* Linkovi za veće ekrane */}
       <div className='hidden md:flex items-center gap-4'>
         {links.map((link, index) => (
           <Link key={index} to={link.link} className={`${
@@ -35,10 +48,31 @@ const Navbar = () => {
             } px-6 py-2 rounded-full`}
             onClick={() => setSelected(index)}
           >
-            {link.label} {/* Prikazivanje teksta linka */}
+            {link.label}
           </Link>
         ))}
       </div>
+
+      {/* Mobilni meni */}
+      {isMobileMenuOpen && (
+        <div className='absolute top-16 left-0 right-0 bg-white dark:bg-gray-800 shadow-lg md:hidden'>
+          {links.map((link, index) => (
+            <Link
+              key={index}
+              to={link.link}
+              className={`block px-4 py-2 ${
+                index === selected ? "bg-black text-white" : "text-gray-700"
+              }`}
+              onClick={() => {
+                setSelected(index);
+                setMobileMenuOpen(false); // Zatvori meni nakon izbora
+              }}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
+      )}
 
       <div className='flex items-center gap-10 2xl:gap-20'>
         <ThemeSwitch />
