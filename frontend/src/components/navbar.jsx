@@ -3,6 +3,7 @@ import { RiCurrencyLine } from "react-icons/ri";
 import { Avatar } from "../assets";
 import { MdMenu, MdClose } from "react-icons/md";
 import { Link } from "react-router-dom";
+import ThemeSwitch from "./switch.jsx";
 import { FaTachometerAlt, FaRegHandshake, FaRegUser, FaCog } from 'react-icons/fa';
 
 const links = [
@@ -22,6 +23,7 @@ const Navbar = () => {
 
   return (
     <div>
+      <ThemeSwitch />
       {/* Top NavBar */}
       <nav className="fixed top-0 z-50 w-full bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
         <div className="px-3 py-3 lg:px-5 lg:pl-3">
