@@ -4,11 +4,11 @@ import { Avatar } from "../assets";
 import { MdMenu, MdClose } from "react-icons/md";
 import { Link } from "react-router-dom";
 import ThemeSwitch from "./switch.jsx";
-import { FaTachometerAlt, FaRegHandshake, FaRegUser, FaUser, FaCog, FaSignOutAlt } from 'react-icons/fa';
+import { FaTachometerAlt, FaClipboardList, FaRegUser, FaUser, FaCog, FaSignOutAlt } from 'react-icons/fa';
 
 const links = [
   { label: "Dashboard", link: "/overview", icon: <FaTachometerAlt /> },
-  { label: "Transactions", link: "/transaction", icon: <FaRegHandshake /> },
+  { label: "Projects", link: "/projects", icon: <FaClipboardList /> },
   { label: "Accounts", link: "/account", icon: <FaRegUser /> },
   { label: "Settings", link: "/settings", icon: <FaCog /> },
 ];

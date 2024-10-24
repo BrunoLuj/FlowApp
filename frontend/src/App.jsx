@@ -5,7 +5,7 @@ import SignIn from "./pages/auth/sign-in";
 import Dashboard from "./pages/dashboard";
 import Settings  from "./pages/settings";
 import Account from "./pages/account";
-import Transaction from "./pages/transaction";
+import Projects from "./pages/projects.jsx";
 import Profile from "./pages/profile.tsx";
 import useStore from "./store";
 import { setAuthToken } from "./libs/apiCall";
@@ -38,7 +38,7 @@ function App() {
               <Route element={<RootLayout/>}>
                 <Route path="/" element={<Navigate to="/overview"/>} />
                 <Route path="/overview" element={<Dashboard/>} />
-                <Route path="/transaction" element={<Transaction/>} />
+                <Route path="/projects" element={<Projects/>} />
                 <Route path="/settings" element={<Settings/>} />
                 <Route path="/account" element={<Account/>} />
                 <Route path="/profile" element={<Profile/>} />
