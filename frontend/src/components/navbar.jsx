@@ -4,11 +4,12 @@ import { Avatar } from "../assets";
 import { MdMenu, MdClose } from "react-icons/md";
 import { Link, useLocation } from "react-router-dom";
 import ThemeSwitch from "./switch.jsx";
-import { FaTachometerAlt, FaClipboardList, FaRegUser, FaUser, FaCog, FaSignOutAlt } from 'react-icons/fa';
+import { FaTachometerAlt, FaClipboardList, FaRegUser, FaUser, FaCog, FaSignOutAlt, FaUsers  } from 'react-icons/fa';
 
 const links = [
   { label: "Dashboard", link: "/overview", icon: <FaTachometerAlt /> },
   { label: "Projects", link: "/projects", icon: <FaClipboardList /> },
+  { label: "Clients", link: "/clients", icon: <FaUsers /> },
   { label: "Accounts", link: "/account", icon: <FaRegUser /> },
   { label: "Settings", link: "/settings", icon: <FaCog /> },
 ];

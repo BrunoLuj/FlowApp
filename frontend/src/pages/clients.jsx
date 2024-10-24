@@ -1,12 +1,12 @@
 import React from 'react'
 
-const Account = () => {
+const Clients = () => {
   return  (
     <div className="p-4 sm:ml-16 mt-14">
           {/* Content goes here */}
-          <div>Account</div>
+          <div>Clients</div>
     </div>
   );
 };
 
-export default Account;
+export default Clients;

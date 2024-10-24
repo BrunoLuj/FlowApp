@@ -5,12 +5,13 @@ import SignIn from "./pages/auth/sign-in";
 import Dashboard from "./pages/dashboard";
 import Settings  from "./pages/settings";
 import Account from "./pages/account";
-import Projects from "./pages/projects.jsx";
-import Profile from "./pages/profile.tsx";
+import Projects from "./pages/projects";
+import Profile from "./pages/profile";
 import useStore from "./store";
 import { setAuthToken } from "./libs/apiCall";
 import { Toaster } from "sonner";
 import Navbar from "./components/navbar";
+import Clients from "./pages/clients";
 
 const RootLayout = () =>{
   const {user} = useStore((state) => state);
@@ -42,6 +43,7 @@ function App() {
                 <Route path="/settings" element={<Settings/>} />
                 <Route path="/account" element={<Account/>} />
                 <Route path="/profile" element={<Profile/>} />
+                <Route path="/clients" element={<Clients/>} />
               </Route>
 
               <Route path="/sign-in" element={<SignIn />} />
