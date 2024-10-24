@@ -6,6 +6,7 @@ import Dashboard from "./pages/dashboard";
 import Settings  from "./pages/settings";
 import Account from "./pages/account";
 import Transaction from "./pages/transaction";
+import Profile from "./pages/profile.tsx";
 import useStore from "./store";
 import { setAuthToken } from "./libs/apiCall";
 import { Toaster } from "sonner";
@@ -40,6 +41,7 @@ function App() {
                 <Route path="/transaction" element={<Transaction/>} />
                 <Route path="/settings" element={<Settings/>} />
                 <Route path="/account" element={<Account/>} />
+                <Route path="/profile" element={<Profile/>} />
               </Route>
 
               <Route path="/sign-in" element={<SignIn />} />
