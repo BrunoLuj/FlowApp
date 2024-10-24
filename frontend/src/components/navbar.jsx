@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { RiCurrencyLine } from "react-icons/ri";
 import { Avatar } from "../assets";
 import { MdMenu, MdClose } from "react-icons/md";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import ThemeSwitch from "./switch.jsx";
 import { FaTachometerAlt, FaClipboardList, FaRegUser, FaUser, FaCog, FaSignOutAlt } from 'react-icons/fa';
 
@@ -14,12 +14,20 @@ const links = [
 ];
 
 const Navbar = () => {
+  const location = useLocation();
   const [selected, setSelected] = useState(0);
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setUserMenuOpen] = useState(false);
   const [isSidebarHovered, setSidebarHovered] = useState(false);
-  // Provjera veličine ekrana
   const isMobile = window.innerWidth < 768;
+
+  useEffect(() => {
+    const currentPath = location.pathname;
+    const activeIndex = links.findIndex(link => link.link === currentPath);
+    if (activeIndex !== -1) {
+      setSelected(activeIndex);
+    }
+  }, [location.pathname]);
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!isMobileMenuOpen);
@@ -52,16 +60,14 @@ const Navbar = () => {
             </div>
             <div className="flex items-center">
               <div className="flex items-center ms-3">
-                <div>
-                  <button 
-                    type="button" 
-                    className="flex text-sm bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600" 
-                    onClick={toggleUserMenu}
-                  >
-                    <span className="sr-only">Open user menu</span>
-                    <img src={Avatar} alt='User' className='w-10 h-10 rounded-full object-cover cursor-pointer' />
-                  </button>
-                </div>
+                <button 
+                  type="button" 
+                  className="flex text-sm bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600" 
+                  onClick={toggleUserMenu}
+                >
+                  <span className="sr-only">Open user menu</span>
+                  <img src={Avatar} alt='User' className='w-10 h-10 rounded-full object-cover cursor-pointer' />
+                </button>
               </div>
             </div>
           </div>
@@ -89,30 +95,30 @@ const Navbar = () => {
 
       {/* Sidebar */}
       <aside
-      className={`fixed top-0 left-0 z-40 transition-all duration-300 ${isMobile ? (isMobileMenuOpen ? 'w-64' : 'w-0 overflow-hidden') : (isSidebarHovered ? 'w-64' : 'w-16')} h-screen pt-20 bg-white border-r border-gray-200 dark:bg-gray-800 dark:border-gray-700`}
-      onMouseEnter={() => !isMobile && setSidebarHovered(true)}
-      onMouseLeave={() => !isMobile && setSidebarHovered(false)}
-      aria-label="Sidebar"
-    >
-      <div className='flex flex-col items-start px-4 gap-4'>
-        {links.map((link, index) => (
-          <Link
-            key={index}
-            to={link.link}
-            className={`${index === selected ? "bg-black dark:bg-slate-800 text-white" : "text-gray-700 dark:text-gray-500"} flex items-center gap-2 px-2 py-2 rounded-full overflow-hidden`}
-            onClick={() => {
-              setSelected(index);
-              setMobileMenuOpen(false); // Close the menu when a link is clicked
-            }}
-          >
-            <div className="flex items-center">
-              {link.icon}
-              {(isMobileMenuOpen || isSidebarHovered) && <span className="ml-2">{link.label}</span>}
-            </div>
-          </Link>
-        ))}
-      </div>
-    </aside>
+        className={`fixed top-0 left-0 z-40 transition-all duration-300 ${isMobile ? (isMobileMenuOpen ? 'w-64' : 'w-0 overflow-hidden') : (isSidebarHovered ? 'w-64' : 'w-16')} h-screen pt-20 bg-white border-r border-gray-200 dark:bg-gray-800 dark:border-gray-700`}
+        onMouseEnter={() => !isMobile && setSidebarHovered(true)}
+        onMouseLeave={() => !isMobile && setSidebarHovered(false)}
+        aria-label="Sidebar"
+      >
+        <div className='flex flex-col items-start px-4 gap-4'>
+          {links.map((link, index) => (
+            <Link
+              key={index}
+              to={link.link}
+              className={`${index === selected ? "bg-black dark:bg-slate-800 text-white" : "text-gray-700 dark:text-gray-500"} flex items-center gap-2 px-2 py-2 rounded-full overflow-hidden`}
+              onClick={() => {
+                setSelected(index);
+                setMobileMenuOpen(false); // Close the menu when a link is clicked
+              }}
+            >
+              <div className="flex items-center">
+                {link.icon}
+                {(isMobileMenuOpen || isSidebarHovered) && <span className="ml-2">{link.label}</span>}
+              </div>
+            </Link>
+          ))}
+        </div>
+      </aside>
     </div>
   );
 };
