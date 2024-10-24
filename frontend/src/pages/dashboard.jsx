@@ -150,49 +150,37 @@ const Dashboard = () => {
 
       {/* Lista zadataka kao tabela */}
       <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-        <div className="mb-4">
-          <span className="mr-4 font-semibold">Filter po statusu:</span>
-          <button onClick={() => setFilter('svi')} className="text-blue-500 mr-2">Svi</button>
-          <button onClick={() => setFilter('Završen')} className="text-green-500 mr-2">Završen</button>
-          <button onClick={() => setFilter('U tijeku')} className="text-blue-500 mr-2">U tijeku</button>
-          <button onClick={() => setFilter('Nezavršeno')} className="text-red-500">Nezavršeno</button>
-        </div>
-        <div className="mb-4">
-          <input 
-            type="text" 
-            placeholder="Pretraži zadatke..." 
-            className="p-2 border rounded" 
-            onChange={e => setSearchTerm(e.target.value)} 
-          />
-        </div>
         <h2 className="text-xl font-semibold mb-4">Aktivni Zadaci</h2>
-        <table className="min-w-full">
-          <thead>
-            <tr className="bg-gray-200">
-              <th className="p-2 cursor-pointer" onClick={() => handleSort('name')}>Naziv Zadatka</th>
-              <th className="p-2 cursor-pointer" onClick={() => handleSort('status')}>Status</th>
-              <th className="p-2">Due Date</th>
-              <th className="p-2">Akcije</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredTasks.map(task => (
-              <tr key={task.id} className="border-b">
-                <td className="p-4">{task.name}</td>
-                <td className="p-4 flex items-center">
-                  <span className={`w-4 h-4 rounded-full ${statusColors[task.status]} mr-2`}></span>
-                  {task.status}
-                </td>
-                <td className="p-4">{task.dueDate}</td>
-                <td className="p-4">
-                  <button className="text-blue-500 mr-2">Uredi</button>
-                  <button className="text-red-500">Obriši</button>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead>
+              <tr className="bg-gray-200">
+                <th className="p-2 cursor-pointer">Naziv Zadatka</th>
+                <th className="p-2 cursor-pointer">Status</th>
+                <th className="p-2">Due Date</th>
+                <th className="p-2">Akcije</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredTasks.map(task => (
+                <tr key={task.id} className="border-b">
+                  <td className="p-4">{task.name}</td>
+                  <td className="p-4 flex items-center">
+                    <span className={`w-4 h-4 rounded-full ${statusColors[task.status]} mr-2`}></span>
+                    {task.status}
+                  </td>
+                  <td className="p-4">{task.dueDate}</td>
+                  <td className="p-4">
+                    <button className="text-blue-500 mr-2">Uredi</button>
+                    <button className="text-red-500">Obriši</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
+
     </div>
   );
 };
