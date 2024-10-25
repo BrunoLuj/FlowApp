@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { RiCurrencyLine } from "react-icons/ri";
 import { Avatar } from "../assets";
 import { MdMenu, MdClose } from "react-icons/md";
@@ -20,6 +20,7 @@ const Navbar = () => {
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setUserMenuOpen] = useState(false);
   const [isSidebarHovered, setSidebarHovered] = useState(false);
+  const userMenuRef = useRef(null);
   const isMobile = window.innerWidth < 768;
 
   useEffect(() => {
@@ -37,6 +38,25 @@ const Navbar = () => {
   const toggleUserMenu = () => {
     setUserMenuOpen(!isUserMenuOpen);
   };
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    if (isUserMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isUserMenuOpen]);
 
   return (
     <div>
@@ -75,9 +95,9 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* User Menu */}
-      {isUserMenuOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-50 overflow-hidden border border-gray-200">
+     {/* User Menu */}
+     {isUserMenuOpen && (
+        <div ref={userMenuRef} className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-50 overflow-hidden border border-gray-200">
           <div className="py-1" role="menu">
             <h3 className="px-4 py-2 text-xs font-semibold text-gray-600">User Options</h3>
             <Link to="/profile" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-100 transition duration-200">
