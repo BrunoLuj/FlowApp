@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import { RiCurrencyLine } from "react-icons/ri";
+import { RiBlazeLine } from "react-icons/ri";
 import { Avatar } from "../assets";
 import { MdMenu, MdClose } from "react-icons/md";
 import { Link, useLocation } from "react-router-dom";
 import ThemeSwitch from "./switch.jsx";
 import { FaTachometerAlt, FaClipboardList, FaRegUser, FaUser, FaCog, FaSignOutAlt, FaUsers  } from 'react-icons/fa';
+import useStore from "../store/index.js";
 
 const links = [
   { label: "Dashboard", link: "/overview", icon: <FaTachometerAlt /> },
@@ -22,6 +23,8 @@ const Navbar = () => {
   const [isSidebarHovered, setSidebarHovered] = useState(false);
   const userMenuRef = useRef(null);
   const isMobile = window.innerWidth < 768;
+
+  const signOut = useStore((state) => state.signOut);
 
   useEffect(() => {
     const currentPath = location.pathname;
@@ -72,8 +75,8 @@ const Navbar = () => {
                 <span className="sr-only">Open sidebar</span>
                 {isMobileMenuOpen ? <MdClose className="w-6 h-6" /> : <MdMenu className="w-6 h-6" />}
               </button>
-              <div className='flex ms-2 md:me-5 items-center justify-center bg-violet-700 rounded-xxl'>
-                <RiCurrencyLine className='text-white text-3xl hover:animate-spin' />
+              <div className='flex ms-2 md:me-5 items-center justify-center bg-blue-700 rounded-xl'>
+                <RiBlazeLine className='text-white text-3xl hover:animate-spin' />
               </div>
               <span className='self-center text-xl font-semibold sm:text-2xl whitespace-nowrap dark:text-white'>
                 FlowApp
@@ -107,9 +110,16 @@ const Navbar = () => {
               <FaCog className="mr-2 text-blue-500" /> Settings
             </Link>
             <div className="border-t border-gray-200"></div>
-            <Link to="/logout" className="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-100 transition duration-200">
+            <button 
+              onClick={() => {
+                  signOut();
+                  // Opcionalno, preusmerite korisnika na početnu stranicu ili login stranicu
+                  // history.push('/login'); // Ako koristite useHistory iz react-router
+              }}
+              className="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-100 transition duration-200"
+          >
               <FaSignOutAlt className="mr-2 text-red-600" /> Log Out
-            </Link>
+          </button>
           </div>
         </div>
       )}

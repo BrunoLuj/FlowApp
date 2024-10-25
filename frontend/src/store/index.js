@@ -6,7 +6,10 @@ const useStore = create((set) =>({
 
     setTheme: (value) => set({ theme: value}),
     setCredentials: (user) => set({ user }),
-    signOut: () => set({ user: null}),
+    signOut: () => {
+        set({ user: null });
+        localStorage.removeItem("user");
+    },
 
 }));
 
