@@ -3,11 +3,13 @@ import authRoutes from "./authRoutes.js";
 import accountRoutes from "./accountRoutes.js";
 import userRoutes from "./userRoutes.js";
 import transactionRoutes from "./transactionRoutes.js";
+import projectsRoutes from "./projectsRoutes.js";
 
 const router = express.Router();
 
 router.use("/auth", authRoutes);
 router.use("/user", userRoutes);
+router.use("/projects", projectsRoutes);
 router.use("/account", accountRoutes);
 router.use("/transaction", transactionRoutes);
 
