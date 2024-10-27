@@ -11,9 +11,9 @@ import {
 const router = express.Router();
 
 // Rute za projekte
-router.get("/", authMiddleware, checkPermission('view_project'), getProjects); // Prikaz svih projekata
-router.post("/", authMiddleware, checkPermission('create_project'), addProjects); // Dodavanje novog projekta
-router.put("/:id", authMiddleware, checkPermission('update_project'), updateProjects); // Ažuriranje postojećeg projekta
-router.delete("/:id", authMiddleware, checkPermission('delete_project'), deleteProjects); // Brisanje projekta
+router.get("/", authMiddleware, checkPermission('view_projects'), getProjects); // Prikaz svih projekata
+router.post("/", authMiddleware, checkPermission('create_projects'), addProjects); // Dodavanje novog projekta
+router.put("/:id", authMiddleware, checkPermission('update_projects'), updateProjects); // Ažuriranje postojećeg projekta
+router.delete("/:id", authMiddleware, checkPermission('delete_projects'), deleteProjects); // Brisanje projekta
 
 export default router;

@@ -10,9 +10,11 @@ export const getProjects = async (req, res) => {
 };
 
 export const addProjects = async (req, res) => {
-    const { name, description } = req.body;
+    const { name, project_type, status, due_date } = req.body;
+    console.log(req.body);
     try {
-        const newProject = await projectModel.createProject(name, description);
+        const newProject = await projectModel.createProject(name, project_type, status, due_date);
+        console.log(newProject);
         res.status(201).json(newProject);
     } catch (error) {
         res.status(500).json({ error: 'Error creating project' });
@@ -21,9 +23,9 @@ export const addProjects = async (req, res) => {
 
 export const updateProjects = async (req, res) => {
     const { id } = req.params;
-    const { name, description } = req.body;
+    const { name, project_type, status, due_date } = req.body;
     try {
-        const updatedProject = await projectModel.updateProject(id, name, description);
+        const updatedProject = await projectModel.updateProject(id, name, project_type, status, due_date);
         if (updatedProject) {
             res.json(updatedProject);
         } else {
