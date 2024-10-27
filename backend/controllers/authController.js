@@ -62,6 +62,7 @@ export const signinUser = async(req, res) =>{
         }
 
         const token = createJWT(user.id);
+     
         user.password = undefined;
 
         res.status(200).json({
