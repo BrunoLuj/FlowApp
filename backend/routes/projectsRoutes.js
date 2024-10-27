@@ -1,12 +1,12 @@
 import express from "express";
 import authMiddleware from "../middleware/authMiddleware.js";
-import { checkPermission } from "../middleware/permissionsMiddleware.js";
+import checkPermission  from "../middleware/permissionsMiddleware.js";
 import {
     getProjects,
     addProjects,
     updateProjects,
     deleteProjects,
-} from "../controllers/projectController.js";
+} from "../controllers/projectsController.js";
 
 const router = express.Router();
 
