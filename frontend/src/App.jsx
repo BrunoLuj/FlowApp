@@ -12,6 +12,7 @@ import { setAuthToken } from "./libs/apiCall";
 import { Toaster } from "sonner";
 import Navbar from "./components/navbar";
 import Clients from "./pages/clients";
+import ProjectForm from "./pages/project";
 
 const RootLayout = () =>{
   const {user} = useStore((state) => state);
@@ -44,6 +45,7 @@ function App() {
                 <Route path="/account" element={<Account/>} />
                 <Route path="/profile" element={<Profile/>} />
                 <Route path="/clients" element={<Clients/>} />
+                <Route path="/project" element={<ProjectForm/>} />
               </Route>
 
               <Route path="/sign-in" element={<SignIn />} />

@@ -75,9 +75,8 @@ const Projects = () => {
     setProjects(updatedProjects);
   };
 
-  const startEditing = (index) => {
-    setEditIndex(index);
-    navigate('/projects/form');
+  const startEditing = (project) => {
+    navigate('/project', { state: { project } });
   };
 
   return (
@@ -86,7 +85,7 @@ const Projects = () => {
       
       {permissions.includes('create_projects') && (
           <button
-              onClick={() => navigate('/projects/form')}
+              onClick={() => navigate('/project/')}
               className="bg-blue-600 text-white px-6 py-2 rounded-lg mb-4 w-full sm:w-auto"
           >
               Add Project
@@ -142,7 +141,7 @@ const Projects = () => {
               <tr 
                 key={index} 
                 className={`hover:bg-gray-100 cursor-pointer ${getRowClass(project.serviceStatus)}`} 
-                onClick={() => startEditing(index)}
+                onClick={() => startEditing(project)}
               >
                 <td className="py-3 px-4 border-b">{project.name}</td>
                 <td className="py-3 px-4 border-b">{project.project_type}</td>
@@ -153,7 +152,7 @@ const Projects = () => {
                   
                   {permissions.includes('update_projects') && (
                       <button
-                        onClick={(e) => { e.stopPropagation(); startEditing(index); }}
+                        onClick={(e) => { e.stopPropagation(); startEditing(project); }}
                         className="bg-yellow-500 text-white px-4 py-1 rounded-lg shadow hover:bg-yellow-600 transition mr-2"
                       >
                         Edit
