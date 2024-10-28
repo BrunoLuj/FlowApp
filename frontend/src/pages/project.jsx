@@ -67,7 +67,7 @@ const ProjectForm = () => {
                 <div className="absolute right-4"> {/* Pozicioniranje dugmadi */}
                     <button type="button" onClick={handleGenerateReport} className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition mr-2">Generiraj izvještaj</button>
                     {permissions.includes('create_projects') && (
-                        <button type="button" onClick={handleGenerateCertificate} className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition">Generiraj certifikat</button>
+                        <button type="button" onClick={handleGenerateCertificate} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">Generiraj certifikat</button>
                     )}
                 </div>
 
