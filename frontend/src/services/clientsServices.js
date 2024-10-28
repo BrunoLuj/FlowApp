@@ -9,7 +9,7 @@ export const saveClient = async (clientData) => {
     if (clientData.id) {
         return await api.put(`/clients/${clientData.id}`, clientData);
     } else {
-        return await api.post('/clients', clientData);
+        return await api.post('/clients/', clientData);
     }
 };
 

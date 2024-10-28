@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import useStore from '../store';
 import { deleteProject, saveProject } from '../services/projectsServices';
+import { toast } from 'sonner';
 
 const ProjectForm = () => {
     const location = useLocation();
@@ -37,11 +38,11 @@ const ProjectForm = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await saveProject(formData); // Pozovi funkciju za slanje podataka
-            navigate('/projects'); // Preusmeri na listu projekata
+            await saveProject(formData);
+            toast.success("Project saved successfully!");
+            navigate('/projects');
         } catch (error) {
-            console.error("Greška prilikom čuvanja projekta:", error);
-            // Možeš dodati obaveštenje korisniku ovde
+            toast.error(error.response?.data?.message || "An error occurred. Please try again.");
         }
     };
 
@@ -63,8 +64,8 @@ const ProjectForm = () => {
     return (
         <div className="bg-gray-100 min-h-screen p-4 mt-14 sm:ml-16">
             <div className="w-full">
-                <h2 className="text-3xl p-4 font-bold text-center">{project.name || 'Novi Projekat'}</h2>
-                <div className="absolute right-4"> {/* Pozicioniranje dugmadi */}
+                <h2 className="text-3xl p-4 font-bold text-center">{project.name || 'New Project'}</h2>
+                <div className="absolute right-4">
                     <button type="button" onClick={handleGenerateReport} className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition mr-2">Generiraj izvještaj</button>
                     {permissions.includes('create_projects') && (
                         <button type="button" onClick={handleGenerateCertificate} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">Generiraj certifikat</button>
@@ -76,7 +77,7 @@ const ProjectForm = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-16">
                         <div>
-                            <label className="block text-gray-700 font-medium mb-2">Naziv projekta:</label>
+                            <label className="block text-gray-700 font-medium mb-2">Naziv klijenta:</label>
                             <input 
                                 type="text" 
                                 name="name" 
