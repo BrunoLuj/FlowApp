@@ -9,6 +9,7 @@ const api = axios.create({
 export function setAuthToken(token) {
   if (token) {
     api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    console.log("Token set:", token); // Proveri token
   } else {
     delete api.defaults.headers.common["Authorization"];
   }

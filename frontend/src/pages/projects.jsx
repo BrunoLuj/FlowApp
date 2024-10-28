@@ -1,25 +1,46 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useStore from '../store/index.js';
+import { getProjects } from '../services/projectsServices.js';
 // import ProjectForm from './ProjectForm';
 
 const Projects = () => {
-  const [projects, setProjects] = useState([
-    { name: 'Project A', serviceType: 'Type 1', serviceStatus: 'Active', serviceDate: '2024-01-01', deadline: '2024-06-01' },
-    { name: 'Project B', serviceType: 'Type 2', serviceStatus: 'Completed', serviceDate: '2024-02-01', deadline: '2024-07-01' },
-    { name: 'Project C', serviceType: 'Type 3', serviceStatus: 'Pending', serviceDate: '2024-03-01', deadline: '2024-08-01' },
-  ]);
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [editIndex, setEditIndex] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const navigate = useNavigate();
 
-  const { permissions } = useStore(); // Dohvati permisije iz store-a
+  const { permissions } = useStore();
 
-  console.log(permissions);
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const response = await getProjects(); // Pozovi API funkciju
+        console.log(response);
+        setProjects(response.data);
+      } catch (err) {
+        setError(err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const filteredProjects = projects.filter(project => 
+    fetchProjects();
+  }, []);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error.message}</div>;
+  }
+
+  const filteredProjects = projects.filter(project =>
     project.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
     (filterType ? project.serviceType === filterType : true) &&
     (filterStatus ? project.serviceStatus === filterStatus : true)
@@ -124,10 +145,10 @@ const Projects = () => {
                 onClick={() => startEditing(index)}
               >
                 <td className="py-3 px-4 border-b">{project.name}</td>
-                <td className="py-3 px-4 border-b">{project.serviceType}</td>
-                <td className="py-3 px-4 border-b">{project.serviceStatus}</td>
-                <td className="py-3 px-4 border-b">{project.serviceDate}</td>
-                <td className="py-3 px-4 border-b">{project.deadline}</td>
+                <td className="py-3 px-4 border-b">{project.project_type}</td>
+                <td className="py-3 px-4 border-b">{project.status}</td>
+                <td className="py-3 px-4 border-b">{new Date(project.created_at).toLocaleDateString()}</td>
+                <td className="py-3 px-4 border-b">{new Date(project.due_date).toLocaleDateString()}</td>
                 <td className="py-3 px-4 border-b">
                   
                   {permissions.includes('update_projects') && (

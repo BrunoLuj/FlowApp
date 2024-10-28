@@ -7,3 +7,4 @@ export const signIn = async (data) => {
 export const signUp = async (data) => {
     return await api.post("/auth/sign-up", data);
 };
+
