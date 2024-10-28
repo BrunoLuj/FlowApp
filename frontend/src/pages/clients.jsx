@@ -1,158 +1,161 @@
-import React, { useState } from 'react';
-
-// Dummy data for clients
-const initialClientsData = [
-  { id: 1, name: 'Client A', address: 'Address A', taxId: '123456789', phone: '0123456789', isActive: true },
-  { id: 2, name: 'Client B', address: 'Address B', taxId: '987654321', phone: '9876543210', isActive: false },
-  // Add more clients as needed
-];
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import useStore from '../store/index.js';
+import { deleteClient, getClients } from '../services/clientsServices.js';
 
 const Clients = () => {
-  const [clientsData, setClientsData] = useState(initialClientsData);
+  const [clients, setClients] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [editIndex, setEditIndex] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  const handleSearch = (event) => setSearchTerm(event.target.value);
-  const handleStatusFilterChange = (event) => setStatusFilter(event.target.value);
+  const navigate = useNavigate();
+  const { permissions } = useStore();
 
-  const filteredClients = clientsData.filter(client => {
-    const matchesName = client.name.toLowerCase().includes(searchTerm.toLowerCase());
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const response = await getClients();
+        setClients(response.data);
+      } catch (err) {
+        setError(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchClients();
+  }, []);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error.message}</div>;
+  }
+
+  const filteredClients = clients.filter(client => {
+    const matchesName = client.company_name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || 
-      (statusFilter === 'active' && client.isActive) || 
-      (statusFilter === 'inactive' && !client.isActive);
+      (statusFilter === 'active' && client.status) || 
+      (statusFilter === 'inactive' && !client.status);
     return matchesName && matchesStatus;
   });
 
-  const handleAddClient = () => {
-    console.log('Add a new client');
+  const getStatusClass = (status) => {
+    return status ? { class: 'bg-green-100' } : { class: 'bg-red-100' };
   };
 
-  const handleUpdateClient = (id) => {
-    console.log(`Update client with ID: ${id}`);
+  const getStatusText = (status) => {
+    return status ? { text: 'Active', class: 'bg-green-400' } : { text: 'Inactive', class: 'bg-red-400' };
+  }
+
+  const removeClient = async (client) => {
+    await deleteClient(client.id);
+    setClients(clients.filter(p => p.id !== client.id));
   };
 
-  const handleDeleteClient = (id) => {
-    setClientsData(clientsData.filter(client => client.id !== id));
-  };
-
-  const toggleStatus = (id) => {
-    setClientsData(clientsData.map(client =>
-      client.id === id ? { ...client, isActive: !client.isActive } : client
-    ));
+  const startEditing = (client) => {
+    navigate('/client', { state: { client } });
   };
 
   return (
-    <div className="p-4 sm:ml-16 mt-14">
-      <h2 className="text-2xl font-bold mb-6">Our Clients</h2>
+    <div className="bg-gray-100 min-h-screen p-4 mt-14 sm:ml-16">
+      <h1 className="text-2xl font-bold mb-6">Clients</h1>
       
-      <div className="mb-4 flex flex-col sm:flex-row items-center">
+      {permissions.includes('create_clients') && (
+        <button
+          onClick={() => navigate('/client/')}
+          className="bg-blue-600 text-white px-6 py-2 rounded-lg mb-4 w-full sm:w-auto"
+        >
+          Add Client
+        </button>
+      )}
+
+      <div className="mb-6 flex flex-col sm:flex-row sm:space-x-4">
         <input 
           type="text" 
-          placeholder="Search by name..." 
-          value={searchTerm} 
-          onChange={handleSearch}
-          className="border border-gray-300 p-2 rounded mb-2 sm:mb-0 sm:mr-4 w-full sm:w-auto"
+          placeholder="Search by client name" 
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="border border-gray-300 p-3 rounded-lg shadow-sm focus:outline-none focus:ring focus:ring-blue-300 transition w-full"
         />
         <select 
           value={statusFilter} 
-          onChange={handleStatusFilterChange} 
-          className="border border-gray-300 p-2 rounded mb-2 sm:mb-0 sm:mr-4 w-full sm:w-auto"
+          onChange={(e) => setStatusFilter(e.target.value)} 
+          className="border border-gray-300 p-3 rounded-lg shadow-sm focus:outline-none focus:ring focus:ring-blue-300 transition w-full"
         >
           <option value="all">All</option>
           <option value="active">Active</option>
           <option value="inactive">Inactive</option>
         </select>
-        <button 
-          onClick={handleAddClient} 
-          className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 w-full sm:w-auto"
-        >
-          Add Client
-        </button>
       </div>
 
-      {/* Table for larger screens */}
-      <div className="hidden sm:block">
-        <table className="min-w-full bg-white border border-gray-200">
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-white border border-gray-300 rounded-lg shadow-md">
           <thead>
-            <tr className="bg-gray-200 text-left">
-              {['ID', 'Name', 'Address', 'Tax ID', 'Phone', 'Status', 'Options'].map(header => (
-                <th key={header} className="py-2 px-4 border-b">{header}</th>
-              ))}
+            <tr className="bg-gray-200 text-gray-700">
+              <th className="py-3 px-4 border-b text-left">Company Name</th>
+              <th className="py-3 px-4 border-b text-left">Address</th>
+              <th className="py-3 px-4 border-b text-left">ID Number</th>
+              <th className="py-3 px-4 border-b text-left">PDV Number</th>
+              <th className="py-3 px-4 border-b text-left">STTN Number</th>
+              <th className="py-3 px-4 border-b text-left">Contact Person</th>
+              <th className="py-3 px-4 border-b text-left">Phone</th>
+              <th className="py-3 px-4 border-b text-left">Email</th>
+              <th className="py-3 px-4 border-b text-left">Status</th>
+              <th className="py-3 px-4 border-b text-left">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filteredClients.map(client => (
-              <tr key={client.id} className="hover:bg-gray-100">
-                <td className="py-2 px-4 border-b">{client.id}</td>
-                <td className="py-2 px-4 border-b">{client.name}</td>
-                <td className="py-2 px-4 border-b">{client.address}</td>
-                <td className="py-2 px-4 border-b">{client.taxId}</td>
-                <td className="py-2 px-4 border-b">{client.phone}</td>
-                <td className="py-2 px-4 border-b">
-                  <span className={`inline-block px-2 py-1 rounded ${client.isActive ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
-                    {client.isActive ? 'Active' : 'Inactive'}
-                  </span>
-                  <button 
-                    onClick={() => toggleStatus(client.id)} 
-                    className="ml-2 bg-gray-300 text-black py-1 px-2 rounded hover:bg-gray-400"
-                  >
-                    Toggle Status
-                  </button>
-                </td>
-                <td className="py-2 px-4 border-b">
-                  <button 
-                    onClick={() => handleUpdateClient(client.id)} 
-                    className="bg-yellow-500 text-white py-1 px-3 rounded mr-2 hover:bg-yellow-600"
-                  >
-                    Update
-                  </button>
-                  <button 
-                    onClick={() => handleDeleteClient(client.id)} 
-                    className="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600"
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {filteredClients.map((client) => {
+              const { class: statusClass } = getStatusClass(client.status);
+              const { text, class: statusClass1 } = getStatusText(client.status);
+              return (
+                <tr 
+                  key={client.id} 
+                  className={`hover:bg-gray-100 cursor-pointer ${statusClass}`} 
+                  onClick={() => startEditing(client)}
+                >
+                  <td className="py-3 px-4 border-b">{client.company_name}</td>
+                  <td className="py-3 px-4 border-b">{client.address}</td>
+                  <td className="py-3 px-4 border-b">{client.idbroj}</td>
+                  <td className="py-3 px-4 border-b">{client.pdvbroj}</td>
+                  <td className="py-3 px-4 border-b">{client.sttn_broj}</td>
+                  <td className="py-3 px-4 border-b">{client.contact_person}</td>
+                  <td className="py-3 px-4 border-b">{client.phone}</td>
+                  <td className="py-3 px-4 border-b">{client.email}</td>
+                  <td className="py-3 px-4 border-b text-center">
+                    <span className={`py-2 px-3 border rounded-md ${statusClass1}`}>
+                      {text}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 border-b">
+                    {permissions.includes('update_clients') && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); startEditing(client); }}
+                        className="bg-yellow-500 text-white px-4 py-1 rounded-lg shadow hover:bg-yellow-600 transition mr-2"
+                      >
+                        Edit
+                      </button>
+                    )}
+                    {permissions.includes('delete_clients') && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); removeClient(client); }}
+                        className="bg-red-500 text-white px-4 py-1 rounded-lg shadow hover:bg-red-600 transition"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
-      </div>
-
-      {/* Cards for smaller screens */}
-      <div className="sm:hidden">
-        {filteredClients.map(client => (
-          <div key={client.id} className="border rounded p-4 mb-4 bg-white shadow">
-            <h3 className="text-lg font-bold">{client.name}</h3>
-            <p><strong>ID:</strong> {client.id}</p>
-            <p><strong>Address:</strong> {client.address}</p>
-            <p><strong>Tax ID:</strong> {client.taxId}</p>
-            <p><strong>Phone:</strong> {client.phone}</p>
-            <span className={`inline-block px-2 py-1 rounded ${client.isActive ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
-              {client.isActive ? 'Active' : 'Inactive'}
-            </span>
-            <div className="mt-2">
-              <button 
-                onClick={() => toggleStatus(client.id)} 
-                className="bg-gray-300 text-black py-1 px-2 rounded hover:bg-gray-400 mr-2"
-              >
-                Toggle Status
-              </button>
-              <button 
-                onClick={() => handleUpdateClient(client.id)} 
-                className="bg-yellow-500 text-white py-1 px-3 rounded mr-2 hover:bg-yellow-600"
-              >
-                Update
-              </button>
-              <button 
-                onClick={() => handleDeleteClient(client.id)} 
-                className="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        ))}
       </div>
     </div>
   );

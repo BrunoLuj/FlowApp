@@ -13,6 +13,7 @@ import { Toaster } from "sonner";
 import Navbar from "./components/navbar";
 import Clients from "./pages/clients";
 import ProjectForm from "./pages/project";
+import ClientForm from "./pages/client";
 
 const RootLayout = () =>{
   const {user} = useStore((state) => state);
@@ -41,11 +42,12 @@ function App() {
                 <Route path="/" element={<Navigate to="/overview"/>} />
                 <Route path="/overview" element={<Dashboard/>} />
                 <Route path="/projects" element={<Projects/>} />
+                <Route path="/project" element={<ProjectForm/>} />
                 <Route path="/settings" element={<Settings/>} />
                 <Route path="/account" element={<Account/>} />
                 <Route path="/profile" element={<Profile/>} />
-                <Route path="/clients" element={<Clients/>} />
-                <Route path="/project" element={<ProjectForm/>} />
+                <Route path="/clients" element={<Clients/>} />   
+                <Route path="/client" element={<ClientForm/>} />
               </Route>
 
               <Route path="/sign-in" element={<SignIn />} />

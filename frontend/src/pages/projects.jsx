@@ -103,7 +103,7 @@ const Projects = () => {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="border border-gray-300 p-3 rounded-lg shadow-sm focus:outline-none focus:ring focus:ring-blue-300 transition w-full"
         />
-        <div className="flex space-x-4 mt-2 sm:mt-0">
+        <div className="flex space-x-4 sm:mt-0">
           <select 
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
