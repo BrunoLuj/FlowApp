@@ -7,7 +7,6 @@ const Projects = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [editIndex, setEditIndex] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -56,17 +55,6 @@ const Projects = () => {
       default:
         return '';
     }
-  };
-
-  const addOrUpdateProject = (projectData) => {
-    if (editIndex !== null) {
-      const updatedProjects = projects.map((project, index) => (index === editIndex ? projectData : project));
-      setProjects(updatedProjects);
-      setEditIndex(null);
-    } else {
-      setProjects([...projects, projectData]);
-    }
-    navigate('/projects');
   };
 
   const removeProject = async (project) => {
@@ -144,7 +132,7 @@ const Projects = () => {
             {filteredProjects.map((project, index) => (
               <tr 
                 key={index} 
-                className={`hover:bg-gray-100 cursor-pointer ${getRowClass(project.serviceStatus)}`} 
+                className={`hover:bg-gray-100 cursor-pointer ${getRowClass(project.status)}`} 
                 onClick={() => startEditing(project)}
               >
                 <td className="py-3 px-4 border-b">{project.name}</td>

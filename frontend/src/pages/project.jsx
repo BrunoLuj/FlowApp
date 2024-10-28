@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import useStore from '../store';
 import { deleteProject, saveProject } from '../services/projectsServices';
 import { toast } from 'sonner';
+import { getClients } from '../services/clientsServices';
 
 const ProjectForm = () => {
     const location = useLocation();
     const navigate = useNavigate();
+    const [clients, setClients] = useState([]);
     const project = location.state?.project || {};
     const { permissions } = useStore();
 
@@ -28,7 +30,18 @@ const ProjectForm = () => {
         costs: project.costs || 0,
     });
 
-    console.log(formData);
+    useEffect(() => {
+        const fetchClients = async () => {
+            try {
+                const response = await getClients();
+                setClients(response.data);
+            } catch (error) {
+                console.error("Error fetching clients:", error);
+            }
+        };
+
+        fetchClients();
+    }, []);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -76,7 +89,7 @@ const ProjectForm = () => {
                     
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-16">
-                        <div>
+                        {/* <div>
                             <label className="block text-gray-700 font-medium mb-2">Naziv klijenta:</label>
                             <input 
                                 type="text" 
@@ -84,9 +97,26 @@ const ProjectForm = () => {
                                 value={formData.name} 
                                 onChange={handleChange} 
                                 readOnly={!permissions.includes('create_projects')}
-                                className={`w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-300 ${!permissions.includes('create_projects') ? 'bg-gray-200' : ''}`}
-                            />
+                                className={`w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-300 ${!permissions.includes('create_projects') ? 'bg-gray-200' : ''}`} */}
+                            {/* /> */}
                             {/* readOnly --- ako ne zelis da se moze editirati input  */}
+                        {/* </div> */}
+                        <div>
+                            <label className="block text-gray-700 font-medium mb-2">Naziv klijenta:</label>
+                            <select 
+                                name="name" 
+                                value={formData.name} 
+                                onChange={handleChange} 
+                                disabled={!permissions.includes('create_projects')}
+                                className={`w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-300 ${!permissions.includes('create_projects') ? 'bg-gray-200' : ''}`}
+                            >
+                                <option value="">Odaberite klijenta</option>
+                                {clients.map(client => (
+                                    <option key={client.id} value={client.company_name}>
+                                        {client.company_name} {/* Prikazuje naziv klijenta */}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
                         <div>
@@ -153,9 +183,9 @@ const ProjectForm = () => {
                                 onChange={handleChange} 
                                 className={`w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-300 ${!permissions.includes('create_projects') ? 'bg-gray-200' : ''}`}
                             >
-                                <option value="Active">Aktivan</option>
-                                <option value="Completed">Završen</option>
-                                <option value="Pending">Odgođen</option>
+                                <option value="Active">Active</option>
+                                <option value="Completed">Completed</option>
+                                <option value="Pending">Pending</option>
                             </select>
                         </div>
 
