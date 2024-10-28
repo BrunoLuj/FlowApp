@@ -69,6 +69,7 @@ export const signinUser = async(req, res) =>{
      
         user.password = undefined;
         user.permissions = undefined;
+        user.roles_id = undefined;
 
         res.status(200).json({
             status: "Success",
