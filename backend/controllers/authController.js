@@ -45,6 +45,8 @@ export const signinUser = async(req, res) =>{
         const {email, password} = req.body;
         const user = await findUserByEmail(email);
 
+        console.log(user);
+
         if(!user){
             return res.status(404).json({
                 status: "Failed",
@@ -63,9 +65,10 @@ export const signinUser = async(req, res) =>{
 
         console.log(user);
 
-        const token = createJWT(user.id, user.roles_id);
+        const token = createJWT(user.id, user.roles_id, user.permissions);
      
         user.password = undefined;
+        user.permissions = undefined;
 
         res.status(200).json({
             status: "Success",

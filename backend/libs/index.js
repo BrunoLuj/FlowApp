@@ -19,12 +19,13 @@ export const comparePassword = async(userPassword, password) =>{
     }
 };
 
-export const createJWT = (user_id, roles_id) =>{
+export const createJWT = (user_id, roles_id, user_permissions) =>{
 
     return JWT.sign(
         {
             userId: user_id,
-            roles_id: roles_id
+            roles_id: roles_id,
+            permissions: user_permissions
         },
         
         process.env.JWT_SECRET,

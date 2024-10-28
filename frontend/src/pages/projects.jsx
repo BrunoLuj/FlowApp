@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import useStore from '../store/index.js';
 // import ProjectForm from './ProjectForm';
 
 const Projects = () => {
@@ -13,6 +14,10 @@ const Projects = () => {
   const [filterType, setFilterType] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const navigate = useNavigate();
+
+  const { permissions } = useStore(); // Dohvati permisije iz store-a
+
+  console.log(permissions);
 
   const filteredProjects = projects.filter(project => 
     project.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
@@ -58,12 +63,14 @@ const Projects = () => {
     <div className="bg-gray-100 min-h-screen p-4 mt-14 sm:ml-16">
       <h1 className="text-2xl font-bold mb-6">Projects</h1>
       
-      <button
-        onClick={() => navigate('/projects/form')}
-        className="bg-blue-600 text-white px-6 py-2 rounded-lg mb-4 w-full sm:w-auto"
-      >
-        Add Project
-      </button>
+      {permissions.includes('create_projects') && (
+          <button
+              onClick={() => navigate('/projects/form')}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg mb-4 w-full sm:w-auto"
+          >
+              Add Project
+          </button>
+      )}
       
       <div className="mb-6 flex flex-col sm:flex-row sm:space-x-4">
         <input 
@@ -122,18 +129,24 @@ const Projects = () => {
                 <td className="py-3 px-4 border-b">{project.serviceDate}</td>
                 <td className="py-3 px-4 border-b">{project.deadline}</td>
                 <td className="py-3 px-4 border-b">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); startEditing(index); }}
-                    className="bg-yellow-500 text-white px-4 py-1 rounded-lg shadow hover:bg-yellow-600 transition mr-2"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); removeProject(index); }}
-                    className="bg-red-500 text-white px-4 py-1 rounded-lg shadow hover:bg-red-600 transition"
-                  >
-                    Remove
-                  </button>
+                  
+                  {permissions.includes('update_projects') && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); startEditing(index); }}
+                        className="bg-yellow-500 text-white px-4 py-1 rounded-lg shadow hover:bg-yellow-600 transition mr-2"
+                      >
+                        Edit
+                      </button>
+                  )}
+                  
+                  {permissions.includes('delete_projects') && (
+                      <button
+                      onClick={(e) => { e.stopPropagation(); removeProject(index); }}
+                      className="bg-red-500 text-white px-4 py-1 rounded-lg shadow hover:bg-red-600 transition"
+                    >
+                      Remove
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
