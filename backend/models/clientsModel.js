@@ -5,25 +5,31 @@ export const getAllClients = async () => {
     return result.rows;
 };
 
-export const createProject = async (name, project_type, status, end_date ) => {
-    const result = await pool.query(
-        'INSERT INTO projects (name, project_type, status, end_date) VALUES ($1, $2, $3, $4) RETURNING *',
-        [name, project_type, status, end_date ]
-    );
-    return result.rows[0];
+export const createClient = async (company_name, contact_person, email, phone, address, idbroj, pdvbroj, sttn_broj, status ) => {
+   try{
+        const result = await pool.query(
+            'INSERT INTO clients (company_name, contact_person, email, phone, address, idbroj, pdvbroj, sttn_broj, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
+            [company_name, contact_person, email, phone, address, idbroj, pdvbroj, sttn_broj, status ]
+        );
+        return result.rows[0];
+   }catch(error){
+    console.error('Error updating client:', error);
+    throw error;
+   }
+    
 };
 
-export const updateProject = async (id, name, project_type, status, end_date ) => {
+export const updateClient = async (id, company_name, contact_person, email, phone, address, idbroj, pdvbroj, sttn_broj, status ) => {
     try {
-        const result = await pool.query('UPDATE projects SET name = $1, project_type = $2, status = $3, end_date = $4 WHERE id = $5 RETURNING *', [name, project_type, status, end_date , id]);
+        const result = await pool.query('UPDATE clients SET company_name = $1, contact_person = $2, email = $3, phone = $4, address = $5, idbroj = $6, pdvbroj = $7, sttn_broj = $8, status = $9 WHERE id = $10 RETURNING *', [company_name, contact_person, email, phone, address, idbroj, pdvbroj, sttn_broj, status , id]);
         return result.rows[0];
     } catch (error) {
-        console.error('Error updating project:', error); // Prikaz greške
+        console.error('Error updating client:', error);
         throw error;
     }
 };
 
-export const deleteProject = async (id) => {
-    const result = await pool.query('DELETE FROM projects WHERE id = $1 RETURNING *', [id]);
+export const deleteClient = async (id) => {
+    const result = await pool.query('DELETE FROM clients WHERE id = $1 RETURNING *', [id]);
     return result.rows[0];
 };

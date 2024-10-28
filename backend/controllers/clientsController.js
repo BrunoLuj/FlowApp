@@ -10,24 +10,28 @@ export const getClients = async (req, res) => {
 };
 
 export const addClients = async (req, res) => {
-    const { name, project_type, status, end_date  } = req.body;
-    console.log(req.body);
+    const { company_name, contact_person, email, phone, address, idbroj, pdvbroj, sttn_broj, status} = req.body;
+    console.log("Body" ,req.body);
     try {
-        const newProject = await clientsModel.createProject(name, project_type, status, end_date );
-        console.log(newProject);
-        res.status(201).json(newProject);
+        const newClient = await clientsModel.createClient(company_name, contact_person, email, phone, address, idbroj, pdvbroj, sttn_broj, status );
+        console.log("newClient",newClient);
+        res.status(201).json(newClient);
     } catch (error) {
-        res.status(500).json({ error: 'Error creating project' });
+        res.status(500).json({ error: 'Error creating client' });
     }
 };
 
 export const updateClients = async (req, res) => {
     const { id } = req.params;
-    const { name, project_type, status, end_date  } = req.body;
+    console.log(req.params);
+    const { company_name, contact_person, email, phone, address, idbroj, pdvbroj, sttn_broj, status  } = req.body;
+    console.log(req.body);
+
     try {
-        const updatedProject = await clientsModel.updateProject(id, name, project_type, status, end_date );
-        if (updatedProject) {
-            res.json(updatedProject);
+        const updatedClient = await clientsModel.updateClient(id, company_name, contact_person, email, phone, address, idbroj, pdvbroj, sttn_broj, status );
+        console.log(updatedClient);
+        if (updatedClient) {
+            res.json(updatedClient);
         } else {
             res.status(404).json({ error: 'Project not found' });
         }
@@ -40,13 +44,13 @@ export const updateClients = async (req, res) => {
 export const deleteClients = async (req, res) => {
     const { id } = req.params;
     try {
-        const deletedProject = await clientsModel.deleteProject(id);
-        if (deletedProject) {
-            res.json({ message: 'Project deleted' });
+        const deleteClient = await clientsModel.deleteClient(id);
+        if (deleteClient) {
+            res.json({ message: 'Client deleted' });
         } else {
-            res.status(404).json({ error: 'Project not found' });
+            res.status(404).json({ error: 'Client not found' });
         }
     } catch (error) {
-        res.status(500).json({ error: 'Error deleting project' });
+        res.status(500).json({ error: 'Error deleting client' });
     }
 };
