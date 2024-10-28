@@ -41,8 +41,8 @@ const Projects = () => {
 
   const filteredProjects = projects.filter(project =>
     project.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-    (filterType ? project.serviceType === filterType : true) &&
-    (filterStatus ? project.serviceStatus === filterStatus : true)
+    (filterType ? project.project_type === filterType : true) &&
+    (filterStatus ? project.status === filterStatus : true)
   );
 
   const getRowClass = (status) => {
@@ -110,9 +110,10 @@ const Projects = () => {
             className="border border-gray-300 p-3 rounded-lg shadow-sm focus:outline-none focus:ring focus:ring-blue-300 transition w-full"
           >
             <option value="">Filter by Service Type</option>
-            <option value="Type 1">Type 1</option>
-            <option value="Type 2">Type 2</option>
-            <option value="Type 3">Type 3</option>
+            <option value="Volumetri">Volumetri</option>
+            <option value="AMN">AMN</option>
+            <option value="Mjerna Letva">Mjerna Letva</option>
+            <option value="Rezerovari">Rezerovari</option>
           </select>
           <select 
             value={filterStatus}
