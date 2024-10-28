@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useStore from '../store/index.js';
-import { getProjects } from '../services/projectsServices.js';
-// import ProjectForm from './ProjectForm';
+import { deleteProject, getProjects } from '../services/projectsServices.js';
 
 const Projects = () => {
   const [projects, setProjects] = useState([]);
@@ -70,12 +69,16 @@ const Projects = () => {
     navigate('/projects');
   };
 
-  const removeProject = (index) => {
-    const updatedProjects = projects.filter((_, i) => i !== index);
+  const removeProject = async (project) => {
+    await deleteProject(project.id); // Pozovi API funkciju
+
+    // Ažuriraj stanje lista projekata
+    const updatedProjects = projects.filter(p => p.id !== project.id);
     setProjects(updatedProjects);
   };
 
   const startEditing = (project) => {
+    console.log(project);
     navigate('/project', { state: { project } });
   };
 
@@ -147,7 +150,7 @@ const Projects = () => {
                 <td className="py-3 px-4 border-b">{project.project_type}</td>
                 <td className="py-3 px-4 border-b">{project.status}</td>
                 <td className="py-3 px-4 border-b">{new Date(project.created_at).toLocaleDateString()}</td>
-                <td className="py-3 px-4 border-b">{new Date(project.due_date).toLocaleDateString()}</td>
+                <td className="py-3 px-4 border-b">{new Date(project.end_date).toLocaleDateString()}</td>
                 <td className="py-3 px-4 border-b">
                   
                   {permissions.includes('update_projects') && (
@@ -161,7 +164,7 @@ const Projects = () => {
                   
                   {permissions.includes('delete_projects') && (
                       <button
-                      onClick={(e) => { e.stopPropagation(); removeProject(index); }}
+                      onClick={(e) => { e.stopPropagation(); removeProject(project); }}
                       className="bg-red-500 text-white px-4 py-1 rounded-lg shadow hover:bg-red-600 transition"
                     >
                       Remove
