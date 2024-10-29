@@ -112,7 +112,9 @@ const UserForm = () => {
     return (
         <div className="bg-gray-100 min-h-screen p-4 mt-14 sm:ml-16">
             <div className="w-full">
-                <h2 className="text-3xl p-4 font-bold text-center">{user.firstname + ' ' + user.lastname || 'New User'}</h2>
+                <h2 className="text-3xl p-4 font-bold text-center">
+                    {user && (user.firstname || user.lastname) ? `${user.firstname} ${user.lastname}` : 'New User'}
+                </h2>
                 <div className="absolute right-4">
                     <button type="button" onClick={handleGenerateReport} className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition mr-2">Generiraj izvještaj</button>
                     {permissions.includes('create_users') && (
