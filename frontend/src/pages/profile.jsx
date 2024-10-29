@@ -9,7 +9,6 @@ const Profile = () => {
     const { user, permissions, setCredentials } = useStore();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    // const [roles, setRoles] = useState([]);
     const [formData, setFormData] = useState({
         id: '',
         firstname: '',
@@ -32,9 +31,6 @@ const Profile = () => {
             }
             
             try {
-                // const [rolesResponse] = await Promise.all([getRoles()]);
-                // setRoles(rolesResponse.data);
-
                 setFormData({
                     id: user.id,
                     firstname: user.firstname,
@@ -71,7 +67,7 @@ const Profile = () => {
         try {
             const response  = await saveUserProfile(formData);
             const updatedUser = response.data.user; 
-            setCredentials(updatedUser); // Ažuriraj globalno stanje
+            setCredentials(updatedUser);
             toast.success("Podaci su uspešno ažurirani!");
             navigate('/');
         } catch (error) {
@@ -93,6 +89,16 @@ const Profile = () => {
                 <h2 className="text-3xl p-4 font-bold text-center">
                     {formData.firstname || formData.lastname ? `${formData.firstname} ${formData.lastname}` : ''}
                 </h2>
+                 {/* Change Password */}
+                 <div className="flex justify-end mt-1">
+                        <button 
+                            type="button" 
+                            onClick={() => navigate('/change-password')} 
+                            className="bg-green-600 text-white px-5 py-3 rounded-lg hover:bg-green-700 transition"
+                        >
+                            Change Password
+                        </button>
+                    </div>
                 <form onSubmit={handleSubmit} className="relative">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-16">
                         {['firstname', 'lastname', 'address', 'contact', 'country', 'currency'].map((field, index) => (
@@ -108,7 +114,6 @@ const Profile = () => {
                                 />
                             </div>
                         ))}
-
                         <div>
                             <label className="block text-gray-700 font-medium mb-2">Email:</label>
                             <input 
@@ -120,25 +125,6 @@ const Profile = () => {
                                 className={`w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-300 ${!permissions.includes('create_user') ? 'bg-gray-200' : ''}`}
                             />
                         </div>
-
-                        {/* <div>
-                            <label className="block text-gray-700 font-medium mb-2">Role:</label>
-                            <select 
-                                name="roles_id"
-                                disabled={!permissions.includes('create_users')} 
-                                value={formData.roles_id || ''}
-                                onChange={handleChange} 
-                                className={`w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-300 ${!permissions.includes('create_userss') ? 'bg-gray-200' : ''}`}
-                            >
-                                <option value="" disabled>Select a role</option>
-                                {roles.map(role => (
-                                    <option key={role.id} value={role.id}>
-                                        {role.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div> */}
-
                         <div>
                             <label className="block text-gray-700 font-medium mb-2">Status:</label>
                             <select 
@@ -152,7 +138,6 @@ const Profile = () => {
                                 <option value="InActive">InActive</option>
                             </select>
                         </div>
-
                         <div className="col-span-1 md:col-span-2">
                             <label className="block text-gray-700 font-medium mb-2">Opis korisnika:</label>
                             <textarea 
@@ -170,16 +155,8 @@ const Profile = () => {
                         {permissions.includes('update_profile') && (
                             <button type="submit" className="bg-blue-600 text-white px-5 py-3 rounded-lg hover:bg-blue-700 transition mb-2 sm:mb-0 sm:w-auto">Update</button>
                         )}
-                        {/* {permissions.includes('delete_users') && formData.id && (
-                            <button 
-                                type="button" 
-                                onClick={() => removeUser(formData.id)} 
-                                className="bg-red-600 text-white px-5 py-3 rounded-lg hover:bg-red-700 transition"
-                            >
-                                Izbriši
-                            </button>
-                        )} */}
                     </div>
+
                 </form>
             </div>
         </div>

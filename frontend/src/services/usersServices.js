@@ -25,3 +25,9 @@ export const deleteUser = async (user_id) => {
 export const getRoles = async () => {
     return await api.get(`/user/roles/`);
 }
+
+export const changePassword = async (userData) => {
+    if (userData.id) {
+        return await api.put(`/user/change-password/${userData.id}`, userData);
+    }
+};

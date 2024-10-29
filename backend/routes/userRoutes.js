@@ -8,7 +8,7 @@ const router = express.Router();
 router.get("/", authMiddleware, getUser);
 router.get("/all", authMiddleware, checkPermission('create_users'), getAllUsers);
 router.post("/", authMiddleware, checkPermission('create_users'), addUsers);
-router.put("/change-password", authMiddleware, changePassword);
+router.put("/change-password/:id", authMiddleware, changePassword);
 router.put("/:id", authMiddleware, checkPermission('update_users'), updateUser);
 router.put("/profile/:id", authMiddleware, checkPermission('update_profile'), updateUserProfile);
 router.get("/roles/", authMiddleware, checkPermission('create_users'), getUsersRoles);
