@@ -86,6 +86,9 @@ const Navbar = () => {
             </div>
             <div className="flex items-center">
               <div className="flex items-center ms-3">
+                <span className="mr-3 text-sm text-gray-800 dark:text-white">
+                  {user.firstname} {user.lastname}
+                </span>
                 <button 
                   type="button" 
                   className="flex text-sm bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600" 
@@ -94,6 +97,7 @@ const Navbar = () => {
                   <span className="sr-only">Open user menu</span>
                   <img src={Avatar} alt='User' className='w-10 h-10 rounded-full object-cover cursor-pointer' />
                 </button>
+
               </div>
             </div>
           </div>
