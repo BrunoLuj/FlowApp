@@ -1,5 +1,11 @@
 import { pool } from "../libs/database.js";
 
+export const getAccounts = async () => {
+    const result = await pool.query('SELECT * FROM accounts');
+    return result.rows;
+};
+
+
 export const getAccountByUserId = async(userId) =>{
     const result = await pool.query({
         text: `SELECT * FROM account WHERE user_id = $1`,

@@ -4,7 +4,7 @@ import SignUp from "./pages/auth/sign-up";
 import SignIn from "./pages/auth/sign-in";
 import Dashboard from "./pages/dashboard";
 import Settings  from "./pages/settings";
-import Account from "./pages/account";
+import Accounts from "./pages/accounts";
 import Projects from "./pages/projects";
 import Profile from "./pages/profile";
 import useStore from "./store";
@@ -44,7 +44,8 @@ function App() {
                 <Route path="/projects" element={<Projects/>} />
                 <Route path="/project" element={<ProjectForm/>} />
                 <Route path="/settings" element={<Settings/>} />
-                <Route path="/account" element={<Account/>} />
+                <Route path="/accounts" element={<Accounts/>} />
+                {/* <Route path="/account" element={<AccountForm/>} /> */}
                 <Route path="/profile" element={<Profile/>} />
                 <Route path="/clients" element={<Clients/>} />   
                 <Route path="/client" element={<ClientForm/>} />
