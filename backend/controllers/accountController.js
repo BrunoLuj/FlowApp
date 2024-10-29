@@ -51,7 +51,7 @@ export const createAccount = async (req, res) => {
 
 export const updateAccount = async (id, name, project_type, status, end_date ) => {
   try {
-      const result = await pool.query('UPDATE projects SET name = $1, project_type = $2, status = $3, end_date = $4 WHERE id = $5 RETURNING *', [name, project_type, status, end_date , id]);
+      const result = await pool.query('UPDATE account SET name = $1, project_type = $2, status = $3, end_date = $4 WHERE id = $5 RETURNING *', [name, project_type, status, end_date , id]);
       return result.rows[0];
   } catch (error) {
       console.error('Error updating project:', error); // Prikaz greške
@@ -60,7 +60,7 @@ export const updateAccount = async (id, name, project_type, status, end_date ) =
 };
 
 export const deleteAccount = async (id) => {
-  const result = await pool.query('DELETE FROM projects WHERE id = $1 RETURNING *', [id]);
+  const result = await pool.query('DELETE FROM account WHERE id = $1 RETURNING *', [id]);
   return result.rows[0];
 };
 

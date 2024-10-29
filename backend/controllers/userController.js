@@ -1,10 +1,19 @@
 import { comparePassword} from "../libs/index.js";
-import { changeUserPassword, getUserById, updateUserById } from "../models/userModel.js";
+import * as userModel from "../models/userModel.js";
+
+export const getAllUsers = async(req, res) =>{
+  try {
+    const users = await userModel.getAllUsers();
+    res.json(users);
+  } catch (error) {
+      res.status(500).json({ error: 'Error fetching users' });
+  }
+};
 
 export const getUser = async(req, res) =>{
     try{
         const {userId} = req.body.user;
-        const user = await getUserById(userId);
+        const user = await userModel.getUserById(userId);
 
         if(!user){
             return res.status(404).json({
@@ -34,7 +43,7 @@ export const changePassword = async (req, res) => {
       const { userId } = req.body.user;
       const { currentPassword, newPassword, confirmPassword } = req.body;
 
-      const user = await getUserById(userId);
+      const user = await userModel.getUserById(userId);
   
       if (!user) {
         return res
@@ -57,7 +66,7 @@ export const changePassword = async (req, res) => {
           .json({ status: "Failed", message: "Invalid current password." });
       }
   
-      await changeUserPassword(userId, newPassword);
+      await userModel.changeUserPassword(userId, newPassword);
   
       res.status(200).json({
         status: "Success",
@@ -74,7 +83,7 @@ export const updateUser = async (req, res) => {
       const { userId } = req.body.user;
       const userData = req.body;
   
-      const user = await getUserById(userId);
+      const user = await userModel.getUserById(userId);
   
       if (!user) {
         return res
@@ -82,7 +91,7 @@ export const updateUser = async (req, res) => {
           .json({ status: "Failed", message: "User not found." });
       }
   
-      const updatedUser = await updateUserById(userId, userData);
+      const updatedUser = await userModel.updateUserById(userId, userData);
       updatedUser.password = undefined;
   
       res.status(200).json({
