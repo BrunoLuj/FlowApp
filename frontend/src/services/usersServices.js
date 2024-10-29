@@ -5,7 +5,6 @@ export const getUsers = async () => {
 };
 
 export const saveUser = async (userData) => {
-    console.log(userData);
     if (userData.id) {
         return await api.put(`/user/${userData.id}`, userData);
     } else {

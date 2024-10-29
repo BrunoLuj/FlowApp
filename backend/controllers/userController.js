@@ -1,4 +1,4 @@
-import { comparePassword} from "../libs/index.js";
+import { comparePassword, hashPassword} from "../libs/index.js";
 import * as userModel from "../models/userModel.js";
 
 export const getAllUsers = async(req, res) =>{
@@ -45,6 +45,21 @@ export const getUser = async(req, res) =>{
             message: error.message,
         });
     }
+};
+
+export const addUsers= async (req, res) => {
+  const { email, firstname, lastname, address, country, currency, contact, roles_id, status } = req.body;
+  const defaultPassword = 'FlowApp2024@';
+
+  const hashedPassword = await hashPassword(defaultPassword);
+
+  try {
+      const newUser = await userModel.createUser(email, firstname, lastname, address, country, currency, contact, roles_id, status, hashedPassword);
+      console.log(newUser);
+      res.status(201).json(newUser);
+  } catch (error) {
+      res.status(500).json({ error: 'Error creating User' });
+  }
 };
 
 export const changePassword = async (req, res) => {
@@ -148,3 +163,18 @@ export const updateUser = async (req, res) => {
 //       res.status(500).json({ status: "Failed", message: error.message });
 //     }
 // };
+
+
+export const deleteUser = async (req, res) => {
+  const { id } = req.params;
+  try {
+      const deleteUser = await userModel.deleteUser(id);
+      if (deleteUser) {
+          res.json({ message: 'User deleted' });
+      } else {
+          res.status(404).json({ error: 'User not found' });
+      }
+  } catch (error) {
+      res.status(500).json({ error: 'Error deleting user' });
+  }
+};

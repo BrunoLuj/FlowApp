@@ -156,7 +156,7 @@ const UserForm = () => {
                                 name="email" 
                                 value={formData.email} 
                                 onChange={handleChange} 
-                                readOnly
+                                readOnly={!permissions.includes('create_users')}
                                 className={`w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-300 ${!permissions.includes('create_users') ? 'bg-gray-200' : ''}`} 
                             />
                         </div>
@@ -188,7 +188,7 @@ const UserForm = () => {
                         <div>
                             <label className="block text-gray-700 font-medium mb-2">Role:</label>
                             <select 
-                                name="role_id" // Ovdje koristi role_id
+                                name="roles_id" // Ovdje koristi role_id
                                 disabled={!permissions.includes('create_users')} 
                                 value={formData.roles_id|| ''} // Postavi vrednost na role_id
                                 onChange={handleChange} 

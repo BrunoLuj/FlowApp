@@ -19,6 +19,14 @@ export const getUserById = async (userId) => {
   return result.rows[0];
 };
 
+export const createUser = async (email, firstname, lastname, address, country, currency, contact, roles_id, status, password ) => {
+  const result = await pool.query(
+      'INSERT INTO users (email, firstname, lastname, address, country, currency, contact, roles_id, status, password) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
+      [email, firstname, lastname, address, country, currency, contact, roles_id, status, password ]
+  );
+  return result.rows[0];
+};
+
 // export const updateUserById = async (userId, userData) => {
 //   console.log(userId);
 //   const { firstname, lastname, address, country, currency, contact, roles_id, status } = userData;
@@ -48,4 +56,9 @@ export const changeUserPassword = async (userId, newPassword) => {
     text: `UPDATE users SET password = $1 WHERE id = $2`,
     values: [hashedPassword, userId],
   });
+};
+
+export const deleteUser = async (id) => {
+  const result = await pool.query('DELETE FROM users WHERE id = $1 RETURNING *', [id]);
+  return result.rows[0];
 };
