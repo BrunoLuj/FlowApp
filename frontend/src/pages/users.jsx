@@ -52,6 +52,14 @@ const Users = () => {
     return matchesName && matchesStatus;
   });
 
+  const getStatusClass = (status) => {
+    return status ? { class: 'bg-green-100' } : { class: 'bg-red-100' };
+  };
+
+  const getStatusText = (status) => {
+    return status ? { text: 'Active', class: 'bg-green-400' } : { text: 'Inactive', class: 'bg-red-400' };
+  }
+
   const removeUser = async (user) => {
     await deleteUser(user.id);
     setUsers(users.filter(p => p.id !== user.id));
@@ -109,44 +117,47 @@ const Users = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredUsers.map((user) => (
-              <tr 
-                key={user.id} 
-                className={`hover:bg-gray-100 cursor-pointer`} 
-                onClick={() => startEditing(user)}
-              >
-                <td className="py-3 px-4 border-b">{user.firstname}</td>
-                <td className="py-3 px-4 border-b">{user.lastname}</td>
-                <td className="py-3 px-4 border-b">{user.email}</td>
-                <td className="py-3 px-4 border-b">{roleMap[user.roles_id] || 'Unknown Role'}</td>
-                <td className="py-3 px-4 border-b">{user.contact}</td>
-                <td className="py-3 px-4 border-b">{user.country}</td>
-                <td className="py-3 px-4 border-b">{user.currency}</td>
-                <td className="py-3 px-4 border-b text-center">
-                  <span className={`py-2 px-3 border rounded-md ${user.status ? 'bg-green-400' : 'bg-red-400'}`}>
-                    {user.status ? 'Active' : 'Inactive'}
-                  </span>
-                </td>
-                <td className="py-3 px-4 border-b">
-                  {permissions.includes('update_users') && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); startEditing(user); }}
-                      className="bg-yellow-500 text-white px-4 py-1 rounded-lg shadow hover:bg-yellow-600 transition mr-2"
-                    >
-                      Edit
-                    </button>
-                  )}
-                  {permissions.includes('delete_users') && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); removeUser(user); }}
-                      className="bg-red-500 text-white px-4 py-1 rounded-lg shadow hover:bg-red-600 transition"
-                    >
-                      Remove
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
+            {filteredUsers.map((user) => {
+              const { class: statusClass } = getStatusClass(user.status);
+              return (
+                <tr 
+                  key={user.id} 
+                  className={`hover:bg-gray-100 cursor-pointer ${statusClass}`} 
+                  onClick={() => startEditing(user)}
+                >
+                  <td className="py-3 px-4 border-b">{user.firstname}</td>
+                  <td className="py-3 px-4 border-b">{user.lastname}</td>
+                  <td className="py-3 px-4 border-b">{user.email}</td>
+                  <td className="py-3 px-4 border-b">{roleMap[user.roles_id] || 'Unknown Role'}</td>
+                  <td className="py-3 px-4 border-b">{user.contact}</td>
+                  <td className="py-3 px-4 border-b">{user.country}</td>
+                  <td className="py-3 px-4 border-b">{user.currency}</td>
+                  <td className="py-3 px-4 border-b text-center">
+                    <span className={`py-2 px-3 border rounded-md ${user.status ? 'bg-green-400' : 'bg-red-400'}`}>
+                      {user.status ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 border-b">
+                    {permissions.includes('update_users') && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); startEditing(user); }}
+                        className="bg-yellow-500 text-white px-4 py-1 rounded-lg shadow hover:bg-yellow-600 transition mr-2"
+                      >
+                        Edit
+                      </button>
+                    )}
+                    {permissions.includes('delete_users') && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); removeUser(user); }}
+                        className="bg-red-500 text-white px-4 py-1 rounded-lg shadow hover:bg-red-600 transition"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
