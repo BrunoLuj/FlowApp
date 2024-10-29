@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { changePassword } from '../services/usersServices.js';
 import useStore from '../store';
+import { AiOutlineEye, AiOutlineEyeInvisible } from 'react-icons/ai';
 
 const ChangePassword = () => {
     const navigate = useNavigate();
@@ -13,6 +14,9 @@ const ChangePassword = () => {
         confirmPassword: '',
     });
     const [error, setError] = useState(null);
+    const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -65,36 +69,51 @@ const ChangePassword = () => {
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
                         <label className="block text-gray-700 font-medium mb-1" htmlFor="currentPassword">Current Password:</label>
-                        <input 
-                            type="password" 
-                            name="currentPassword" 
-                            value={formData.currentPassword} 
-                            onChange={handleChange} 
-                            required
-                            className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-400 transition duration-150"
-                        />
+                        <div className="relative">
+                            <input 
+                                type={showCurrentPassword ? 'text' : 'password'} 
+                                name="currentPassword" 
+                                value={formData.currentPassword} 
+                                onChange={handleChange} 
+                                required
+                                className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-400 transition duration-150"
+                            />
+                            <button type="button" className="absolute right-3 top-3" onClick={() => setShowCurrentPassword(!showCurrentPassword)}>
+                                {showCurrentPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
+                            </button>
+                        </div>
                     </div>
                     <div>
                         <label className="block text-gray-700 font-medium mb-1" htmlFor="newPassword">New Password:</label>
-                        <input 
-                            type="password" 
-                            name="newPassword" 
-                            value={formData.newPassword} 
-                            onChange={handleChange} 
-                            required
-                            className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-400 transition duration-150"
-                        />
+                        <div className="relative">
+                            <input 
+                                type={showNewPassword ? 'text' : 'password'} 
+                                name="newPassword" 
+                                value={formData.newPassword} 
+                                onChange={handleChange} 
+                                required
+                                className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-400 transition duration-150"
+                            />
+                            <button type="button" className="absolute right-3 top-3" onClick={() => setShowNewPassword(!showNewPassword)}>
+                                {showNewPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
+                            </button>
+                        </div>
                     </div>
                     <div>
                         <label className="block text-gray-700 font-medium mb-1" htmlFor="confirmPassword">Confirm New Password:</label>
-                        <input 
-                            type="password" 
-                            name="confirmPassword" 
-                            value={formData.confirmPassword} 
-                            onChange={handleChange} 
-                            required
-                            className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-400 transition duration-150"
-                        />
+                        <div className="relative">
+                            <input 
+                                type={showConfirmPassword ? 'text' : 'password'} 
+                                name="confirmPassword" 
+                                value={formData.confirmPassword} 
+                                onChange={handleChange} 
+                                required
+                                className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-400 transition duration-150"
+                            />
+                            <button type="button" className="absolute right-3 top-3" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                                {showConfirmPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
+                            </button>
+                        </div>
                     </div>
                     <div className="flex justify-end">
                         <button 
