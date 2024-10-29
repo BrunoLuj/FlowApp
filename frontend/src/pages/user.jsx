@@ -156,7 +156,7 @@ const UserForm = () => {
                                 name="email" 
                                 value={formData.email} 
                                 onChange={handleChange} 
-                                readOnly={!permissions.includes('create_users')}
+                                readOnly
                                 className={`w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-300 ${!permissions.includes('create_users') ? 'bg-gray-200' : ''}`} 
                             />
                         </div>

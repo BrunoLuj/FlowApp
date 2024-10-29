@@ -19,13 +19,27 @@ export const getUserById = async (userId) => {
   return result.rows[0];
 };
 
-export const updateUserById = async (userId, userData) => {
-  const { firstname, lastname, country, currency, contact } = userData;
-  const result = await pool.query({
-    text: `UPDATE users SET firstname = $1, lastname = $2, country = $3, currency = $4, contact = $5, updatedat = CURRENT_TIMESTAMP WHERE id = $6 RETURNING *`,
-    values: [firstname, lastname, country, currency, contact, userId],
-  });
-  return result.rows[0];
+// export const updateUserById = async (userId, userData) => {
+//   console.log(userId);
+//   const { firstname, lastname, address, country, currency, contact, roles_id, status } = userData;
+//   const result = await pool.query({
+//     text: `UPDATE users SET firstname = $1, lastname = $2, address = $3, country = $4, currency = $5, contact = $6, roles_id = $7, status = $8, updatedat = CURRENT_TIMESTAMP WHERE id = $9 RETURNING *`,
+//     values: [firstname, lastname, address, country, currency, contact, roles_id, status, userId],
+//   });
+//   return result.rows[0];
+// };
+
+export const updateUserById = async (id, firstname, lastname, address, country, currency, contact, roles_id, status ) => {
+  try {
+    const result = await pool.query({
+          text: `UPDATE users SET firstname = $1, lastname = $2, address = $3, country = $4, currency = $5, contact = $6, roles_id = $7, status = $8, updatedat = CURRENT_TIMESTAMP WHERE id = $9 RETURNING *`,
+          values: [firstname, lastname, address, country, currency, contact, roles_id, status, id],
+        });
+      return result.rows[0];
+  } catch (error) {
+      console.error('Error updating project:', error);
+      throw error;
+  }
 };
 
 export const changeUserPassword = async (userId, newPassword) => {

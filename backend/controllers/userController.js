@@ -88,28 +88,63 @@ export const changePassword = async (req, res) => {
 };
 
 export const updateUser = async (req, res) => {
-    try {
-      const { userId } = req.body.user;
-      const userData = req.body;
+  const { id } = req.params;
+  const { firstname, lastname, address, country, currency, contact, roles_id, status  } = req.body;
+
+  const user = await userModel.getUserById(id);
   
-      const user = await userModel.getUserById(userId);
-  
-      if (!user) {
-        return res
-          .status(404)
-          .json({ status: "Failed", message: "User not found." });
+  if (!user) {
+    return res
+      .status(404)
+      .json({ status: "Failed", message: "User not found." });
+  }
+
+  console.log(req.params);
+  console.log(req.body);
+
+  try {
+      const updatedUser = await userModel.updateUserById(id, firstname, lastname, address, country, currency, contact, roles_id, status );
+      updatedUser.password = undefined; 
+      if (updatedUser) {
+          // res.json(updatedUser);
+          res.status(200).json({
+            status: "Success",
+            message: "User information updated successfully",
+            user: updatedUser,
+          });
+      } else {
+          res.status(404).json({ error: 'User not found' });
       }
-  
-      const updatedUser = await userModel.updateUserById(userId, userData);
-      updatedUser.password = undefined;
-  
-      res.status(200).json({
-        status: "Success",
-        message: "User information updated successfully",
-        user: updatedUser,
-      });
-    } catch (error) {
-      console.log(error);
+  } catch (error) {
       res.status(500).json({ status: "Failed", message: error.message });
-    }
+  }
 };
+
+// export const updateUser = async (req, res) => {
+//     try {
+//       const { userId } = req.body.user;
+//       const userData = req.body;
+
+//       console.log(req.body)
+  
+//       const user = await userModel.getUserById(userId);
+  
+//       if (!user) {
+//         return res
+//           .status(404)
+//           .json({ status: "Failed", message: "User not found." });
+//       }
+  
+//       const updatedUser = await userModel.updateUserById(userId, userData);
+//       updatedUser.password = undefined;
+  
+//       res.status(200).json({
+//         status: "Success",
+//         message: "User information updated successfully",
+//         user: updatedUser,
+//       });
+//     } catch (error) {
+//       console.log(error);
+//       res.status(500).json({ status: "Failed", message: error.message });
+//     }
+// };
