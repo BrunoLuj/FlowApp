@@ -5,7 +5,7 @@ import { deleteUser, getUsers, getRoles } from '../services/usersServices.js';
 
 const Users = () => {
   const [users, setUsers] = useState([]);
-  const [roles, setRoles] = useState([]); // State for roles
+  const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -38,10 +38,9 @@ const Users = () => {
     return <div>Error: {error.message}</div>;
   }
 
-  // Create a mapping from role ID to role name
   const roleMap = {};
   roles.forEach(role => {
-    roleMap[role.id] = role.name; // Adjust according to your data structure
+    roleMap[role.id] = role.name;
   });
 
   const filteredUsers = users.filter(user => {

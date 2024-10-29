@@ -10,7 +10,7 @@ const UserForm = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [users, setUsers] = useState([]);
-    const [roles, setRoles] = useState([]); // State for roles
+    const [roles, setRoles] = useState([]);
     const user = location.state?.user || {};
     const { permissions } = useStore();
 
@@ -44,16 +44,13 @@ const UserForm = () => {
             setUsers(usersResponse.data);
             setRoles(rolesResponse.data);
 
-              // Ako postoji korisnik, postavi role_id i ime uloge
               if (user) {
                 const userRoleId = user.roles_id || '';
-                console.log(user.roles_id);
-                console.log(rolesResponse.data);
-                const userRole = rolesResponse.data.find(role => role.id === userRoleId); // Pronađi ulogu po ID-u
+                const userRole = rolesResponse.data.find(role => role.id === userRoleId);
 
                 setFormData((prevData) => ({
                     ...prevData,
-                    role_name: userRole ? userRole.name : '', // Postavi naziv uloge ako postoji
+                    role_name: userRole ? userRole.name : '',
                 }));
             }
 
@@ -84,7 +81,6 @@ const UserForm = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log("Form Data before submission:", formData); // Debugging line
         try {
             await saveUser(formData);
             toast.success("Client saved successfully!");
@@ -116,7 +112,7 @@ const UserForm = () => {
                     {user && (user.firstname || user.lastname) ? `${user.firstname} ${user.lastname}` : 'New User'}
                 </h2>
                 <div className="absolute right-4">
-                    <button type="button" onClick={handleGenerateReport} className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition mr-2">Generiraj izvještaj</button>
+                    <button type="button" onClick={handleGenerateReport} className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition mr-2">Edit Roles</button>
                     {permissions.includes('create_users') && (
                         <button type="button" onClick={handleGenerateCertificate} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">Generiraj certifikat</button>
                     )}
