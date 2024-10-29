@@ -9,6 +9,7 @@ import { Separator } from "../../components/separator.jsx";
 import Input from "../../components/ui/input"; 
 import { Button } from "../../components/ui/button"; 
 import { BiLoader } from "react-icons/bi";
+import { AiOutlineEye, AiOutlineEyeInvisible } from 'react-icons/ai';
 import { toast } from 'sonner';
 import { signUp } from '../../services/authServices.js';
 
@@ -34,6 +35,7 @@ const SignUp = () => {
 
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // Stanje za vidljivost lozinke
 
   useEffect(() => {
     if (user) {
@@ -53,7 +55,7 @@ const SignUp = () => {
 
     } catch (error) {
       const errorMessage = error?.response?.data?.message || error.message;
-      setError("server", { message: errorMessage }); // Dodeli grešku stanju
+      setError("server", { message: errorMessage });
       toast.error(errorMessage);
     } finally {
       setLoading(false);
@@ -99,17 +101,26 @@ const SignUp = () => {
                   className="text-sm border dark:border-gray-800 dark:bg-transparent dark:placeholder:text-gray-700 dark:text-gray-800 dark:outline-none"
                 />
 
-                <Input
-                  disabled={loading}
-                  id="password"
-                  label="Password"
-                  name="password"
-                  type="password"
-                  placeholder="Insert your password!"
-                  error={errors.password?.message}
-                  {...register("password")}
-                  className="text-sm border dark:border-gray-800 dark:bg-transparent dark:placeholder:text-gray-700 dark:text-gray-800 dark:outline-none"
-                />
+                <div className='relative'>
+                  <Input
+                    disabled={loading}
+                    id="password"
+                    label="Password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Insert your password!"
+                    error={errors.password?.message}
+                    {...register("password")}
+                    className="text-sm border dark:border-gray-800 dark:bg-transparent dark:placeholder:text-gray-700 dark:text-gray-800 dark:outline-none"
+                  />
+                     <button
+                        type="button"
+                        className="absolute right-3 top-3/4 transform -translate-y-1/2 text-gray-500" // Pozicionirajte dugme
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
+                      </button>
+                </div>
               </div>
 
               <Button
