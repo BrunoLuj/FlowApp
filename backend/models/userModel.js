@@ -6,6 +6,11 @@ export const getAllUsers = async () => {
   return result.rows;
 };
 
+export const getUsersRoles = async () => {
+  const result = await pool.query('SELECT * FROM roles');
+  return result.rows;
+};
+
 export const getUserById = async (userId) => {
   const result = await pool.query({
     text: `SELECT * FROM users WHERE id = $1`,

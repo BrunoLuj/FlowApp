@@ -10,6 +10,15 @@ export const getAllUsers = async(req, res) =>{
   }
 };
 
+export const getUsersRoles = async(req, res) =>{
+  try {
+    const roles = await userModel.getUsersRoles();
+    res.json(roles);
+  } catch (error) {
+      res.status(500).json({ error: 'Error fetching roles' });
+  }
+};
+
 export const getUser = async(req, res) =>{
     try{
         const {userId} = req.body.user;

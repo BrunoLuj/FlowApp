@@ -16,3 +16,7 @@ export const saveUser = async (userData) => {
 export const deleteUser = async (user_id) => {
     return await api.delete(`/user/${user_id}`);
 }
+
+export const getRoles = async () => {
+    return await api.get(`/user/roles/`);
+}
