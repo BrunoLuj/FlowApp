@@ -12,6 +12,12 @@ export const saveUser = async (userData) => {
     }
 };
 
+export const saveUserProfile = async (userData) => {
+    if (userData.id) {
+        return await api.put(`/user/profile/${userData.id}`, userData);
+    }
+};
+
 export const deleteUser = async (user_id) => {
     return await api.delete(`/user/${user_id}`);
 }

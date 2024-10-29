@@ -2,12 +2,12 @@ import { create } from "zustand";
 import { jwtDecode } from 'jwt-decode';
 
 const useStore = create((set) => {
-    // Prvo učitaj korisničke podatke i token iz localStorage
+
     const user = JSON.parse(localStorage.getItem("user")) || null;
     const token = localStorage.getItem("token");
 
     let permissions = [];
-    // Ako postoji token, dekodiraj ga i uzmi dozvole
+
     if (token) {
         const decodedToken = jwtDecode(token);
         permissions = decodedToken.permissions || [];
@@ -25,13 +25,27 @@ const useStore = create((set) => {
             if (user && user.token) {
                 const decodedToken = jwtDecode(user.token);
                 set({ permissions: decodedToken.permissions || [] });
-                localStorage.setItem("token", user.token); // Sačuvaj token
+                localStorage.setItem("token", user.token);
+                localStorage.setItem("user", JSON.stringify(user));
             }
         },
+        setCredentials: (updatedUser) => {
+            set((state) => {
+                const newUser = {
+                    ...state.user,
+                    ...updatedUser,
+                };
+                const decodedToken = jwtDecode(newUser.token);
+                set({ permissions: decodedToken.permissions || [] });
+                localStorage.setItem("user", JSON.stringify(newUser));
+                localStorage.setItem("token", user.token);
+                return { user: newUser };
+            });
+        },
         signOut: () => {
-            set({ user: null, permissions: [] }); // Resetuj i dozvole
+            set({ user: null, permissions: [] });
             localStorage.removeItem("user");
-            localStorage.removeItem("token"); // Opcionalno, obriši token
+            localStorage.removeItem("token");
         },
     };
 });

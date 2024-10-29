@@ -66,13 +66,12 @@ const UserForm = () => {
 
     const roleMap = {};
     roles.forEach(role => {
-      roleMap[role.id] = role.name; // Adjust according to your data structure
+      roleMap[role.id] = role.name;
     });
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         if (name === 'status') {
-            // Convert the selected value to boolean
             setFormData({ ...formData, [name]: value === 'Active' });
         } else {
             setFormData({ ...formData, [name]: value });
@@ -101,7 +100,7 @@ const UserForm = () => {
     };
 
     const removeUser = async (user_id) => {
-        await deleteUser(user_id); // Pozovi API funkciju
+        await deleteUser(user_id);
         navigate('/users');
     };
 
@@ -186,16 +185,16 @@ const UserForm = () => {
                         <div>
                             <label className="block text-gray-700 font-medium mb-2">Role:</label>
                             <select 
-                                name="roles_id" // Ovdje koristi role_id
+                                name="roles_id"
                                 disabled={!permissions.includes('create_users')} 
-                                value={formData.roles_id|| ''} // Postavi vrednost na role_id
+                                value={formData.roles_id|| ''} 
                                 onChange={handleChange} 
                                 className={`w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-300 ${!permissions.includes('create_users') ? 'bg-gray-200' : ''}`}
                             >
-                                <option value="" disabled>Select a role</option> {/* Opcija za odabir */}
+                                <option value="" disabled>Select a role</option>
                                 {roles.map(role => (
                                     <option key={role.id} value={role.id}>
-                                        {role.name} {/* Prikazuje ime uloge */}
+                                        {role.name}
                                     </option>
                                 ))}
                             </select>
@@ -208,7 +207,7 @@ const UserForm = () => {
                             <select 
                                 name="status" 
                                 disabled={!permissions.includes('create_users')} 
-                                value={formData.status ? 'Active' : 'InActive'} // Set display value based on boolean
+                                value={formData.status ? 'Active' : 'InActive'}
                                 onChange={handleChange} 
                                 className={`w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-300 ${!permissions.includes('create_users') ? 'bg-gray-200' : ''}`}
                             >

@@ -50,6 +50,19 @@ export const updateUserById = async (id, firstname, lastname, address, country, 
   }
 };
 
+export const updateUserProfileById = async (id, firstname, lastname, address, country, currency, contact ) => {
+  try {
+    const result = await pool.query({
+          text: `UPDATE users SET firstname = $1, lastname = $2, address = $3, country = $4, currency = $5, contact = $6, updatedat = CURRENT_TIMESTAMP WHERE id = $7 RETURNING *`,
+          values: [firstname, lastname, address, country, currency, contact, id],
+        });
+      return result.rows[0];
+  } catch (error) {
+      console.error('Error updating project:', error);
+      throw error;
+  }
+};
+
 export const changeUserPassword = async (userId, newPassword) => {
   const hashedPassword = await hashPassword(newPassword);
   await pool.query({

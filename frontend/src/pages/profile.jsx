@@ -1,159 +1,189 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import useStore from '../store';
+import { deleteUser, getRoles, saveUser, saveUserProfile } from '../services/usersServices';
+import { toast } from 'sonner';
 
-const UserProfile = () => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    role: 'user',
-    password: '',
-    theme: 'light',
-    address: '',
-    bio: '',
-  });
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
+const Profile = () => {
+    const navigate = useNavigate();
+    const { user, permissions, setCredentials } = useStore();
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    // const [roles, setRoles] = useState([]);
+    const [formData, setFormData] = useState({
+        id: '',
+        firstname: '',
+        lastname: '',
+        email: '',
+        address: '',
+        contact: '',
+        country: '',
+        currency: '',
+        roles_id: '',
+        status: false,
+        description: '',
     });
-  };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Submitted data:', formData);
-  };
+    useEffect(() => {
+        const fetchData = async () => {
+            if (!user) {
+                navigate('/sign-in');
+                return;
+            }
+            
+            try {
+                // const [rolesResponse] = await Promise.all([getRoles()]);
+                // setRoles(rolesResponse.data);
 
-  return (
-    <div className="p-6 sm:ml-16  rounded-lg max-w-8xl mx-auto mt-14">
-      <h1 className="text-2xl font-semibold text-gray-800 mb-4">Korisnički Profil</h1>
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Ime */}
-        <div className="mb-4">
-          <label className="block text-gray-700 mb-2" htmlFor="name">Ime</label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            className="w-full p-2 border border-gray-300 rounded"
-            required
-          />
+                setFormData({
+                    id: user.id,
+                    firstname: user.firstname,
+                    lastname: user.lastname,
+                    email: user.email || '',
+                    address: user.address || '',
+                    contact: user.contact || '',
+                    country: user.country || '',
+                    currency: user.currency || '',
+                    roles_id: user.roles_id || '',
+                    status: user.status,
+                    description: user.description || '',
+                });
+            } catch (err) {
+                setError(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [user, navigate]);
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData((prevData) => ({
+            ...prevData,
+            [name]: name === 'status' ? value === 'Active' : value,
+        }));
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const response  = await saveUserProfile(formData);
+            const updatedUser = response.data.user; 
+            setCredentials(updatedUser); // Ažuriraj globalno stanje
+            toast.success("Podaci su uspešno ažurirani!");
+            navigate('/');
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Došlo je do greške. Pokušajte ponovo.");
+        }
+    };
+
+    const removeUser = async (userId) => {
+        await deleteUser(userId);
+        navigate('/users');
+    };
+
+    if (loading) return <div>Loading...</div>;
+    if (error) return <div>Error: {error.message}</div>;
+
+    return (
+        <div className="bg-gray-100 min-h-screen p-4 mt-14 sm:ml-16">
+            <div className="w-full">
+                <h2 className="text-3xl p-4 font-bold text-center">
+                    {formData.firstname || formData.lastname ? `${formData.firstname} ${formData.lastname}` : ''}
+                </h2>
+                <form onSubmit={handleSubmit} className="relative">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-16">
+                        {['firstname', 'lastname', 'address', 'contact', 'country', 'currency'].map((field, index) => (
+                            <div key={index}>
+                                <label className="block text-gray-700 font-medium mb-2">{field.charAt(0).toUpperCase() + field.slice(1)}:</label>
+                                <input 
+                                    type={field === 'contact' ? 'number' : 'text'} 
+                                    name={field} 
+                                    value={formData[field]} 
+                                    onChange={handleChange} 
+                                    readOnly={!permissions.includes('update_profile')}
+                                    className={`w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-300 ${!permissions.includes('update_profile') ? 'bg-gray-200' : ''}`}
+                                />
+                            </div>
+                        ))}
+
+                        <div>
+                            <label className="block text-gray-700 font-medium mb-2">Email:</label>
+                            <input 
+                                type="email" 
+                                name="email" 
+                                value={formData.email} 
+                                onChange={handleChange} 
+                                readOnly
+                                className={`w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-300 ${!permissions.includes('create_user') ? 'bg-gray-200' : ''}`}
+                            />
+                        </div>
+
+                        {/* <div>
+                            <label className="block text-gray-700 font-medium mb-2">Role:</label>
+                            <select 
+                                name="roles_id"
+                                disabled={!permissions.includes('create_users')} 
+                                value={formData.roles_id || ''}
+                                onChange={handleChange} 
+                                className={`w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-300 ${!permissions.includes('create_userss') ? 'bg-gray-200' : ''}`}
+                            >
+                                <option value="" disabled>Select a role</option>
+                                {roles.map(role => (
+                                    <option key={role.id} value={role.id}>
+                                        {role.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div> */}
+
+                        <div>
+                            <label className="block text-gray-700 font-medium mb-2">Status:</label>
+                            <select 
+                                name="status" 
+                                disabled
+                                value={formData.status ? 'Active' : 'InActive'}
+                                onChange={handleChange} 
+                                className={`w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-300 ${!permissions.includes('create_users') ? 'bg-gray-200' : ''}`}
+                            >
+                                <option value="Active">Active</option>
+                                <option value="InActive">InActive</option>
+                            </select>
+                        </div>
+
+                        <div className="col-span-1 md:col-span-2">
+                            <label className="block text-gray-700 font-medium mb-2">Opis korisnika:</label>
+                            <textarea 
+                                name="description" 
+                                value={formData.description} 
+                                onChange={handleChange} 
+                                readOnly={!permissions.includes('update_profile')}
+                                className={`w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-300 ${!permissions.includes('update_profile') ? 'bg-gray-200' : ''}`} 
+                                rows="4" 
+                            />
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row justify-between mt-6">
+                        {permissions.includes('update_profile') && (
+                            <button type="submit" className="bg-blue-600 text-white px-5 py-3 rounded-lg hover:bg-blue-700 transition mb-2 sm:mb-0 sm:w-auto">Update</button>
+                        )}
+                        {/* {permissions.includes('delete_users') && formData.id && (
+                            <button 
+                                type="button" 
+                                onClick={() => removeUser(formData.id)} 
+                                className="bg-red-600 text-white px-5 py-3 rounded-lg hover:bg-red-700 transition"
+                            >
+                                Izbriši
+                            </button>
+                        )} */}
+                    </div>
+                </form>
+            </div>
         </div>
-
-        {/* E-mail */}
-        <div className="mb-4">
-          <label className="block text-gray-700 mb-2" htmlFor="email">E-mail</label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            className="w-full p-2 border border-gray-300 rounded"
-            required
-          />
-        </div>
-
-        {/* Broj telefona */}
-        <div className="mb-4">
-          <label className="block text-gray-700 mb-2" htmlFor="phone">Broj telefona</label>
-          <input
-            type="tel"
-            id="phone"
-            name="phone"
-            value={formData.phone}
-            onChange={handleChange}
-            className="w-full p-2 border border-gray-300 rounded"
-            required
-          />
-        </div>
-
-        {/* Rola korisnika */}
-        <div className="mb-4">
-          <label className="block text-gray-700 mb-2" htmlFor="role">Rola</label>
-          <select
-            id="role"
-            name="role"
-            value={formData.role}
-            onChange={handleChange}
-            className="w-full p-2 border border-gray-300 rounded"
-          >
-            <option value="user">Korisnik</option>
-            <option value="admin">Administrator</option>
-            <option value="moderator">Moderator</option>
-          </select>
-        </div>
-
-        {/* Lozinka */}
-        <div className="mb-4">
-          <label className="block text-gray-700 mb-2" htmlFor="password">Lozinka</label>
-          <input
-            type="password"
-            id="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            className="w-full p-2 border border-gray-300 rounded"
-            required
-          />
-        </div>
-
-        {/* Tema */}
-        <div className="mb-4">
-          <label className="block text-gray-700 mb-2" htmlFor="theme">Tema</label>
-          <select
-            id="theme"
-            name="theme"
-            value={formData.theme}
-            onChange={handleChange}
-            className="w-full p-2 border border-gray-300 rounded"
-          >
-            <option value="light">Svijetla</option>
-            <option value="dark">Tamna</option>
-          </select>
-        </div>
-
-        {/* Adresa */}
-        <div className="mb-4 col-span-1 md:col-span-2">
-          <label className="block text-gray-700 mb-2" htmlFor="address">Adresa</label>
-          <input
-            type="text"
-            id="address"
-            name="address"
-            value={formData.address}
-            onChange={handleChange}
-            className="w-full p-2 border border-gray-300 rounded"
-          />
-        </div>
-
-        {/* Biografija */}
-        <div className="mb-4 col-span-1 md:col-span-2">
-          <label className="block text-gray-700 mb-2" htmlFor="bio">Biografija</label>
-          <textarea
-            id="bio"
-            name="bio"
-            value={formData.bio}
-            onChange={handleChange}
-            className="w-full p-2 border border-gray-300 rounded"
-            rows="3"
-          />
-        </div>
-
-        {/* Dugme za spremanje */}
-        <div className="col-span-1 md:col-span-3">
-          <button
-            type="submit"
-            className="w-full bg-blue-500 hover:bg-blue-700 text-white font-semibold py-2 rounded"
-          >
-            Spremi Promjene
-          </button>
-        </div>
-      </form>
-    </div>
-  );
+    );
 };
 
-export default UserProfile;
+export default Profile;

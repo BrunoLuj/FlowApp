@@ -135,6 +135,36 @@ export const updateUser = async (req, res) => {
   }
 };
 
+export const updateUserProfile = async (req, res) => {
+  const { id } = req.params;
+  const { firstname, lastname, address, country, currency, contact  } = req.body;
+
+  const user = await userModel.getUserById(id);
+  
+  if (!user) {
+    return res
+      .status(404)
+      .json({ status: "Failed", message: "User not found." });
+  }
+
+  try {
+      const updatedUserProfile = await userModel.updateUserProfileById(id, firstname, lastname, address, country, currency, contact );
+      updatedUserProfile.password = undefined; 
+      if (updatedUserProfile) {
+          // res.json(updatedUser);
+          res.status(200).json({
+            status: "Success",
+            message: "User information updated successfully",
+            user: updatedUserProfile,
+          });
+      } else {
+          res.status(404).json({ error: 'User not found' });
+      }
+  } catch (error) {
+      res.status(500).json({ status: "Failed", message: error.message });
+  }
+};
+
 // export const updateUser = async (req, res) => {
 //     try {
 //       const { userId } = req.body.user;
