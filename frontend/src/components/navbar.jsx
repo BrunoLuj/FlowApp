@@ -11,7 +11,7 @@ const links = [
   { label: "Dashboard", link: "/overview", icon: <FaTachometerAlt /> },
   { label: "Projects", link: "/projects", icon: <FaClipboardList /> },
   { label: "Clients", link: "/clients", icon: <FaUsers /> },
-  { label: "Accounts", link: "/account", icon: <FaRegUser /> },
+  { label: "Users", link: "/users", icon: <FaRegUser /> },
   { label: "Settings", link: "/settings", icon: <FaCog /> },
 ];
 

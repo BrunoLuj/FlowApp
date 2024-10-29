@@ -4,8 +4,8 @@ import SignUp from "./pages/auth/sign-up";
 import SignIn from "./pages/auth/sign-in";
 import Dashboard from "./pages/dashboard";
 import Settings  from "./pages/settings";
-import Accounts from "./pages/accounts";
 import Projects from "./pages/projects";
+import Users from "./pages/users";
 import Profile from "./pages/profile";
 import useStore from "./store";
 import { setAuthToken } from "./libs/apiCall";
@@ -44,8 +44,7 @@ function App() {
                 <Route path="/projects" element={<Projects/>} />
                 <Route path="/project" element={<ProjectForm/>} />
                 <Route path="/settings" element={<Settings/>} />
-                <Route path="/accounts" element={<Accounts/>} />
-                {/* <Route path="/account" element={<AccountForm/>} /> */}
+                <Route path="/users" element={<Users/>} />
                 <Route path="/profile" element={<Profile/>} />
                 <Route path="/clients" element={<Clients/>} />   
                 <Route path="/client" element={<ClientForm/>} />
