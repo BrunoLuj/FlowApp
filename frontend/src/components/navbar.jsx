@@ -8,11 +8,11 @@ import { FaTachometerAlt, FaClipboardList, FaRegUser, FaUser, FaCog, FaSignOutAl
 import useStore from "../store/index.js";
 
 const links = [
-  { label: "Dashboard", link: "/overview", icon: <FaTachometerAlt /> },
-  { label: "Projects", link: "/projects", icon: <FaClipboardList /> },
-  { label: "Clients", link: "/clients", icon: <FaUsers /> },
-  { label: "Users", link: "/users", icon: <FaRegUser /> },
-  { label: "Settings", link: "/settings", icon: <FaCog /> },
+  { label: "Dashboard", link: "/overview", icon: <FaTachometerAlt />, permission: 'view_dashboard' },
+  { label: "Projects", link: "/projects", icon: <FaClipboardList />, permission: 'view_projects' },
+  { label: "Clients", link: "/clients", icon: <FaUsers />, permission: 'view_clients' },
+  { label: "Users", link: "/users", icon: <FaRegUser />, permission: 'view_users' },
+  { label: "Settings", link: "/settings", icon: <FaCog />, permission: 'view_settings' },
 ];
 
 const Navbar = () => {
@@ -23,6 +23,8 @@ const Navbar = () => {
   const [isSidebarHovered, setSidebarHovered] = useState(false);
   const userMenuRef = useRef(null);
   const isMobile = window.innerWidth < 768;
+
+  const { user, permissions } = useStore();
 
   const signOut = useStore((state) => state.signOut);
 
@@ -132,21 +134,23 @@ const Navbar = () => {
         aria-label="Sidebar"
       >
         <div className='flex flex-col items-start px-4 gap-4'>
-          {links.map((link, index) => (
-            <Link
-              key={index}
-              to={link.link}
-              className={`${index === selected ? "bg-black dark:bg-slate-800 text-white" : "text-gray-700 dark:text-gray-500"} flex items-center gap-2 px-2 py-2 rounded-full overflow-hidden`}
-              onClick={() => {
-                setSelected(index);
-                setMobileMenuOpen(false); // Close the menu when a link is clicked
-              }}
-            >
-              <div className="flex items-center">
-                {link.icon}
-                {(isMobileMenuOpen || isSidebarHovered) && <span className="ml-2">{link.label}</span>}
-              </div>
-            </Link>
+        {links.map((link, index) => (
+            permissions.includes(link.permission) && ( // Provjera permissions
+              <Link
+                key={index}
+                to={link.link}
+                className={`${index === selected ? "bg-black dark:bg-slate-800 text-white" : "text-gray-700 dark:text-gray-500"} flex items-center gap-2 px-2 py-2 rounded-full overflow-hidden`}
+                onClick={() => {
+                  setSelected(index);
+                  setMobileMenuOpen(false); // Close the menu when a link is clicked
+                }}
+              >
+                <div className="flex items-center">
+                  {link.icon}
+                  {(isMobileMenuOpen || isSidebarHovered) && <span className="ml-2">{link.label}</span>}
+                </div>
+              </Link>
+            )
           ))}
         </div>
       </aside>
