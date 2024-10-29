@@ -56,10 +56,6 @@ const Users = () => {
     return status ? { class: 'bg-green-100' } : { class: 'bg-red-100' };
   };
 
-  const getStatusText = (status) => {
-    return status ? { text: 'Active', class: 'bg-green-400' } : { text: 'Inactive', class: 'bg-red-400' };
-  }
-
   const removeUser = async (user) => {
     await deleteUser(user.id);
     setUsers(users.filter(p => p.id !== user.id));
@@ -110,6 +106,7 @@ const Users = () => {
               <th className="py-3 px-4 border-b">Email</th>
               <th className="py-3 px-4 border-b">Role</th>
               <th className="py-3 px-4 border-b">Contact</th>
+              <th className="py-3 px-4 border-b">Address</th>
               <th className="py-3 px-4 border-b">Country</th>
               <th className="py-3 px-4 border-b">Currency</th>
               <th className="py-3 px-4 border-b">Status</th>
@@ -130,6 +127,7 @@ const Users = () => {
                   <td className="py-3 px-4 border-b">{user.email}</td>
                   <td className="py-3 px-4 border-b">{roleMap[user.roles_id] || 'Unknown Role'}</td>
                   <td className="py-3 px-4 border-b">{user.contact}</td>
+                  <td className="py-3 px-4 border-b">{user.address}</td>
                   <td className="py-3 px-4 border-b">{user.country}</td>
                   <td className="py-3 px-4 border-b">{user.currency}</td>
                   <td className="py-3 px-4 border-b text-center">
