@@ -10,10 +10,10 @@ export const getProjects = async (req, res) => {
 };
 
 export const addProjects = async (req, res) => {
-    const { name, project_type, status, end_date  } = req.body;
+    const { name, project_type, status, end_date, start_date, main_person  } = req.body;
     console.log(req.body);
     try {
-        const newProject = await projectModel.createProject(name, project_type, status, end_date );
+        const newProject = await projectModel.createProject(name, project_type, status, end_date, start_date, main_person );
         console.log(newProject);
         res.status(201).json(newProject);
     } catch (error) {
@@ -23,9 +23,10 @@ export const addProjects = async (req, res) => {
 
 export const updateProjects = async (req, res) => {
     const { id } = req.params;
-    const { name, project_type, status, end_date  } = req.body;
+    const { name, project_type, status, start_date, end_date, main_person } = req.body;
+    console.log(req.body);
     try {
-        const updatedProject = await projectModel.updateProject(id, name, project_type, status, end_date );
+        const updatedProject = await projectModel.updateProject(id, name, project_type, status, start_date, end_date, main_person );
         if (updatedProject) {
             res.json(updatedProject);
         } else {

@@ -4,27 +4,34 @@ import useStore from '../store';
 import { deleteProject, saveProject } from '../services/projectsServices';
 import { toast } from 'sonner';
 import { getClients } from '../services/clientsServices';
+import { getRoles, getUsers } from '../services/usersServices';
 
 const ProjectForm = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const [clients, setClients] = useState([]);
+    const [users, setUsers] = useState([]);
+    const [roles, setRoles] = useState([]);
     const project = location.state?.project || {};
     const { permissions } = useStore();
 
     const formatDate = (dateString) => {
         if (!dateString) return '';
         const date = new Date(dateString);
-        return date.toISOString().split('T')[0];
+        return date.toISOString().slice(0, 16); // Uzimamo do sekundi (YYYY-MM-DDTHH:mm)
     };
+
+    console.log(users);
+    console.log(clients);
 
     const [formData, setFormData] = useState({
         id: project.id || '',
         name: project.name || '',
+        main_person: project.main_person || '',
         project_type: project.project_type || '',
-        startDate: formatDate(project.created_at),
+        start_date: formatDate(project.start_date),
         end_date: formatDate(project.end_date),
-        status: project.status || 'aktivan',
+        status: project.status || 'Active',
         description: project.description || '',
         budget: project.budget || 0,
         costs: project.costs || 0,
@@ -35,6 +42,9 @@ const ProjectForm = () => {
             try {
                 const response = await getClients();
                 setClients(response.data);
+                const [usersResponse, rolesResponse] = await Promise.all([getUsers(), getRoles()]);
+                setUsers(usersResponse.data);
+                setRoles(rolesResponse.data);
             } catch (error) {
                 console.error("Error fetching clients:", error);
             }
@@ -113,13 +123,49 @@ const ProjectForm = () => {
                                 <option value="">Odaberite klijenta</option>
                                 {clients.map(client => (
                                     <option key={client.id} value={client.company_name}>
-                                        {client.company_name} {/* Prikazuje naziv klijenta */}
+                                        {client.company_name}
                                     </option>
                                 ))}
                             </select>
                         </div>
 
                         <div>
+                            <label className="block text-gray-700 font-medium mb-2">Odgovorna osoba:</label>
+                            <select 
+                                name="main_person" 
+                                value={formData.main_person} 
+                                onChange={handleChange} 
+                                disabled={!permissions.includes('create_projects')}
+                                className={`w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-300 ${!permissions.includes('create_projects') ? 'bg-gray-200' : ''}`}
+                            >
+                                <option value="">Odaberite odgovornu osobu</option>
+                                {users.map(user => (
+                                    <option key={user.id} value={user.firstname + ' ' + user.lastname}>
+                                        {user.firstname + ' ' + user.lastname}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-gray-700 font-medium mb-2">Izvrsitelji usluga:</label>
+                            <select 
+                                name="name" 
+                                value={formData.name} 
+                                onChange={handleChange} 
+                                disabled={!permissions.includes('create_projects')}
+                                className={`w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-300 ${!permissions.includes('create_projects') ? 'bg-gray-200' : ''}`}
+                            >
+                                <option value="">Odaberite izvrsitelje usluga</option>
+                                {clients.map(client => (
+                                    <option key={client.id} value={client.company_name}>
+                                        {client.company_name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* <div>
                             <label className="block text-gray-700 font-medium mb-2">ID projekta:</label>
                             <input 
                                 type="text" 
@@ -128,14 +174,14 @@ const ProjectForm = () => {
                                 readOnly 
                                 className={`w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-300 ${!permissions.includes('create_projects') ? 'bg-gray-200' : ''}`} 
                             />
-                        </div>
+                        </div> */}
 
                         <div>
                             <label className="block text-gray-700 font-medium mb-2">Datum početka:</label>
                             <input 
-                                type="date" 
-                                name="startDate" 
-                                value={formData.startDate} 
+                                type="datetime-local" 
+                                name="start_date" 
+                                value={formData.start_date} 
                                 onChange={handleChange} 
                                 readOnly={!permissions.includes('create_projects')}
                                 className={`w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-300 ${!permissions.includes('create_projects') ? 'bg-gray-200' : ''}`} 
@@ -145,7 +191,7 @@ const ProjectForm = () => {
                         <div>
                             <label className="block text-gray-700 font-medium mb-2">Datum završetka:</label>
                             <input 
-                                type="date" 
+                                type="datetime-local" 
                                 name="end_date" 
                                 value={formData.end_date} 
                                 onChange={handleChange} 

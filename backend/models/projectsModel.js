@@ -5,17 +5,18 @@ export const getAllProjects = async () => {
     return result.rows;
 };
 
-export const createProject = async (name, project_type, status, end_date ) => {
+export const createProject = async (name, project_type, status, start_date, end_date, main_person ) => {
     const result = await pool.query(
-        'INSERT INTO projects (name, project_type, status, end_date) VALUES ($1, $2, $3, $4) RETURNING *',
-        [name, project_type, status, end_date ]
+        'INSERT INTO projects (name, project_type, status, start_date, end_date, main_person) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+        [name, project_type, status, start_date, end_date ]
     );
     return result.rows[0];
 };
 
-export const updateProject = async (id, name, project_type, status, end_date ) => {
+export const updateProject = async (id, name, project_type, status, start_date, end_date, main_person ) => {
     try {
-        const result = await pool.query('UPDATE projects SET name = $1, project_type = $2, status = $3, end_date = $4 WHERE id = $5 RETURNING *', [name, project_type, status, end_date , id]);
+        const result = await pool.query('UPDATE projects SET name = $1, project_type = $2, status = $3, end_date = $4, start_date = $5, main_person = $6 WHERE id = $7 RETURNING *', 
+            [name, project_type, status, end_date , start_date, main_person, id]);
         return result.rows[0];
     } catch (error) {
         console.error('Error updating project:', error); // Prikaz greške
