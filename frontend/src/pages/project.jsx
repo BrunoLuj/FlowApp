@@ -1,10 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import useStore from '../store';
 import { deleteProject, saveProject } from '../services/projectsServices';
+import Select from 'react-select'; // Import react-select
 import { toast } from 'sonner';
 import { getClients } from '../services/clientsServices';
 import { getRoles, getUsers } from '../services/usersServices';
+import { MultiSelect } from 'primereact/multiselect';
+import UniversalMultiSelect from '../components/ui/multiselectdropdown';
+import UserDropdown from '../components/ui/multiselectdropdown';
+import UserMultiSelectDropdown from '../components/ui/multiselectdropdown';
 
 const ProjectForm = () => {
     const location = useLocation();
@@ -12,6 +17,7 @@ const ProjectForm = () => {
     const [clients, setClients] = useState([]);
     const [users, setUsers] = useState([]);
     const [roles, setRoles] = useState([]);
+    const [selectedUsers, setSelectedUsers] = useState([]);
     const project = location.state?.project || {};
     const { permissions } = useStore();
 
@@ -21,13 +27,11 @@ const ProjectForm = () => {
         return date.toISOString().slice(0, 16); // Uzimamo do sekundi (YYYY-MM-DDTHH:mm)
     };
 
-    console.log(users);
-    console.log(clients);
-
     const [formData, setFormData] = useState({
         id: project.id || '',
         name: project.name || '',
-        main_person: project.main_person || '',
+        responsible_person: project.responsible_person || '',
+        service_executors: project.service_executors || [],
         project_type: project.project_type || '',
         start_date: formatDate(project.start_date),
         end_date: formatDate(project.end_date),
@@ -45,6 +49,13 @@ const ProjectForm = () => {
                 const [usersResponse, rolesResponse] = await Promise.all([getUsers(), getRoles()]);
                 setUsers(usersResponse.data);
                 setRoles(rolesResponse.data);
+
+            // Postavi odabrane korisnike ako postoji projekt
+            if (project.service_executors) {
+                const selectedServiceExecutors = project.service_executors.map(item => JSON.parse(item));
+                setSelectedUsers(selectedServiceExecutors);
+            }
+
             } catch (error) {
                 console.error("Error fetching clients:", error);
             }
@@ -53,6 +64,11 @@ const ProjectForm = () => {
         fetchClients();
     }, []);
 
+    const responsiblePersons = users.filter(user => user.roles_id === 2);
+    const serviceExecutors = users.filter(user => [3].includes(user.roles_id));
+
+    console.log(serviceExecutors)
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
@@ -60,8 +76,24 @@ const ProjectForm = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        // Validacija
+        if (!formData.name || !formData.responsible_person) {
+            toast.error("Molimo popunite obavezna polja.");
+            return;
+        }
+        
+            // Pripremi niz objekata kao stringove
+            const serviceExecutors = selectedUsers.map(user => 
+                JSON.stringify({ id: user.id, fullName: user.firstname + ' ' + user.lastname })
+            );
+
+            const updatedFormData = {
+                ...formData,
+                service_executors: serviceExecutors, // Sada šalješ objekte
+            };
+    
         try {
-            await saveProject(formData);
+            await saveProject(updatedFormData);
             toast.success("Project saved successfully!");
             navigate('/projects');
         } catch (error) {
@@ -82,6 +114,11 @@ const ProjectForm = () => {
     const removeProject = async (project_id) => {
         await deleteProject(project_id); // Pozovi API funkciju
         navigate('/projects');
+    };
+
+    const handleSelectionChange = (selectedValues) => {
+        setSelectedUsers(selectedValues);
+        console.log('Odabrani korisnici:', selectedValues);
     };
 
     return (
@@ -129,17 +166,18 @@ const ProjectForm = () => {
                             </select>
                         </div>
 
+                        {/* Responsible Person selection */}
                         <div>
                             <label className="block text-gray-700 font-medium mb-2">Odgovorna osoba:</label>
                             <select 
-                                name="main_person" 
-                                value={formData.main_person} 
+                                name="responsible_person" 
+                                value={formData.responsible_person} 
                                 onChange={handleChange} 
                                 disabled={!permissions.includes('create_projects')}
                                 className={`w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-300 ${!permissions.includes('create_projects') ? 'bg-gray-200' : ''}`}
                             >
                                 <option value="">Odaberite odgovornu osobu</option>
-                                {users.map(user => (
+                                {responsiblePersons.map(user => (
                                     <option key={user.id} value={user.firstname + ' ' + user.lastname}>
                                         {user.firstname + ' ' + user.lastname}
                                     </option>
@@ -147,23 +185,16 @@ const ProjectForm = () => {
                             </select>
                         </div>
 
+                        {/* Service Executors selection */}
                         <div>
-                            <label className="block text-gray-700 font-medium mb-2">Izvrsitelji usluga:</label>
-                            <select 
-                                name="name" 
-                                value={formData.name} 
-                                onChange={handleChange} 
-                                disabled={!permissions.includes('create_projects')}
-                                className={`w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-300 ${!permissions.includes('create_projects') ? 'bg-gray-200' : ''}`}
-                            >
-                                <option value="">Odaberite izvrsitelje usluga</option>
-                                {clients.map(client => (
-                                    <option key={client.id} value={client.company_name}>
-                                        {client.company_name}
-                                    </option>
-                                ))}
-                            </select>
+                        <label className="block text-gray-700 font-medium mb-2">Odaberi izvršitelje usluge:</label>
+                            <UserMultiSelectDropdown
+                                users={serviceExecutors}
+                                selectedUsers={selectedUsers}
+                                onSelectionChange={setSelectedUsers}
+                            />
                         </div>
+                        
 
                         {/* <div>
                             <label className="block text-gray-700 font-medium mb-2">ID projekta:</label>
@@ -247,7 +278,7 @@ const ProjectForm = () => {
                             />
                         </div>
 
-                        <div>
+                        {/* <div>
                             <label className="block text-gray-700 font-medium mb-2">Budžet:</label>
                             <input 
                                 type="number" 
@@ -257,9 +288,9 @@ const ProjectForm = () => {
                                 readOnly={!permissions.includes('create_projects')}
                                 className={`w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-300 ${!permissions.includes('create_projects') ? 'bg-gray-200' : ''}`}
                             />
-                        </div>
+                        </div> */}
 
-                        <div>
+                        {/* <div>
                             <label className="block text-gray-700 font-medium mb-2">Troškovi do sada:</label>
                             <input 
                                 type="number" 
@@ -269,7 +300,7 @@ const ProjectForm = () => {
                                 readOnly={!permissions.includes('create_projects')}
                                 className={`w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-300 ${!permissions.includes('create_projects') ? 'bg-gray-200' : ''}`} 
                             />
-                        </div>
+                        </div> */}
                     </div>
 
                     <div className="flex flex-col sm:flex-row justify-between mt-6">

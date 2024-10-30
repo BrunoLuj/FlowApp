@@ -122,6 +122,8 @@ const Projects = () => {
             <tr className="bg-gray-200 text-gray-700">
               <th className="py-3 px-4 border-b text-left">Project Name</th>
               <th className="py-3 px-4 border-b text-left">Service Type</th>
+              <th className="py-3 px-4 border-b text-left">Responsible Person</th>
+              <th className="py-3 px-4 border-b text-left">Service Executor</th>
               <th className="py-3 px-4 border-b text-left">Service Status</th>
               <th className="py-3 px-4 border-b text-left">Service Date</th>
               <th className="py-3 px-4 border-b text-left">Deadline</th>
@@ -137,6 +139,15 @@ const Projects = () => {
               >
                 <td className="py-3 px-4 border-b">{project.name}</td>
                 <td className="py-3 px-4 border-b">{project.project_type}</td>
+                <td className="py-3 px-4 border-b">{project.responsible_person}</td>
+                <td className="py-3 px-4 border-b">
+                    {Array.isArray(project.service_executors) && project.service_executors.length > 0 
+                        ? project.service_executors.map(executor => {
+                            const user = JSON.parse(executor);
+                            return user.fullName;
+                        }).join(', ') 
+                        : 'Nema izvršitelja'}
+                </td>
                 <td className="py-3 px-4 border-b">{project.status}</td>
                 <td className="py-3 px-4 border-b">{new Date(project.created_at).toLocaleDateString()}</td>
                 <td className="py-3 px-4 border-b">{new Date(project.end_date).toLocaleDateString()}</td>
