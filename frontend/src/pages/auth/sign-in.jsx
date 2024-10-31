@@ -12,6 +12,7 @@ import { BiLoader } from "react-icons/bi";
 import { AiOutlineEye, AiOutlineEyeInvisible } from 'react-icons/ai';
 import { toast } from 'sonner';
 import { signIn } from '../../services/authServices.js';
+import i18next from 'i18next';
 
 const LoginSchema = z.object({
   email: z
@@ -19,11 +20,13 @@ const LoginSchema = z.object({
     .email({ message: "Invalid Email address!" }),
   password: z
     .string({ required_error: "Password is required!" })
-    .min(1, "Password is required!")
+    .min(1, "Password is required!"),
+  language: z
+    .string({ required_error: "Language is required!" })
 });
 
 const SignIn = () => {
-  const { user, setCredentials } = useStore((state) => state);
+  const { user, setCredentials, setLanguage } = useStore((state) => state);
   const { register, handleSubmit, formState: { errors }, setError } = useForm({
     resolver: zodResolver(LoginSchema),
   });
@@ -41,6 +44,7 @@ const SignIn = () => {
   const onSubmit = useCallback(async (data) => {
     setLoading(true);
     try {
+
       const { data: res } = await signIn(data);
 
       if (res?.user) {
@@ -48,6 +52,11 @@ const SignIn = () => {
 
         const userInfo = { ...res?.user, token: res.token };
         localStorage.setItem("user", JSON.stringify(userInfo));
+
+        const language = data.language || 'en';
+        localStorage.setItem("language", language);
+        setLanguage(language);
+
         setCredentials(userInfo);
 
         navigate("/overview");
@@ -74,7 +83,7 @@ const SignIn = () => {
               <div className='mb-8 space-y-6'>
                 <div className='mb-8 space-y-6 text-center'>Sign With Google</div>
                 <Separator />
-                
+
                 <Input
                   disabled={loading}
                   id="email"
@@ -103,9 +112,24 @@ const SignIn = () => {
                         type="button"
                         className="absolute right-3 top-3/4 transform -translate-y-1/2 text-gray-500" // Pozicionirajte dugme
                         onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
-                    </button>
+                  >
+                    {showPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
+                  </button>
+                </div>
+
+                {/* Dodaj odabir jezika */}
+                <div>
+                  <label htmlFor="language" className="block text-sm font-medium text-gray-700">Language</label>
+                  <select
+                    id="language"
+                    {...register("language")}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option value="en">English</option>
+                    <option value="hr">Hrvatski</option>
+                    {/* Dodaj ostale jezike po potrebi */}
+                  </select>
+                  {errors.language && <p className="text-red-600 text-sm">{errors.language.message}</p>}
                 </div>
               </div>
 

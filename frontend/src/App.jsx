@@ -1,9 +1,8 @@
-import { useState } from "react";
 import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 import SignUp from "./pages/auth/sign-up";
 import SignIn from "./pages/auth/sign-in";
 import Dashboard from "./pages/dashboard";
-import Settings  from "./pages/settings";
+import Settings from "./pages/settings";
 import Projects from "./pages/projects";
 import Users from "./pages/users";
 import Profile from "./pages/profile";
@@ -17,52 +16,47 @@ import ClientForm from "./pages/client";
 import UserForm from "./pages/user";
 import ChangePassword from "./pages/changepassword";
 
-const RootLayout = () =>{
-  const {user} = useStore((state) => state);
-  setAuthToken(user?.token ?? "");
+const RootLayout = () => {
+    const { user } = useStore((state) => state);
+    setAuthToken(user?.token ?? "");
 
-  return !user ? (<Navigate to="sign-in" replace = {true}/>
-
-  ) : (
-    <> 
-      <Navbar/>
-      <div className="min-h-[cal(h-screen-100px)]">
-        <Outlet />
-      </div>
-    </>
-  );
+    return !user ? (
+        <Navigate to="sign-in" replace={true} />
+    ) : (
+        <>
+            <Navbar />
+            <div className="min-h-[cal(h-screen-100px)]">
+                <Outlet />
+            </div>
+        </>
+    );
 };
 
 function App() {
-  const [count, setCount] = useState(0);
-
-  return (
-    <main>
-        <div className="w-full min-h-screen  bg-gray-100 dark:bg-slate-900">
-          <Routes>
-              <Route element={<RootLayout/>}>
-                <Route path="/" element={<Navigate to="/overview"/>} />
-                <Route path="/overview" element={<Dashboard/>} />
-                <Route path="/projects" element={<Projects/>} />
-                <Route path="/project" element={<ProjectForm/>} />
-                <Route path="/settings" element={<Settings/>} />
-                <Route path="/users" element={<Users/>} />
-                <Route path="/user" element={<UserForm/>} />
-                <Route path="/profile" element={<Profile/>} />
-                <Route path="/clients" element={<Clients/>} />   
-                <Route path="/client" element={<ClientForm/>} />
-                <Route path="/change-password" element={<ChangePassword/>} />
-              </Route>
-
-              <Route path="/sign-in" element={<SignIn />} />
-              <Route path="/sign-up" element={<SignUp />} />
-          </Routes>
-        </div>
-
-        <Toaster richColors position="top-center" />
-
-    </main>
-  );
-};
+    return (
+        <main>
+            <div className="w-full min-h-screen bg-gray-100 dark:bg-slate-900">
+                <Routes>
+                    <Route element={<RootLayout />}>
+                        <Route path="/" element={<Navigate to="/overview" />} />
+                        <Route path="/overview" element={<Dashboard />} />
+                        <Route path="/projects" element={<Projects />} />
+                        <Route path="/project" element={<ProjectForm />} />
+                        <Route path="/settings" element={<Settings />} />
+                        <Route path="/users" element={<Users />} />
+                        <Route path="/user" element={<UserForm />} />
+                        <Route path="/profile" element={<Profile />} />
+                        <Route path="/clients" element={<Clients />} />
+                        <Route path="/client" element={<ClientForm />} />
+                        <Route path="/change-password" element={<ChangePassword />} />
+                    </Route>
+                    <Route path="/sign-in" element={<SignIn />} />
+                    <Route path="/sign-up" element={<SignUp />} />
+                </Routes>
+            </div>
+            <Toaster richColors position="top-center" />
+        </main>
+    );
+}
 
 export default App;

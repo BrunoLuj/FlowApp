@@ -6,17 +6,11 @@ import { Link, useLocation } from "react-router-dom";
 import ThemeSwitch from "./switch.jsx";
 import { FaTachometerAlt, FaClipboardList, FaRegUser, FaUser, FaCog, FaSignOutAlt, FaUsers  } from 'react-icons/fa';
 import useStore from "../store/index.js";
-
-const links = [
-  { label: "Dashboard", link: "/overview", icon: <FaTachometerAlt />, permission: 'view_dashboard' },
-  { label: "Projects", link: "/projects", icon: <FaClipboardList />, permission: 'view_projects' },
-  { label: "Clients", link: "/clients", icon: <FaUsers />, permission: 'view_clients' },
-  { label: "Users", link: "/users", icon: <FaRegUser />, permission: 'view_users' },
-  { label: "Settings", link: "/settings", icon: <FaCog />, permission: 'view_settings' },
-];
+import { useTranslation } from 'react-i18next';
 
 const Navbar = () => {
   const location = useLocation();
+  const { t } = useTranslation();
   const [selected, setSelected] = useState(0);
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setUserMenuOpen] = useState(false);
@@ -27,6 +21,14 @@ const Navbar = () => {
   const { user, permissions } = useStore();
 
   const signOut = useStore((state) => state.signOut);
+  
+  const links = [
+    { label: t("dashboard"), link: "/overview", icon: <FaTachometerAlt />, permission: 'view_dashboard' },
+    { label: t("projects"), link: "/projects", icon: <FaClipboardList />, permission: 'view_projects' },
+    { label: "Clients", link: "/clients", icon: <FaUsers />, permission: 'view_clients' },
+    { label: "Users", link: "/users", icon: <FaRegUser />, permission: 'view_users' },
+    { label: "Settings", link: "/settings", icon: <FaCog />, permission: 'view_settings' },
+  ];
 
   useEffect(() => {
     const currentPath = location.pathname;
@@ -113,7 +115,7 @@ const Navbar = () => {
               <FaUser className="mr-2 text-blue-500" /> Profile
             </Link>
             <Link to="/settings" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-100 transition duration-200">
-              <FaCog className="mr-2 text-blue-500" /> Settings
+              <FaCog className="mr-2 text-blue-500" />Settings
             </Link>
             <div className="border-t border-gray-200"></div>
             <button 
