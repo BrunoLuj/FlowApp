@@ -16,7 +16,7 @@ app.use("/api-v1", routes);
 
 //Za mob
 // app.use(cors({
-//     origin: 'http://192.168.0.20:3000', 
+//     origin: 'ip adresa', 
 //     methods: 'GET,POST',
 //     allowedHeaders: ['Content-Type', 'Authorization']
 //   }));

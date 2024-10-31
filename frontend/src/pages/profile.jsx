@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 
 const Profile = () => {
     const navigate = useNavigate();
-    const { user, permissions, setCredentials } = useStore();
+    const { user, permissions, updateCredentials } = useStore();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [formData, setFormData] = useState({
@@ -67,17 +67,12 @@ const Profile = () => {
         try {
             const response  = await saveUserProfile(formData);
             const updatedUser = response.data.user; 
-            setCredentials(updatedUser);
+            updateCredentials(updatedUser);
             toast.success("Podaci su uspešno ažurirani!");
             navigate('/');
         } catch (error) {
             toast.error(error.response?.data?.message || "Došlo je do greške. Pokušajte ponovo.");
         }
-    };
-
-    const removeUser = async (userId) => {
-        await deleteUser(userId);
-        navigate('/users');
     };
 
     if (loading) return <div>Loading...</div>;

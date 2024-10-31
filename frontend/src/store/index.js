@@ -2,7 +2,6 @@ import { create } from "zustand";
 import { jwtDecode } from 'jwt-decode';
 
 const useStore = create((set) => {
-
     const user = JSON.parse(localStorage.getItem("user")) || null;
     const token = localStorage.getItem("token");
 
@@ -26,6 +25,19 @@ const useStore = create((set) => {
         localStorage.removeItem("token");
     };
 
+    const handleUserUpdate = (newUser) => {
+        if (newUser && newUser.token) {
+            if (checkTokenExpiration(newUser.token)) {
+                console.log("Token je istekao. Korisnik se odjavljuje.");
+                signOut();
+            } else {
+                const decodedToken = jwtDecode(newUser.token);
+                set({ permissions: decodedToken.permissions || [] });
+                localStorage.setItem("token", newUser.token);
+                localStorage.setItem("user", JSON.stringify(newUser));
+            }
+        }
+    };
 
     return {
         theme: localStorage.getItem("theme") ?? "light",
@@ -33,42 +45,21 @@ const useStore = create((set) => {
         permissions,
 
         setTheme: (value) => set({ theme: value }),
-        setCredentials: (user) => {
-            set({ user });
-            // Kada se korisnik prijavi, učitaj i njegove dozvole iz tokena
-            if (user && user.token) {
-                if (checkTokenExpiration(user.token)) {
-                    signOut();
-                } else {
-                    const decodedToken = jwtDecode(user.token);
-                    set({ permissions: decodedToken.permissions || [] });
-                    localStorage.setItem("token", user.token);
-                    localStorage.setItem("user", JSON.stringify(user));
-                }
-            }
+        setCredentials: (newUser) => {
+            set({ user: newUser });
+            handleUserUpdate(newUser);
         },
-        setCredentials: (updatedUser) => {
+        updateCredentials: (updatedUser) => {
             set((state) => {
                 const newUser = {
                     ...state.user,
                     ...updatedUser,
                 };
-                if (checkTokenExpiration(user.token)) {
-                    signOut();
-                } else {
-                    const decodedToken = jwtDecode(newUser.token);
-                set({ permissions: decodedToken.permissions || [] });
-                localStorage.setItem("user", JSON.stringify(newUser));
-                localStorage.setItem("token", user.token);
+                handleUserUpdate(newUser);
                 return { user: newUser };
-                }  
             });
         },
-        signOut: () => {
-            set({ user: null, permissions: [] });
-            localStorage.removeItem("user");
-            localStorage.removeItem("token");
-        },
+        signOut,
     };
 });
 

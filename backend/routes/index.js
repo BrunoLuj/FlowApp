@@ -5,6 +5,7 @@ import userRoutes from "./userRoutes.js";
 import clientsRoutes from "./clientsRoutes.js";
 import transactionRoutes from "./transactionRoutes.js";
 import projectsRoutes from "./projectsRoutes.js";
+import translationRoutes from "./translationRoutes.js";
 
 const router = express.Router();
 
@@ -14,5 +15,6 @@ router.use("/projects", projectsRoutes);
 router.use("/clients", clientsRoutes);
 // router.use("/account", accountRoutes);
 router.use("/transaction", transactionRoutes);
+router.use("/translations", translationRoutes);
 
 export default router;
