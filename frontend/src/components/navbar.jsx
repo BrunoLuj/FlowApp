@@ -25,9 +25,9 @@ const Navbar = () => {
   const links = [
     { label: t("dashboard"), link: "/overview", icon: <FaTachometerAlt />, permission: 'view_dashboard' },
     { label: t("projects"), link: "/projects", icon: <FaClipboardList />, permission: 'view_projects' },
-    { label: "Clients", link: "/clients", icon: <FaUsers />, permission: 'view_clients' },
-    { label: "Users", link: "/users", icon: <FaRegUser />, permission: 'view_users' },
-    { label: "Settings", link: "/settings", icon: <FaCog />, permission: 'view_settings' },
+    { label: t("clients"), link: "/clients", icon: <FaUsers />, permission: 'view_clients' },
+    { label: t("users"), link: "/users", icon: <FaRegUser />, permission: 'view_users' },
+    { label: t("settings"), link: "/settings", icon: <FaCog />, permission: 'view_settings' },
   ];
 
   useEffect(() => {
@@ -110,12 +110,12 @@ const Navbar = () => {
      {isUserMenuOpen && (
         <div ref={userMenuRef} className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-50 overflow-hidden border border-gray-200">
           <div className="py-1" role="menu">
-            <h3 className="px-4 py-2 text-xs font-semibold text-gray-600">User Options</h3>
+            <h3 className="px-4 py-2 text-xs font-semibold text-gray-600">{t('user options')}</h3>
             <Link to="/profile" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-100 transition duration-200">
-              <FaUser className="mr-2 text-blue-500" /> Profile
+              <FaUser className="mr-2 text-blue-500" /> {t('profile')}
             </Link>
             <Link to="/settings" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-100 transition duration-200">
-              <FaCog className="mr-2 text-blue-500" />Settings
+              <FaCog className="mr-2 text-blue-500" /> {t('settings')}
             </Link>
             <div className="border-t border-gray-200"></div>
             <button 
@@ -124,9 +124,9 @@ const Navbar = () => {
                   // Opcionalno, preusmerite korisnika na početnu stranicu ili login stranicu
                   // history.push('/login'); // Ako koristite useHistory iz react-router
               }}
-              className="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-100 transition duration-200"
+              className="flex items-center px-4 py-2 w-full text-sm text-red-600 hover:bg-red-100 transition duration-200"
           >
-              <FaSignOutAlt className="mr-2 text-red-600" /> Log Out
+              <FaSignOutAlt className="mr-2 text-red-600" /> {t('logout')}
           </button>
           </div>
         </div>
