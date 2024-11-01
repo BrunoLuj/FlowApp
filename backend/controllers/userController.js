@@ -1,12 +1,17 @@
 import { comparePassword, hashPassword} from "../libs/index.js";
 import * as userModel from "../models/userModel.js";
 
-export const getAllUsers = async(req, res) =>{
+export const getAllUsers = async (req, res) => {
   try {
     const users = await userModel.getAllUsers();
-    res.json(users);
+    // Uklanjamo lozinku iz svakog korisnika
+    const sanitizedUsers = users.map(user => {
+      user.password = undefined;
+      return user;
+    });
+    res.json(sanitizedUsers);
   } catch (error) {
-      res.status(500).json({ error: 'Error fetching users' });
+    res.status(500).json({ error: 'Error fetching users' });
   }
 };
 

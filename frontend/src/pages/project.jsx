@@ -108,6 +108,7 @@ const ProjectForm = () => {
             description: formData.description,
             budget: formData.budget,
             costs: formData.costs,
+            id: formData.id
         };
         
         if(reportData.project_type === "AMN"){

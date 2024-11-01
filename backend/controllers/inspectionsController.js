@@ -15,8 +15,10 @@ export const addInspections = async (req, res) => {
         installationCheck,
         labelCheck,
         integrityCheck,
-        inspectionResult,
+        inspectionResult
     } = req.body;
+
+    console.log(req.body)
 
     try {
         const newInspections= await inspectionsModel.addInspections(
@@ -35,9 +37,10 @@ export const addInspections = async (req, res) => {
             integrityCheck,
             inspectionResult,
         );
-        console.log(newInspections);
+        console.log("New",newInspections);
         res.status(201).json(newInspections);
     } catch (error) {
+        console.log("Error", error)
         res.status(500).json({ error: 'Error adding inspections' });
     }
 };

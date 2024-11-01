@@ -4,6 +4,11 @@ import { toast } from 'sonner';
 import { saveAllInspectionsResults } from '../services/inspectionsServices';
 
 function InspectionResult() {
+    const location = useLocation();
+    const reportData = location.state?.reportData;
+
+    console.log(reportData)
+
     const [inspectionResults, setInspectionResults] = useState([]);
     const [editIndex, setEditIndex] = useState(null);
     const [newResult, setNewResult] = useState({
@@ -23,8 +28,6 @@ function InspectionResult() {
         inspectionResult: false,
     });
 
-    const location = useLocation();
-    const reportData = location.state?.reportData;
 
     const handleInputChange = (field, value) => {
         const updatedResult = { ...newResult, [field]: value };
@@ -211,17 +214,25 @@ function InspectionResult() {
         return errorValue <= 4 ? 'bg-green-200' : 'bg-red-200'; // Zeleni za ispravno, crveni za grešku
     };
 
-    const saveAllResults = async (projectId) => {
+    const saveAllResults = async () => {
         try {
+            const projectId = reportData.id;
             for (const result of inspectionResults) {
-                const resultWithProjectId = { ...result, projectId }; // Dodajte ID projekta
+                const resultWithProjectId = { ...result, projectId };
+                console.log("Saving result:", resultWithProjectId);
                 const response = await saveAllInspectionsResults(resultWithProjectId);
-    
-                if (!response.ok) {
+                console.log("Response:", response);
+
+                if (!response.status === 201) {
+                    console.error('Error details:', response.data); 
                     throw new Error('Failed to save result');
                 }
             }
-            toast.success("Svi rezultati su uspešno sačuvani!");
+
+            // Clear the results after successful save
+            setInspectionResults([]);
+
+                toast.success("Svi rezultati su uspešno sačuvani!");
         } catch (error) {
             console.error('Error saving results:', error);
             toast.error("Došlo je do greške prilikom čuvanja rezultata.");
@@ -507,7 +518,7 @@ function InspectionResult() {
             </table>
 
             <button 
-                onClick={() => saveAllResults(reportData.id)} 
+                onClick={() => saveAllResults()} 
                 className="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-600 mb-6 w-full"
             >
                 Sačuvaj sve rezultate
