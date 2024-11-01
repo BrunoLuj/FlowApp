@@ -13,3 +13,13 @@
 .inputStyle {
   @apply w-full text-sm border dark:border-gray-800 dark:bg-transparent dark:placeholder:text-gray-700 dark:text-gray-400 dark:outline-none;
 }
+
+@media print {
+  .a4-landscape {
+    width: 29.7cm;  /* A4 width */
+    height: 21cm;   /* A4 height */
+    margin: 0 auto;
+    overflow: hidden;
+    page-break-after: always;
+  }
+}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { saveAllInspectionsResults } from '../services/inspectionsServices';
+import InspectionReport from './InspectionReport.jsx' ;
 
 function InspectionResult() {
     const location = useLocation();
@@ -10,6 +11,7 @@ function InspectionResult() {
     console.log(reportData)
 
     const [inspectionResults, setInspectionResults] = useState([]);
+    const [showReport, setShowReport] = useState(false);
     const [editIndex, setEditIndex] = useState(null);
     const [newResult, setNewResult] = useState({
         probe: '',
@@ -28,6 +30,9 @@ function InspectionResult() {
         inspectionResult: false,
     });
 
+    const toggleReport = () => {
+        setShowReport(!showReport);
+    };
 
     const handleInputChange = (field, value) => {
         const updatedResult = { ...newResult, [field]: value };
@@ -429,93 +434,93 @@ function InspectionResult() {
             </button>
 
             <h3 className="text-lg font-semibold mt-6">Dodani rezultati</h3>
-            <table className="min-w-full bg-white border border-gray-300 mb-6">
-                <thead>
-                    <tr>
-                        <th className="border px-4 py-2">Sonda</th>
-                        <th className="border px-4 py-2">Proizvođač</th>
-                        <th className="border px-4 py-2">Tip</th>
-                        <th className="border px-4 py-2">Službena oznaka</th>
-                        <th className="border px-4 py-2">Etalon Rezultati</th>
-                        <th className="border px-4 py-2">AMN Rezultati</th>
-                        <th className="border px-4 py-2">Temperatura</th>
-                        <th className="border px-4 py-2">Vlažnost</th>
-                        <th className="border px-4 py-2">Greške</th>
-                        <th className="border px-4 py-2">Provjera ugradnje</th>
-                        <th className="border px-4 py-2">Provjera natpisa i oznaka</th>
-                        <th className="border px-4 py-2">Provjera cjelovitosti i integriteta</th>
-                        <th className="border px-4 py-2">Rezultat inspekcije</th>
-                        <th className="border px-4 py-2">Akcije</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {inspectionResults.map((result, index) => (
-                        <tr key={index}>
-                            <td className="border px-4 py-2">{result.probe}</td>
-                            <td className="border px-4 py-2">{result.manufacturer}</td>
-                            <td className="border px-4 py-2">{result.type}</td>
-                            <td className="border px-4 py-2">{result.officialLabel}</td>
-                            <td className="border px-4 py-2">
-                                {result.referenceResults.join(', ')}
-                            </td>
-                            <td className="border px-4 py-2">
-                                {result.amnResults.join(', ')}
-                            </td>
-                            <td className="border px-4 py-2">
-                                {result.errors.join(', ')}
-                            </td>
-                            <td className="border px-4 py-2">{result.temperature}</td>
-                            <td className="border px-4 py-2">{result.humidity}</td>
-                            <td className="border px-4 py-2">
-                                <input 
-                                    type="checkbox" 
-                                    checked={result.installationCheck} 
-                                    readOnly
-                                    className="cursor-not-allowed"
-                                />
-                            </td>
-                            <td className="border px-4 py-2">
-                                <input 
-                                    type="checkbox" 
-                                    checked={result.labelCheck} 
-                                    readOnly
-                                    className="cursor-not-allowed"
-                                />
-                            </td>
-                            <td className="border px-4 py-2">
-                                <input 
-                                    type="checkbox" 
-                                    checked={result.integrityCheck} 
-                                    readOnly
-                                    className="cursor-not-allowed"
-                                />
-                            </td>
-                            <td className="border px-4 py-2">
-                                <input 
-                                    type="checkbox" 
-                                    checked={result.inspectionResult} 
-                                    readOnly
-                                    className="cursor-not-allowed"
-                                />
-                            </td>
-                            <td className="border px-4 py-2">
-                                <button 
-                                    onClick={() => editResult(index)} 
-                                    className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600 mr-2"
-                                >
-                                    Ažuriraj
-                                </button>
-                                <button 
-                                    onClick={() => deleteResult(index)} 
-                                    className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
-                                >
-                                    Obriši
-                                </button>
-                            </td>
+            <div className="overflow-x-auto">
+                <table className="w-full bg-white border border-gray-300 mb-6">
+                    <thead>
+                        <tr>
+                            <th className="border px-2 sm:px-4 py-2 text-left">Sonda</th>
+                            <th className="border px-2 sm:px-4 py-2 text-left">Proizvođač</th>
+                            <th className="border px-2 sm:px-4 py-2 text-left">Tip</th>
+                            <th className="border px-2 sm:px-4 py-2 text-left">Službena oznaka</th>
+                            <th className="border px-2 sm:px-4 py-2 text-left">Etalon Rezultati</th>
+                            <th className="border px-2 sm:px-4 py-2 text-left">AMN Rezultati</th>
+                            <th className="border px-2 sm:px-4 py-2 text-left">Temperatura</th>
+                            <th className="border px-2 sm:px-4 py-2 text-left">Vlažnost</th>
+                            <th className="border px-2 sm:px-4 py-2 text-left">Greške</th>
+                            <th className="border px-2 sm:px-4 py-2 text-left">Provjera ugradnje</th>
+                            <th className="border px-2 sm:px-4 py-2 text-left">Provjera natpisa i oznaka</th>
+                            <th className="border px-2 sm:px-4 py-2 text-left">Provjera cjelovitosti i integriteta</th>
+                            <th className="border px-2 sm:px-4 py-2 text-left">Rezultat inspekcije</th>
+                            <th className="border px-2 sm:px-4 py-2 text-left">Akcije</th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {inspectionResults.map((result, index) => (
+                            <tr key={index}>
+                                <td className="border px-2 sm:px-4 py-2">{result.probe}</td>
+                                <td className="border px-2 sm:px-4 py-2">{result.manufacturer}</td>
+                                <td className="border px-2 sm:px-4 py-2">{result.type}</td>
+                                <td className="border px-2 sm:px-4 py-2">{result.officialLabel}</td>
+                                <td className="border px-2 sm:px-4 py-2">
+                                    {result.referenceResults.join(', ')}
+                                </td>
+                                <td className="border px-2 sm:px-4 py-2">
+                                    {result.amnResults.join(', ')}
+                                </td>
+                                <td className="border px-2 sm:px-4 py-2">{result.temperature}</td>
+                                <td className="border px-2 sm:px-4 py-2">{result.humidity}</td>
+                                <td className="border px-2 sm:px-4 py-2">
+                                    <input 
+                                        type="checkbox" 
+                                        checked={result.installationCheck} 
+                                        readOnly
+                                        className="cursor-not-allowed"
+                                    />
+                                </td>
+                                <td className="border px-2 sm:px-4 py-2">
+                                    <input 
+                                        type="checkbox" 
+                                        checked={result.labelCheck} 
+                                        readOnly
+                                        className="cursor-not-allowed"
+                                    />
+                                </td>
+                                <td className="border px-2 sm:px-4 py-2">
+                                    <input 
+                                        type="checkbox" 
+                                        checked={result.integrityCheck} 
+                                        readOnly
+                                        className="cursor-not-allowed"
+                                    />
+                                </td>
+                                <td className="border px-2 sm:px-4 py-2">
+                                    <input 
+                                        type="checkbox" 
+                                        checked={result.inspectionResult} 
+                                        readOnly
+                                        className="cursor-not-allowed"
+                                    />
+                                </td>
+                                <td className="border px-2 sm:px-4 py-2">
+                                    <button 
+                                        onClick={() => editResult(index)} 
+                                        className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600 mr-2"
+                                    >
+                                        Ažuriraj
+                                    </button>
+                                    <button 
+                                        onClick={() => deleteResult(index)} 
+                                        className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
+                                    >
+                                        Obriši
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
 
             <button 
                 onClick={() => saveAllResults()} 
@@ -523,6 +528,38 @@ function InspectionResult() {
             >
                 Sačuvaj sve rezultate
             </button>
+
+        {/* Dugme za otvaranje izveštaja */}
+        <button 
+            onClick={toggleReport} 
+            className={`fixed right-0 top-1/2 transform -translate-y-1/2 rotate-90 bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-600 z-10 ${showReport ? 'hidden' : ''} mr-0`}
+            style={{ marginRight: '-28px' }}
+        >
+            Izvještaj
+        </button>
+
+         {/* Dugme za zatvaranje izveštaja */}
+         <button 
+            onClick={toggleReport} 
+            className={`fixed right-1/2 top-1/2 -translate-y-1/2 bg-red-500 text-white font-bold py-2 px-4 rounded-b hover:bg-red-600 transform rotate-90  ${showReport ? '' : 'hidden'}`}
+            style={{ marginRight: '-22px' }}
+        >
+            Zatvori
+        </button>
+
+
+        {/* Kontejner za izveštaj */}
+        <div 
+            className={`fixed top-0 right-0 w-1/2 h-full bg-white shadow-lg transition-transform duration-300 ease-in-out ${showReport ? 'translate-x-0' : 'translate-x-full'} z-20 overflow-y-auto`}
+        >
+            <div className="p-4 relative">
+                <h2 className="text-xl font-bold mb-4">Izvještaj</h2>
+                <InspectionReport inspectionResults={inspectionResults} projectId={reportData.projectId} />
+                
+               
+            </div>
+        </div>
+            
 
         </div>
     );
