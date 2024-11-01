@@ -15,6 +15,7 @@ import ProjectForm from "./pages/project";
 import ClientForm from "./pages/client";
 import UserForm from "./pages/user";
 import ChangePassword from "./pages/changepassword";
+import InspectionResult from "./pages/inspectionResult";
 
 const RootLayout = () => {
     const { user } = useStore((state) => state);
@@ -49,6 +50,7 @@ function App() {
                         <Route path="/clients" element={<Clients />} />
                         <Route path="/client" element={<ClientForm />} />
                         <Route path="/change-password" element={<ChangePassword />} />
+                        <Route path="/inspectionResult" element={<InspectionResult />} />
                     </Route>
                     <Route path="/sign-in" element={<SignIn />} />
                     <Route path="/sign-up" element={<SignUp />} />

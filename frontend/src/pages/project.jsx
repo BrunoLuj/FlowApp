@@ -2,13 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import useStore from '../store';
 import { deleteProject, saveProject } from '../services/projectsServices';
-import Select from 'react-select'; // Import react-select
 import { toast } from 'sonner';
 import { getClients } from '../services/clientsServices';
 import { getRoles, getUsers } from '../services/usersServices';
-import { MultiSelect } from 'primereact/multiselect';
-import UniversalMultiSelect from '../components/ui/multiselectdropdown';
-import UserDropdown from '../components/ui/multiselectdropdown';
 import UserMultiSelectDropdown from '../components/ui/multiselectdropdown';
 
 const ProjectForm = () => {
@@ -67,8 +63,6 @@ const ProjectForm = () => {
     const responsiblePersons = users.filter(user => user.roles_id === 2);
     const serviceExecutors = users.filter(user => [3].includes(user.roles_id));
 
-    console.log(serviceExecutors)
-
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
@@ -101,10 +95,24 @@ const ProjectForm = () => {
         }
     };
 
+
     const handleGenerateReport = () => {
-        // Logika za generiranje izvještaja
-        console.log("Izvještaj generiran za projekat:", formData);
+        const reportData = {
+            name: formData.name,
+            responsible_person: formData.responsible_person,
+            service_executors: selectedUsers,
+            project_type: formData.project_type,
+            start_date: formData.start_date,
+            end_date: formData.end_date,
+            status: formData.status,
+            description: formData.description,
+            budget: formData.budget,
+            costs: formData.costs,
+        };
+        
+        navigate('/inspectionResult', { state: { reportData } });
     };
+
 
     const handleGenerateCertificate = () => {
         // Logika za generiranje certifikata
