@@ -110,7 +110,10 @@ const ProjectForm = () => {
             costs: formData.costs,
         };
         
-        navigate('/inspectionResult', { state: { reportData } });
+        if(reportData.project_type === "AMN"){
+            navigate('/inspectionResult', { state: { reportData } });
+        }
+        
     };
 
 

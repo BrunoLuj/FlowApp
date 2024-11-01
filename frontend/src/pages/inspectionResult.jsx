@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { toast } from 'sonner';
+import { saveAllInspectionsResults } from '../services/inspectionsServices';
 
 function InspectionResult() {
     const [inspectionResults, setInspectionResults] = useState([]);
@@ -123,7 +125,7 @@ function InspectionResult() {
         if (!newResult.probe || !newResult.manufacturer || !newResult.type || !newResult.officialLabel ||
             newResult.referenceResults.some(result => !result) || 
             newResult.amnResults.some(result => !result)) {
-            alert("Molimo ispunite sva polja prije dodavanja rezultata.");
+            toast.error("Molimo ispunite sva polja prije dodavanja rezultata.");
             return;
         }
 
@@ -134,17 +136,17 @@ function InspectionResult() {
         const humidity = parseFloat(newResult.humidity);
 
         if (hasErrors) {
-            alert("Molimo ispravite greške prije dodavanja rezultata");
+            toast.error("Molimo ispravite greške prije dodavanja rezultata");
             return;
         }
 
         if (temperature < 12 || temperature > 30) {
-            alert("Temperatura mora biti između 12 i 30 stupnjeva!");
+            toast.error("Temperatura mora biti između 12 i 30 stupnjeva!");
             return;
         }
 
         if (humidity < 50 || humidity > 90) {
-            alert("Vlažnost mora biti između 50% i 90%!");
+            toast.error("Vlažnost mora biti između 50% i 90%!");
             return;
         }
 
@@ -209,27 +211,22 @@ function InspectionResult() {
         return errorValue <= 4 ? 'bg-green-200' : 'bg-red-200'; // Zeleni za ispravno, crveni za grešku
     };
 
-    const saveAllResults = async () => {
+    const saveAllResults = async (projectId) => {
         try {
             for (const result of inspectionResults) {
-                const response = await fetch('/api/inspection-results', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(result),
-                });
+                const resultWithProjectId = { ...result, projectId }; // Dodajte ID projekta
+                const response = await saveAllInspectionsResults(resultWithProjectId);
     
                 if (!response.ok) {
                     throw new Error('Failed to save result');
                 }
             }
-            alert('Svi rezultati su uspešno sačuvani!');
+            toast.success("Svi rezultati su uspešno sačuvani!");
         } catch (error) {
             console.error('Error saving results:', error);
-            alert('Došlo je do greške prilikom čuvanja rezultata.');
+            toast.error("Došlo je do greške prilikom čuvanja rezultata.");
         }
-    };
+    };    
     
 
     return (
@@ -510,7 +507,7 @@ function InspectionResult() {
             </table>
 
             <button 
-                onClick={saveAllResults} 
+                onClick={() => saveAllResults(reportData.id)} 
                 className="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-600 mb-6 w-full"
             >
                 Sačuvaj sve rezultate
