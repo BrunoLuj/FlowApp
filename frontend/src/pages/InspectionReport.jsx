@@ -2,7 +2,6 @@ import React, { useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
-import html2canvas from 'html2canvas';
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts'; // koristi virtualne fontove
 
@@ -177,66 +176,66 @@ const InspectionReport = ({ reportData, inspectionResults }) => {
     //     pdfMake.createPdf(documentDefinition).download('izvjestaj.pdf');
     // };
 
+    
     const generatePDF = () => {
-        const doc = new jsPDF('l', 'mm', 'a4');
+        const doc = new jsPDF('l', 'mm', 'a4'); // Landscape orijentacija
         const pageHeight = doc.internal.pageSize.height;
-
-        // Funkcija za iscrtavanje headera
+    
+        // Funkcija za iscrtavanje headera u landscape orijentaciji
         const drawHeader = () => {
-            doc.setFontSize(12);
-        const column1X = 20; // Prvi stupac
-        const column2X = 105; // Drugi stupac
-        const column3X = 190; // Treći stupac
-        const headerHeight = 20;
-
-        // Crtanje okvira
-        doc.rect(column1X - 5, 10, 60, headerHeight); // Lijevi stupac
-        doc.rect(column2X - 5, 10, 80, headerHeight); // Srednji stupac
-        doc.rect(column3X - 5, 10, 60, headerHeight); // Desni stupac
-
-        // Ispisivanje sadržaja
-        doc.text('Logo', column1X + 5, 20, { align: 'center' });
-        doc.text('Izvještaj o rezultatima inspekcije za automatska mjerila nivoa tečnosti - AMN', column2X + 5, 20, { align: 'center' });
-        doc.text('Oznaka dokumenta: ZA -19.04/03', column3X + 5, 20, { align: 'right' });
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(14);
+            doc.text('Izvještaj o rezultatima inspekcije za automatska mjerila nivoa tečnosti - AMN', 148.5, 10, { align: 'center' });
+            
+            doc.setFontSize(10);
+            doc.text('Oznaka dokumenta: ZA -19.04/03', 287 - 10, 10, { align: 'right' });
+    
+            // Linija ispod headera
+            doc.setLineWidth(0.5);
+            doc.line(10, 15, 287 - 10, 15); 
         };
-
-
-        // Funkcija za iscrtavanje footera
-        const drawFooter = () => {
-            const footerY = pageHeight - 10; // Pozicija za footer
-            doc.setFontSize(8);
-            doc.text('Datum implementacije: 25.02.2022. Izdanje broj: 01 | Revizija broj: 04', 105, footerY, { align: 'center' });
-            doc.text('Broj stranice: ' + doc.internal.getNumberOfPages(), 10, footerY);
+    
+        // Funkcija za unos osnovnih podataka
+        const drawInspectionDetails = () => {
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            const details = [
+                'Imenovana laboratorija: Čaljkušić d.o.o.',
+                'Vlasnik/korisnik mjerila: <kupac>',
+                'Mjerilo predmet verifikacije: AMN',
+                'Službena oznaka: BA D-8-1009',
+                'Proizvođač: SEEBIT',
+                'Tip: SEETAC S200, SEETAC K200'
+            ];
+    
+            details.forEach((text, index) => {
+                doc.text(text, 10, 25 + index * 10);
+            });
         };
-
-        // Dodaj header na prvu stranicu
-        drawHeader();
-
-        // Osnovne informacije
-        doc.setFontSize(10);
-        doc.text('Imenovana laboratorija: Čaljkušić d.o.o.', 10, 40);
-        doc.text('Vlasnik/korisnik mjerila:', 10, 50);
-        doc.text('Mjerilo predmet verifikacije: AMN', 10, 60);
-        doc.text('Službena oznaka: BA D-8-1009', 10, 70);
-        doc.text('Proizvođač: SEEBIT', 10, 80);
-        doc.text('Tip: SEETAC S200, SEETAC K200', 10, 90);
-
-        // Metode i procedure
-        doc.text('Metode i procedure:', 10, 100);
-        doc.text('• Inspekcija automatskih mjerila nivoa tečnosti - AMN (RU-19.04.)', 20, 110);
-        doc.text('• Procedura za metode inspekcije (PR-19)', 20, 120);
-
-        // Korištena mjerna oprema
-        doc.text('Korištena mjerna oprema:', 10, 130);
-        doc.text('• Mjerna letva/ALMIO/162-2019', 20, 140);
-        doc.text('• Mjerna letva/ALMIO/0116-2016', 20, 145);
-        doc.text('• Data Logger/MSR Electronic/410379', 20, 150);
-        doc.text('• Termometar stakleni/Tlos Zagreb/212-2017', 20, 155);
-
-        // Rezultati mjerenja
-        let startY = 170; // Pozicija gdje počinju rezultati
-
-        // Funkcija za dodavanje rezultata
+    
+        // Funkcija za unos metoda i procedure
+        const drawMethods = () => {
+            doc.text('Metode i procedure:', 10, 90);
+            doc.text('• Inspekcija automatskih mjerila nivoa tečnosti - AMN (RU-19.04.)', 20, 100);
+            doc.text('• Procedura za metode inspekcije (PR-19)', 20, 110);
+        };
+    
+        // Funkcija za unos korištene mjerne opreme
+        const drawEquipment = () => {
+            doc.text('Korištena mjerna oprema:', 10, 120);
+            const equipment = [
+                'Mjerna letva/ALMIO/162-2019',
+                'Mjerna letva/ALMIO/0116-2016',
+                'Data Logger/MSR Electronic/410379',
+                'Termometar stakleni/Tlos Zagreb/212-2017'
+            ];
+    
+            equipment.forEach((item, index) => {
+                doc.text(`• ${item}`, 20, 130 + index * 5);
+            });
+        };
+    
+        // Funkcija za unos tablice rezultata mjerenja
         const addResults = (results) => {
             doc.autoTable({
                 head: [['Proizvođač', 'Tip', 'Službena oznaka mjerila', 'Serijski broj', 'Broj mjerenja', 'Pokazivanje etalona (mm)', 'Pokazivanje AMN (mm)', 'Greška (mm)', 'GDG (mm)', 'T[ºC]', 'rH[%]', 'Provjera ispravnosti ugradnje', 'Provjera natpisa i oznaka', 'Provjera cjelovitosti i integriteta', 'Rezultati inspekcije']],
@@ -244,7 +243,7 @@ const InspectionReport = ({ reportData, inspectionResults }) => {
                     'SEEBIT',
                     'SEETAC S200, SEETAC K200',
                     'BA D-8-1009',
-                    result.probe,
+                    result.serialNumber,
                     result.measureCount,
                     result.referenceResults.join(', '),
                     result.amnResults.join(', '),
@@ -252,46 +251,62 @@ const InspectionReport = ({ reportData, inspectionResults }) => {
                     '±4',
                     result.temperature,
                     result.humidity,
-                    result.installationCheck ? 'OK' : 'Nije OK',
-                    result.labelCheck ? 'OK' : 'Nije OK',
-                    result.integrityCheck ? 'OK' : 'Nije OK',
+                    result.installationCheck ? '✓' : '✗',
+                    result.labelCheck ? '✓' : '✗',
+                    result.integrityCheck ? '✓' : '✗',
                     result.inspectionResult ? 'Zadovoljava' : 'Ne zadovoljava',
                 ]),
-                startY: startY,
+                startY: 150,
                 theme: 'grid',
-                styles: { cellPadding: 2, fontSize: 8 },
-                headStyles: { fillColor: [22, 160, 133], textColor: [255, 255, 255] },
-                margin: { top: 10, bottom: 10, left: 10, right: 10 },
+                styles: { 
+                    cellPadding: 2, 
+                    fontSize: 8, 
+                    halign: 'center',
+                    overflow: 'linebreak' 
+                },
+                headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold' },
+                bodyStyles: { textColor: 50 },
+                columnStyles: {
+                    0: { cellWidth: 20 },
+                    1: { cellWidth: 30 },
+                    2: { cellWidth: 30 },
+                    3: { cellWidth: 25 },
+                    4: { cellWidth: 20 },
+                    5: { cellWidth: 25 },
+                    6: { cellWidth: 25 },
+                    7: { cellWidth: 20 },
+                    8: { cellWidth: 20 },
+                    9: { cellWidth: 15 },
+                    10: { cellWidth: 15 },
+                    11: { cellWidth: 25 },
+                    12: { cellWidth: 25 },
+                    13: { cellWidth: 25 },
+                    14: { cellWidth: 35 }
+                }
             });
-
-            // Ažuriraj poziciju za sljedeći sadržaj
-            startY = doc.lastAutoTable.finalY + 10;
-
-            // Ako je prešao visinu stranice, dodaj novu stranicu i header/footer
-            if (startY > pageHeight - 30) {
-                doc.addPage();
-                startY = 10; // Resetiraj na vrh nove stranice
-                drawHeader(); // Ponovo iscrtaj header
-            }
         };
-
-        // Pozovi funkciju za dodavanje rezultata
-        addResults(inspectionResults);
-
-        // Napomena
-        doc.setFontSize(8);
-        doc.text('* Napomena: Ispunjavanje prvog uvjeta prilikom umjeravanja, da odstupanje mjerenja etalona mora biti unutar vrijednosti 1mm.', 10, startY + 10);
-
-        // Potpisnici
-        doc.text('Mjeritelj: Marinko', 10, startY + 30);
-        doc.text('Tehnički rukovoditelj: Bruno', 10, startY + 40);
-
-        // Footer na posljednjoj stranici
+    
+        // Napomena i potpisi
+        const drawFooter = () => {
+            doc.setFontSize(8);
+            doc.text('* Napomena: Ispunjavanje prvog uvjeta prilikom umjeravanja, da odstupanje mjerenja etalona mora biti unutar vrijednosti 1mm.', 10, doc.lastAutoTable.finalY + 10);
+            doc.text('Mjeritelj: <ime mjeritelja>', 10, doc.lastAutoTable.finalY + 30);
+            doc.text('Tehnički rukovoditelj: Bruno', 10, doc.lastAutoTable.finalY + 40);
+            doc.text('Datum implementacije: 25.02.2022. Izdanje broj: 01 | Revizija broj: 04', 148.5, pageHeight - 10, { align: 'center' });
+        };
+    
+        // Dodaj sve dijelove na PDF
+        drawHeader();
+        drawInspectionDetails();
+        drawMethods();
+        drawEquipment();
+        addResults(inspectionResults); // Preuzmi rezultate iz izvora podataka
         drawFooter();
-
-        // Spremanje PDF-a
-        doc.save('izvjestaj.pdf');
+    
+        // Spremi PDF
+        doc.save('AMN_rezultati_inspekcije.pdf');
     };
+    
 
 
     return (
