@@ -14,6 +14,7 @@ import { AiOutlineEye, AiOutlineEyeInvisible } from 'react-icons/ai';
 import { toast } from 'sonner';
 import { signIn } from '../../services/authServices.js';
 import i18n from 'i18next';
+import { fetchTranslations } from '../../services/translationServices.js';
 
 const SignIn = () => {
   const { t, i18n } = useTranslation();
@@ -22,6 +23,8 @@ const SignIn = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState(localStorage.getItem("language") || "en");
+  const { language, setLanguage } = useStore((state) => state);
+
 
   const LoginSchema = z.object({
     email: z.string({ required_error: t("Email is required!") }).email({ message: t("Invalid Email address!") }),
@@ -40,9 +43,23 @@ const SignIn = () => {
 
   const handleLanguageChange = (e) => {
     const newLang = e.target.value;
-    i18n.changeLanguage(newLang).then(() => {
-      localStorage.setItem("language", newLang);
-      setSelectedLanguage(newLang); // This will trigger a re-render
+  
+    // Promijeni jezik u i18next
+    i18n.changeLanguage(newLang).then(async () => {
+      // Učitaj prijevode za novi jezik s servera
+      const translations = await fetchTranslations(newLang);
+      
+      // Ažuriraj i18next resurse za novi jezik
+      i18n.addResourceBundle(newLang, 'translation', translations, true, true);
+      
+      // Postavi novi jezik u zustand store
+      setLanguage(newLang);
+      
+      // Spremi novi jezik u localStorage
+      localStorage.setItem('language', newLang);
+      
+      // Ažuriraj stanje u aplikaciji (ako treba)
+      setSelectedLanguage(newLang); 
     });
   };
 
