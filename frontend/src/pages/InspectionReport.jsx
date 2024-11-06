@@ -1,316 +1,170 @@
 import React, { useRef } from 'react';
-import { useReactToPrint } from 'react-to-print';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import pdfMake from 'pdfmake/build/pdfmake';
-import pdfFonts from 'pdfmake/build/vfs_fonts'; // koristi virtualne fontove
+import pdfFonts from 'pdfmake/build/vfs_fonts';
 
-pdfMake.vfs = pdfFonts.pdfMake.vfs;
+pdfMake.vfs = pdfFonts.pdfMake.vfs; // Ovo omogućava pdfMake da koristi fontove
 
 const InspectionReport = ({ reportData, inspectionResults }) => {
-
-    const componentRef = useRef();
-
-    // const handleDownloadPDF = () => {
-    //     const documentDefinition = {
-    //         content: [
-    //             {
-    //                 table: {
-    //                     widths: ['*', '*', '*'],
-    //                     body: [
-    //                         [
-    //                             { text: 'Logo', alignment: 'center', style: 'header' },
-    //                             {
-    //                                 text: 'Izvještaj o rezultatima inspekcije za automatska mjerila nivoa tečnosti - AMN',
-    //                                 alignment: 'center',
-    //                                 colSpan: 2,
-    //                                 style: 'header',
-    //                             },
-    //                             {},
-    //                         ],
-    //                     ],
-    //                 },
-    //                 layout: 'noBorders',
-    //             },
-    //             {
-    //                 style: 'normal',
-    //                 table: {
-    //                     widths: ['*', '*'],
-    //                     body: [
-    //                         [{ text: 'Imenovana laboratorija:', bold: true }, { text: 'Čaljkušić d.o.o.', alignment: 'right' }],
-    //                         [{ text: 'Vlasnik/korisnik mjerila:', bold: true }, { text: '____________________', alignment: 'right' }],
-    //                         [{ text: 'Mjerilo predmet verifikacije:', bold: true }, { text: 'AMN', alignment: 'right' }],
-    //                         [{ text: 'Službena oznaka:', bold: true }, { text: 'BA D-8-1009', alignment: 'right' }],
-    //                         [{ text: 'Proizvođač:', bold: true }, { text: 'SEEBIT', alignment: 'right' }],
-    //                         [{ text: 'Tip:', bold: true }, { text: 'SEETAC S200, SEETAC K200', alignment: 'right' }],
-    //                         [{ text: 'Broj i datum zahtjeva inspekcije:', bold: true }, { text: '____________________', alignment: 'right' }],
-    //                     ],
-    //                 },
-    //                 layout: {
-    //                     hLineWidth: () => 1,
-    //                     vLineWidth: () => 0,
-    //                     hLineColor: () => '#000',
-    //                     paddingLeft: () => 4,
-    //                     paddingRight: () => 4,
-    //                     paddingTop: () => 4,
-    //                     paddingBottom: () => 4,
-    //                 },
-    //             },
-    //             {
-    //                 text: 'Metode i procedure:',
-    //                 style: 'normal',
-    //             },
-    //             {
-    //                 ul: [
-    //                     'Inspekcija automatskih mjerila nivoa tečnosti - AMN (RU-19.04.)',
-    //                     'Procedura za metode inspekcije (PR-19)',
-    //                 ],
-    //             },
-    //             {
-    //                 text: 'Korištena mjerna oprema:',
-    //                 style: 'normal',
-    //             },
-    //             {
-    //                 ul: [
-    //                     'Mjerna letva/ALMIO/162-2019',
-    //                     'Mjerna letva/ALMIO/0116-2016',
-    //                     'Data Logger/MSR Electronic/410379',
-    //                     'Termometar stakleni/Tlos Zagreb/212-2017',
-    //                 ],
-    //             },
-    //             {
-    //                 text: 'REZULTATI MJERENJA',
-    //                 style: 'header',
-    //                 margin: [0, 20],
-    //             },
-    //             {
-    //                 table: {
-    //                     widths: ['*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*'],
-    //                     body: [
-    //                         [
-    //                             { text: 'Proizvođač', style: 'tableHeader' },
-    //                             { text: 'Tip', style: 'tableHeader' },
-    //                             { text: 'Službena oznaka mjerila', style: 'tableHeader' },
-    //                             { text: 'Serijski broj', style: 'tableHeader' },
-    //                             { text: 'Broj mjerenja', style: 'tableHeader' },
-    //                             { text: 'Pokazivanje etalona (mm)', style: 'tableHeader' },
-    //                             { text: 'Pokazivanje AMN (mm)', style: 'tableHeader' },
-    //                             { text: 'Greška (mm)', style: 'tableHeader' },
-    //                             { text: 'GDG (mm)', style: 'tableHeader' },
-    //                             { text: 'T[ºC]', style: 'tableHeader' },
-    //                             { text: 'rH[%]', style: 'tableHeader' },
-    //                             { text: 'Provjera ispravnosti ugradnje', style: 'tableHeader' },
-    //                             { text: 'Provjera natpisa i oznaka', style: 'tableHeader' },
-    //                             { text: 'Provjera cjelovitosti i integriteta', style: 'tableHeader' },
-    //                             { text: 'Rezultati inspekcije', style: 'tableHeader' },
-    //                         ],
-    //                         ...inspectionResults.map(result => [
-    //                             'SEEBIT',
-    //                             'SEETAC S200, SEETAC K200',
-    //                             'BA D-8-1009',
-    //                             result.probe,
-    //                             '1, 2, 3',
-    //                             result.referenceResults.join(', '),
-    //                             result.amnResults.join(', '),
-    //                             result.errors.join(', '),
-    //                             '±4',
-    //                             result.temperature,
-    //                             result.humidity,
-    //                             result.installationCheck ? 'OK' : 'Nije OK',
-    //                             result.labelCheck ? 'OK' : 'Nije OK',
-    //                             result.integrityCheck ? 'OK' : 'Nije OK',
-    //                             result.inspectionResult ? 'Zadovoljava' : 'Ne zadovoljava',
-    //                         ]),
-    //                     ],
-    //                 },
-    //                 layout: {
-    //                     hLineWidth: () => 1,
-    //                     vLineWidth: () => 1,
-    //                     hLineColor: () => '#000',
-    //                     vLineColor: () => '#000',
-    //                     paddingLeft: () => 4,
-    //                     paddingRight: () => 4,
-    //                     paddingTop: () => 4,
-    //                     paddingBottom: () => 4,
-    //                 },
-    //             },
-    //             {
-    //                 text: '* Napomena: Ispunjavanje prvog uvjeta prilikom umjeravanja, da odstupanje mjerenja etalona mora biti unutar vrijednosti 1mm.',
-    //                 style: 'note',
-    //                 margin: [0, 10],
-    //             },
-    //             {
-    //                 text: 'M.P.',
-    //                 style: 'footer',
-    //                 alignment: 'center',
-    //                 margin: [0, 20],
-    //             },
-    //             {
-    //                 table: {
-    //                     widths: ['*', '*', '*'],
-    //                     body: [
-    //                         [
-    //                             { text: 'Mjeritelj: Marinko', style: 'footer' },
-    //                             { text: 'Tehnički rukovoditelj: Bruno', style: 'footer' },
-    //                             { text: 'Broj stranice', style: 'footer', alignment: 'center' },
-    //                         ],
-    //                     ],
-    //                 },
-    //                 layout: 'noBorders',
-    //             },
-    //             {
-    //                 text: 'Datum implementacije: 25.02.2022. Izdanje broj: 01 | Revizija broj: 04',
-    //                 style: 'normal',
-    //                 alignment: 'center',
-    //             },
-    //         ],
-    //         styles: {
-    //             header: { fontSize: 14, bold: true, margin: [0, 10, 0, 10] },
-    //             normal: { fontSize: 10, margin: [0, 5] },
-    //             tableHeader: { fillColor: '#f3f3f3', bold: true, fontSize: 9, margin: [0, 5] },
-    //             note: { fontSize: 9, italics: true, margin: [0, 10] },
-    //             footer: { fontSize: 10, margin: [0, 20] },
-    //         },
-    //     };
-
-    //     pdfMake.createPdf(documentDefinition).download('izvjestaj.pdf');
-    // };
-
-    
     const generatePDF = () => {
-        const doc = new jsPDF('l', 'mm', 'a4'); // Landscape orijentacija
-        const pageHeight = doc.internal.pageSize.height;
-    
-        // Funkcija za iscrtavanje headera u landscape orijentaciji
-        const drawHeader = () => {
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(14);
-            doc.text('Izvještaj o rezultatima inspekcije za automatska mjerila nivoa tečnosti - AMN', 148.5, 10, { align: 'center' });
-            
-            doc.setFontSize(10);
-            doc.text('Oznaka dokumenta: ZA -19.04/03', 287 - 10, 10, { align: 'right' });
-    
-            // Linija ispod headera
-            doc.setLineWidth(0.5);
-            doc.line(10, 15, 287 - 10, 15); 
-        };
-    
-        // Funkcija za unos osnovnih podataka
-        const drawInspectionDetails = () => {
-            doc.setFont("helvetica", "normal");
-            doc.setFontSize(10);
-            const details = [
-                'Imenovana laboratorija: Čaljkušić d.o.o.',
-                'Vlasnik/korisnik mjerila: <kupac>',
-                'Mjerilo predmet verifikacije: AMN',
-                'Službena oznaka: BA D-8-1009',
-                'Proizvođač: SEEBIT',
-                'Tip: SEETAC S200, SEETAC K200'
-            ];
-    
-            details.forEach((text, index) => {
-                doc.text(text, 10, 25 + index * 10);
-            });
-        };
-    
-        // Funkcija za unos metoda i procedure
-        const drawMethods = () => {
-            doc.text('Metode i procedure:', 10, 90);
-            doc.text('• Inspekcija automatskih mjerila nivoa tečnosti - AMN (RU-19.04.)', 20, 100);
-            doc.text('• Procedura za metode inspekcije (PR-19)', 20, 110);
-        };
-    
-        // Funkcija za unos korištene mjerne opreme
-        const drawEquipment = () => {
-            doc.text('Korištena mjerna oprema:', 10, 120);
-            const equipment = [
-                'Mjerna letva/ALMIO/162-2019',
-                'Mjerna letva/ALMIO/0116-2016',
-                'Data Logger/MSR Electronic/410379',
-                'Termometar stakleni/Tlos Zagreb/212-2017'
-            ];
-    
-            equipment.forEach((item, index) => {
-                doc.text(`• ${item}`, 20, 130 + index * 5);
-            });
-        };
-    
-        // Funkcija za unos tablice rezultata mjerenja
-        const addResults = (results) => {
-            doc.autoTable({
-                head: [['Proizvođač', 'Tip', 'Službena oznaka mjerila', 'Serijski broj', 'Broj mjerenja', 'Pokazivanje etalona (mm)', 'Pokazivanje AMN (mm)', 'Greška (mm)', 'GDG (mm)', 'T[ºC]', 'rH[%]', 'Provjera ispravnosti ugradnje', 'Provjera natpisa i oznaka', 'Provjera cjelovitosti i integriteta', 'Rezultati inspekcije']],
-                body: results.map(result => [
-                    'SEEBIT',
-                    'SEETAC S200, SEETAC K200',
-                    'BA D-8-1009',
-                    result.serialNumber,
-                    result.measureCount,
-                    result.referenceResults.join(', '),
-                    result.amnResults.join(', '),
-                    result.errors.join(', '),
-                    '±4',
-                    result.temperature,
-                    result.humidity,
-                    result.installationCheck ? '✓' : '✗',
-                    result.labelCheck ? '✓' : '✗',
-                    result.integrityCheck ? '✓' : '✗',
-                    result.inspectionResult ? 'Zadovoljava' : 'Ne zadovoljava',
-                ]),
-                startY: 150,
-                theme: 'grid',
-                styles: { 
-                    cellPadding: 2, 
-                    fontSize: 8, 
-                    halign: 'center',
-                    overflow: 'linebreak' 
+        const documentDefinition = {
+            pageSize: 'A4',
+            pageOrientation: 'landscape',
+            pageMargins: [40, 60, 40, 60],
+            header: {
+                table: {
+                    widths: ['25%', '55%', '20%'],
+                    body: [
+                        [
+                            { text: 'Logo', bold: true, alignment: 'center', rowSpan: 2 }, // Spajanje prvog stupca kroz dva reda
+                            { text: 'Izvještaj o rezultatima inspekcije za automatska mjerila nivoa tečnosti - AMN', alignment: 'center', rowSpan: 2 }, // Spajanje drugog stupca kroz dva reda
+                            { text: 'Oznaka dokumenta : ', alignment: 'center' } // Treći stupac
+                        ],
+                        [
+                            {}, // Prazna ćelija za prvi stupac
+                            {}, // Prazna ćelija za drugi stupac
+                            { text: 'ZA -19.04/03', alignment: 'center' } // Treći stupac
+                        ]
+                    ],
                 },
-                headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold' },
-                bodyStyles: { textColor: 50 },
-                columnStyles: {
-                    0: { cellWidth: 20 },
-                    1: { cellWidth: 30 },
-                    2: { cellWidth: 30 },
-                    3: { cellWidth: 25 },
-                    4: { cellWidth: 20 },
-                    5: { cellWidth: 25 },
-                    6: { cellWidth: 25 },
-                    7: { cellWidth: 20 },
-                    8: { cellWidth: 20 },
-                    9: { cellWidth: 15 },
-                    10: { cellWidth: 15 },
-                    11: { cellWidth: 25 },
-                    12: { cellWidth: 25 },
-                    13: { cellWidth: 25 },
-                    14: { cellWidth: 35 }
-                }
-            });
+                // layout: 'noBorders', // Postavi bez granica
+                margin: [20, 20], // Margine zaglavlja
+            },
+            content: [
+                // Dodaj informacije o laboratoriji
+                {
+                    style: 'normal',
+                    table: {
+                        widths: ['*', '*'],
+                        body: [
+                            [{ text: 'Imenovana laboratorija:', bold: true }, { text: 'Čaljkušić d.o.o.', alignment: 'left' }],
+                            [{ text: 'Vlasnik/korisnik mjerila:', bold: true }, { text: '<kupac>', alignment: 'left' }],
+                            [{ text: 'Mjerilo predmet verifikacije:', bold: true }, { text: 'AMN', alignment: 'left' }],
+                            [{ text: 'Službena oznaka:', bold: true }, { text: 'BA D-8-1009', alignment: 'left' }],
+                            [{ text: 'Proizvođač:', bold: true }, { text: 'SEEBIT', alignment: 'left' }],
+                            [{ text: 'Tip:', bold: true }, { text: 'SEETAC S200, SEETAC K200', alignment: 'left' }],
+                        ],
+                    },
+                },
+                // Dodaj metode i procedure
+                {
+                    text: 'Metode i procedure:',
+                    style: 'normal',
+                },
+                {
+                    ul: [
+                        'Inspekcija automatskih mjerila nivoa tečnosti - AMN (RU-19.04.)',
+                        'Procedura za metode inspekcije (PR-19)',
+                    ],
+                },
+                // Dodaj korišćenu mjerna oprema
+                {
+                    text: 'Korištena mjerna oprema:',
+                    style: 'normal',
+                },
+                {
+                    ul: [
+                        'Mjerna letva/ALMIO/162-2019',
+                        'Mjerna letva/ALMIO/0116-2016',
+                        'Data Logger/MSR Electronic/410379',
+                        'Termometar stakleni/Tlos Zagreb/212-2017',
+                    ],
+                },
+                // Rezultati mjerenja
+                {
+                    text: 'REZULTATI MJERENJA',
+                    style: 'header',
+                    margin: [0, 20],
+                },
+                {
+                    table: {
+                        widths: ['*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*'],
+                        body: [
+                            [
+                                { text: 'Proizvođač', style: 'tableHeader' },
+                                { text: 'Tip', style: 'tableHeader' },
+                                { text: 'Službena oznaka mjerila', style: 'tableHeader' },
+                                { text: 'Serijski broj', style: 'tableHeader' },
+                                { text: 'Broj mjerenja', style: 'tableHeader' },
+                                { text: 'Pokazivanje etalona (mm)', style: 'tableHeader' },
+                                { text: 'Pokazivanje AMN (mm)', style: 'tableHeader' },
+                                { text: 'Greška (mm)', style: 'tableHeader' },
+                                { text: 'GDG (mm)', style: 'tableHeader' },
+                                { text: 'T[ºC]', style: 'tableHeader' },
+                                { text: 'rH[%]', style: 'tableHeader' },
+                                { text: 'Provjera ispravnosti ugradnje', style: 'tableHeader' },
+                                { text: 'Provjera natpisa i oznaka', style: 'tableHeader' },
+                                { text: 'Provjera cjelovitosti i integriteta', style: 'tableHeader' },
+                                { text: 'Rezultati inspekcije', style: 'tableHeader' },
+                            ],
+                            ...inspectionResults.map(result => [
+                                'SEEBIT',
+                                'SEETAC S200, SEETAC K200',
+                                'BA D-8-1009',
+                                result.serialNumber,
+                                result.measureCount,
+                                result.referenceResults.join(', '),
+                                result.amnResults.join(', '),
+                                result.errors.join(', '),
+                                '±4',
+                                result.temperature,
+                                result.humidity,
+                                result.installationCheck ? 'OK' : 'Nije OK',
+                                result.labelCheck ? 'OK' : 'Nije OK',
+                                result.integrityCheck ? 'OK' : 'Nije OK',
+                                result.inspectionResult ? 'Zadovoljava' : 'Ne zadovoljava',
+                            ]),
+                        ],
+                    },
+                    layout: 'lightHorizontalLines', // koristi lagane horizontalne linije
+                },
+                // Napomena i potpisi
+                {
+                    text: '* Napomena: Ispunjavanje prvog uvjeta prilikom umjeravanja, da odstupanje mjerenja etalona mora biti unutar vrijednosti 1mm.',
+                    style: 'note',
+                    margin: [0, 10],
+                },
+                {
+                    text: 'M.P.',
+                    style: 'footer',
+                    alignment: 'center',
+                    margin: [0, 20],
+                },
+                {
+                    table: {
+                        widths: ['*', '*', '*'],
+                        body: [
+                            [
+                                { text: 'Mjeritelj: <ime mjeritelja>', style: 'footer' },
+                                { text: 'Tehnički rukovoditelj: Bruno', style: 'footer' },
+                                { text: 'Broj stranice', style: 'footer', alignment: 'center' },
+                            ],
+                        ],
+                    },
+                    layout: 'noBorders',
+                },
+                {
+                    text: 'Datum implementacije: 25.02.2022. Izdanje broj: 01 | Revizija broj: 04',
+                    style: 'normal',
+                    alignment: 'center',
+                },
+            ],
+            styles: {
+                header: { fontSize: 14, bold: true, margin: [0, 10, 0, 10] },
+                normal: { fontSize: 10, margin: [0, 5] },
+                tableHeader: { fillColor: '#f3f3f3', bold: true, fontSize: 9, margin: [0, 5] },
+                note: { fontSize: 9, italics: true, margin: [0, 10] },
+                footer: { fontSize: 10, margin: [0, 20] },
+            },
         };
     
-        // Napomena i potpisi
-        const drawFooter = () => {
-            doc.setFontSize(8);
-            doc.text('* Napomena: Ispunjavanje prvog uvjeta prilikom umjeravanja, da odstupanje mjerenja etalona mora biti unutar vrijednosti 1mm.', 10, doc.lastAutoTable.finalY + 10);
-            doc.text('Mjeritelj: <ime mjeritelja>', 10, doc.lastAutoTable.finalY + 30);
-            doc.text('Tehnički rukovoditelj: Bruno', 10, doc.lastAutoTable.finalY + 40);
-            doc.text('Datum implementacije: 25.02.2022. Izdanje broj: 01 | Revizija broj: 04', 148.5, pageHeight - 10, { align: 'center' });
-        };
-    
-        // Dodaj sve dijelove na PDF
-        drawHeader();
-        drawInspectionDetails();
-        drawMethods();
-        drawEquipment();
-        addResults(inspectionResults); // Preuzmi rezultate iz izvora podataka
-        drawFooter();
-    
-        // Spremi PDF
-        doc.save('AMN_rezultati_inspekcije.pdf');
+        pdfMake.createPdf(documentDefinition).download('izvjestaj.pdf');
     };
     
 
-
     return (
-        <div className="p-4" ref={componentRef}>
+        <div className="p-4">
             {/* <button onClick={handlePrint} className="mb-4 px-4 py-2 bg-blue-500 text-white rounded">
                 Štampaj Izvještaj
             </button> */}
