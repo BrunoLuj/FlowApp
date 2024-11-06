@@ -8,8 +8,6 @@ function InspectionResult() {
     const location = useLocation();
     const reportData = location.state?.reportData;
 
-    console.log(reportData)
-
     const [inspectionResults, setInspectionResults] = useState([]);
     const [showReport, setShowReport] = useState(false);
     const [editIndex, setEditIndex] = useState(null);
@@ -224,9 +222,7 @@ function InspectionResult() {
             const projectId = reportData.id;
             for (const result of inspectionResults) {
                 const resultWithProjectId = { ...result, projectId };
-                console.log("Saving result:", resultWithProjectId);
                 const response = await saveAllInspectionsResults(resultWithProjectId);
-                console.log("Response:", response);
 
                 if (!response.status === 201) {
                     console.error('Error details:', response.data); 

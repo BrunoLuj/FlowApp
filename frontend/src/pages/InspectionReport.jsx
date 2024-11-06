@@ -7,7 +7,6 @@ import pdfFonts from 'pdfmake/build/vfs_fonts';
 pdfMake.vfs = pdfFonts.pdfMake.vfs; // Ovo omogućava pdfMake da koristi fontove
 
 const InspectionReport = ({ reportData, inspectionResults }) => {
-    console.log(inspectionResults);
     const generatePDF = () => {
         const documentDefinition = {
             pageSize: 'A4',
