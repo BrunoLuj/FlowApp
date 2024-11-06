@@ -17,15 +17,16 @@ const InspectionReport = ({ reportData, inspectionResults }) => {
                     widths: ['25%', '55%', '20%'],
                     body: [
                         [
-                            { text: 'Logo', bold: true, rowSpan: 2, style: 'headerText' },
-                            { text: 'Izvještaj o rezultatima inspekcije za automatska mjerila nivoa tečnosti - AMN', style: 'headerText', rowSpan: 2 },
-                            { text: 'Oznaka dokumenta : ', alignment: 'center' }
+                            { text: 'Logo', bold: true, rowSpan: 2, style: 'headerText' }, // Spajanje prvog stupca kroz dva reda
+                            { text: 'Izvještaj o rezultatima inspekcije za automatska mjerila nivoa tečnosti - AMN', style: 'headerText', rowSpan: 2 }, // Spajanje drugog stupca kroz dva reda
+                            { text: 'Oznaka dokumenta : ', alignment: 'center' } // Treći stupac
                         ],
                         [
                             {}, // Prazna ćelija za prvi stupac
                             {}, // Prazna ćelija za drugi stupac
                             { text: 'ZA -19.04/03', alignment: 'center' } // Treći stupac
                         ],
+                        // Novi red ispod
                         [
                             { text: 'Broj izvještaja : <broj>', alignment: 'right' }, // Prvi stupac
                             {}, // Prazna ćelija za drugi stupac
@@ -34,7 +35,7 @@ const InspectionReport = ({ reportData, inspectionResults }) => {
                     ],
                 },
                 // layout: 'noBorders', // Postavi bez granica
-                margin: [40, 10], // Margine zaglavlja
+                margin: [40, 20], // Margine zaglavlja
             },
             content: [
                 // Dodaj informacije o laboratoriji
@@ -184,6 +185,27 @@ const InspectionReport = ({ reportData, inspectionResults }) => {
                     alignment: 'center',
                 },
             ],
+            footer: function(currentPage, pageCount) {
+                return {
+                    table: {
+                        widths: ['25%', '55%', '20%'],
+                        body: [
+                            [
+                                { text: 'Logo BATA', bold: true, rowSpan: 2, style: 'footerText', alignment: 'center' },
+                                { text: 'Datum implementacije: 25.02.2022.', style: 'footerText', alignment: 'center' },
+                                { text: 'Strana ' + currentPage + ' od ' + pageCount, alignment: 'right', rowSpan: 2, style: 'footerText', margin: [0, 20, 0, 0] }
+                            ],
+                            [
+                                {}, // Prazna ćelija za prvi stupac
+                                { text: 'Izdanje broj: 01 | Revizija broj: 04', style: 'footerText', alignment: 'center', marginBottom: 50 },
+                                {}
+                            ],
+                        ],
+                    },
+                    layout: 'noBorders', // Postavi bez granica
+                    margin: [40, 0], // Margine zaglavlja
+                };
+            },
             styles: {
                 header: { fontSize: 14, bold: true, margin: [0, 10, 0, 10] },
                 normal: { fontSize: 10, margin: [0, 5] },
@@ -195,6 +217,13 @@ const InspectionReport = ({ reportData, inspectionResults }) => {
                     bold: true,
                     alignment: 'center',
                     margin: [0, 10], // Razmak od 10 pikseli sa vrha i dna
+                    // Opcionalno, dodajte padding ako je potrebno
+                    // padding: [10, 0], // Razmak od 10 pikseli sa vrha i dna (samo za vizuelni efekat)
+                },
+                footerText: {
+                    fontSize: 8,
+                    bold: false,
+                    margin: [0, 0], // Razmak od 10 pikseli sa vrha i dna
                     // Opcionalno, dodajte padding ako je potrebno
                     // padding: [10, 0], // Razmak od 10 pikseli sa vrha i dna (samo za vizuelni efekat)
                 },
