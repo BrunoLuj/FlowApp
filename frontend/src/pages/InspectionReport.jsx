@@ -29,15 +29,15 @@ const InspectionReport = ({ reportData, inspectionResults }) => {
                         ],
                         // Novi red ispod
                         [
-                            { text: 'Broj izvještaja : <broj>', bold: true, alignment: 'left', fontSize: 10,  border: [false, false, false, false] }, // Prvi stupac
-                            { text: 'Osoba odgovorna za vođenje aktivnosti: Rukovoditelj IT', bold: true, alignment: 'right', fontSize: 10, colSpan: 2, border: [false, false, false, false]  }, // Treći stupac
+                            { text: 'Broj izvještaja : <broj>', bold: true, alignment: 'left', fontSize: 8,  border: [false, false, false, false] }, // Prvi stupac
+                            { text: 'Osoba odgovorna za vođenje aktivnosti: Rukovoditelj IT', bold: true, alignment: 'right', fontSize: 8, colSpan: 2, border: [false, false, false, false]  }, // Treći stupac
                             {}, // Prazna ćelija za drugi stupac
                         ],
                     ],
 
                 },
                 // layout: 'noBorders', // Postavi bez granica
-                margin: [40, 5], // Margine zaglavlja
+                margin: [40, 8], // Margine zaglavlja
             },
             content: [
                 // Dodaj informacije o laboratoriji
@@ -270,29 +270,27 @@ const InspectionReport = ({ reportData, inspectionResults }) => {
                     margin: [0, 10],
                 },
                 {
+                    table: {
+                        widths: ['15%', '30%', '25%', '30%'], // Širine stupaca
+                        body: [
+                            [
+                                { text: 'Mjeritelj: ', style: 'footer', alignment: 'right', border: [false, false, false, false], margin: [0,0,0,0],  },
+                                { text: ' <ime mjeritelja>', style: 'footer', alignment: 'center', border: [false, false, false, true], margin: [0,0,0,0]   },
+                                { text: 'Tehnički rukovoditelj:', style: 'footer', alignment: 'right', border: [false, false, false, false], margin: [0,0,0,0]   }, // Prazna ćelija
+                                { text: 'Bruno', style: 'footer', alignment: 'center', border: [false, false, false, true], margin: [0,0,0,0]  }  // Prazna ćelija
+                            ],
+                        ],
+                    },
+                    // layout: 'noBorders', // Bez granica između ćelija
+                    margin: [40, 50] // Razmak oko tabele
+                },
+                {
                     text: 'M.P.',
                     style: 'footer',
                     alignment: 'center',
                     margin: [0, 20],
                 },
-                {
-                    table: {
-                        widths: ['*', '*', '*'],
-                        body: [
-                            [
-                                { text: 'Mjeritelj: <ime mjeritelja>', style: 'footer' },
-                                { text: 'Tehnički rukovoditelj: Bruno', style: 'footer' },
-                                { text: 'Broj stranice', style: 'footer', alignment: 'center' },
-                            ],
-                        ],
-                    },
-                    layout: 'noBorders',
-                },
-                {
-                    text: 'Datum implementacije: 25.02.2022. Izdanje broj: 01 | Revizija broj: 04',
-                    style: 'normal',
-                    alignment: 'center',
-                },
+
             ],
             footer: function(currentPage, pageCount) {
                 return {
