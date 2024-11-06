@@ -17,34 +17,68 @@ const InspectionReport = ({ reportData, inspectionResults }) => {
                     widths: ['25%', '55%', '20%'],
                     body: [
                         [
-                            { text: 'Logo', bold: true, alignment: 'center', rowSpan: 2 }, // Spajanje prvog stupca kroz dva reda
-                            { text: 'Izvještaj o rezultatima inspekcije za automatska mjerila nivoa tečnosti - AMN', alignment: 'center', rowSpan: 2 }, // Spajanje drugog stupca kroz dva reda
-                            { text: 'Oznaka dokumenta : ', alignment: 'center' } // Treći stupac
+                            { text: 'Logo', bold: true, rowSpan: 2, style: 'headerText' },
+                            { text: 'Izvještaj o rezultatima inspekcije za automatska mjerila nivoa tečnosti - AMN', style: 'headerText', rowSpan: 2 },
+                            { text: 'Oznaka dokumenta : ', alignment: 'center' }
                         ],
                         [
                             {}, // Prazna ćelija za prvi stupac
                             {}, // Prazna ćelija za drugi stupac
                             { text: 'ZA -19.04/03', alignment: 'center' } // Treći stupac
+                        ],
+                        [
+                            { text: 'Broj izvještaja : <broj>', alignment: 'right' }, // Prvi stupac
+                            {}, // Prazna ćelija za drugi stupac
+                            { text: 'Osoba odgovorna za vođenje aktivnosti: Rukovoditelj IT', alignment: 'right' } // Treći stupac
                         ]
                     ],
                 },
                 // layout: 'noBorders', // Postavi bez granica
-                margin: [20, 20], // Margine zaglavlja
+                margin: [40, 10], // Margine zaglavlja
             },
             content: [
                 // Dodaj informacije o laboratoriji
                 {
                     style: 'normal',
                     table: {
-                        widths: ['*', '*'],
+                        widths: ['20%', '80%'],
                         body: [
-                            [{ text: 'Imenovana laboratorija:', bold: true }, { text: 'Čaljkušić d.o.o.', alignment: 'left' }],
+                            [{ text: 'Imenovana laboratorija:', bold: true }, { text: 'IT Čaljkušić d.o.o.', alignment: 'center' }],
                             [{ text: 'Vlasnik/korisnik mjerila:', bold: true }, { text: '<kupac>', alignment: 'left' }],
                             [{ text: 'Mjerilo predmet verifikacije:', bold: true }, { text: 'AMN', alignment: 'left' }],
                             [{ text: 'Službena oznaka:', bold: true }, { text: 'BA D-8-1009', alignment: 'left' }],
                             [{ text: 'Proizvođač:', bold: true }, { text: 'SEEBIT', alignment: 'left' }],
                             [{ text: 'Tip:', bold: true }, { text: 'SEETAC S200, SEETAC K200', alignment: 'left' }],
                         ],
+                    },
+                    layout: {
+                        hLineWidth: (i, node) => {
+                            // Prvi red sa granicom
+                            if (i === 1 || i === 6) return 1; // Horizontalne linije za prve 4 reda
+                            return 0; // Uklanja horizontalne linije za ostale redove
+                        },
+                        vLineWidth: (i, node) => {
+                            // Granice između kolona
+                            return (i === 0) ? 0 : 0; // Prva vertikalna linija (između prvog i drugog stupca)
+                        },
+                        hLineColor: (i, node) => {
+                            return 'black'; // Boja horizontalnih linija
+                        },
+                        vLineColor: (i, node) => {
+                            return 'black'; // Boja vertikalnih linija
+                        },
+                        paddingLeft: (i, node) => {
+                            return 5; // Padding sa leve strane
+                        },
+                        paddingRight: (i, node) => {
+                            return 5; // Padding sa desne strane
+                        },
+                        paddingTop: (i, node) => {
+                            return 10; // Padding sa vrha
+                        },
+                        paddingBottom: (i, node) => {
+                            return 5; // Padding sa dna
+                        },
                     },
                 },
                 // Dodaj metode i procedure
@@ -156,6 +190,14 @@ const InspectionReport = ({ reportData, inspectionResults }) => {
                 tableHeader: { fillColor: '#f3f3f3', bold: true, fontSize: 9, margin: [0, 5] },
                 note: { fontSize: 9, italics: true, margin: [0, 10] },
                 footer: { fontSize: 10, margin: [0, 20] },
+                headerText: {
+                    fontSize: 14,
+                    bold: true,
+                    alignment: 'center',
+                    margin: [0, 10], // Razmak od 10 pikseli sa vrha i dna
+                    // Opcionalno, dodajte padding ako je potrebno
+                    // padding: [10, 0], // Razmak od 10 pikseli sa vrha i dna (samo za vizuelni efekat)
+                },
             },
         };
     
