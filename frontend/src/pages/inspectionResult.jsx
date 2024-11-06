@@ -15,9 +15,9 @@ function InspectionResult() {
     const [editIndex, setEditIndex] = useState(null);
     const [newResult, setNewResult] = useState({
         probe: '',
-        manufacturer: '',
-        type: '',
-        officialLabel: '',
+        manufacturer: 'SEEBIT',
+        type: 'SEETAC S200, SEETAC K200',
+        officialLabel: 'BA D-8-1009',
         referenceResults: ['', '', ''],
         amnResults: ['', '', ''],
         errors: ['', '', ''],
