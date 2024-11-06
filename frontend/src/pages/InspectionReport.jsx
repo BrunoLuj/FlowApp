@@ -7,6 +7,7 @@ import pdfFonts from 'pdfmake/build/vfs_fonts';
 pdfMake.vfs = pdfFonts.pdfMake.vfs; // Ovo omogućava pdfMake da koristi fontove
 
 const InspectionReport = ({ reportData, inspectionResults }) => {
+    console.log(inspectionResults);
     const generatePDF = () => {
         const documentDefinition = {
             pageSize: 'A4',
@@ -17,45 +18,141 @@ const InspectionReport = ({ reportData, inspectionResults }) => {
                     widths: ['25%', '55%', '20%'],
                     body: [
                         [
-                            { text: 'Logo', bold: true, rowSpan: 2, style: 'headerText' }, // Spajanje prvog stupca kroz dva reda
-                            { text: 'Izvještaj o rezultatima inspekcije za automatska mjerila nivoa tečnosti - AMN', style: 'headerText', rowSpan: 2 }, // Spajanje drugog stupca kroz dva reda
-                            { text: 'Oznaka dokumenta : ', alignment: 'center' } // Treći stupac
+                            { text: 'Logo', bold: true, rowSpan: 2, style: 'headerText', fontSize: 12, }, // Spajanje prvog stupca kroz dva reda
+                            { text: 'Izvještaj o rezultatima inspekcije za automatska mjerila nivoa tečnosti - AMN', fontSize: 12, style: 'headerText', rowSpan: 2 }, // Spajanje drugog stupca kroz dva reda
+                            { text: 'Oznaka dokumenta : ', alignment: 'center', fontSize: 10, } // Treći stupac
                         ],
                         [
                             {}, // Prazna ćelija za prvi stupac
                             {}, // Prazna ćelija za drugi stupac
-                            { text: 'ZA -19.04/03', alignment: 'center' } // Treći stupac
+                            { text: 'ZA -19.04/03', alignment: 'center', fontSize: 10, } // Treći stupac
                         ],
                         // Novi red ispod
                         [
-                            { text: 'Broj izvještaja : <broj>', alignment: 'right' }, // Prvi stupac
+                            { text: 'Broj izvještaja : <broj>', bold: true, alignment: 'left', fontSize: 10,  border: [false, false, false, false] }, // Prvi stupac
+                            { text: 'Osoba odgovorna za vođenje aktivnosti: Rukovoditelj IT', bold: true, alignment: 'right', fontSize: 10, colSpan: 2, border: [false, false, false, false]  }, // Treći stupac
                             {}, // Prazna ćelija za drugi stupac
-                            { text: 'Osoba odgovorna za vođenje aktivnosti: Rukovoditelj IT', alignment: 'right' } // Treći stupac
-                        ]
+                        ],
                     ],
+
                 },
                 // layout: 'noBorders', // Postavi bez granica
-                margin: [40, 20], // Margine zaglavlja
+                margin: [40, 5], // Margine zaglavlja
             },
             content: [
                 // Dodaj informacije o laboratoriji
                 {
                     style: 'normal',
                     table: {
-                        widths: ['20%', '80%'],
+                        widths: ['25%','75%'],
                         body: [
                             [{ text: 'Imenovana laboratorija:', bold: true }, { text: 'IT Čaljkušić d.o.o.', alignment: 'center' }],
-                            [{ text: 'Vlasnik/korisnik mjerila:', bold: true }, { text: '<kupac>', alignment: 'left' }],
+                            [{ text: 'Vlasnik/korisnik mjerila:', bold: true, margin: [0, 10, 0, 0] }, { text: '<kupac>', alignment: 'left', margin: [0, 10, 0, 0] }],
                             [{ text: 'Mjerilo predmet verifikacije:', bold: true }, { text: 'AMN', alignment: 'left' }],
                             [{ text: 'Službena oznaka:', bold: true }, { text: 'BA D-8-1009', alignment: 'left' }],
                             [{ text: 'Proizvođač:', bold: true }, { text: 'SEEBIT', alignment: 'left' }],
                             [{ text: 'Tip:', bold: true }, { text: 'SEETAC S200, SEETAC K200', alignment: 'left' }],
+                            [{ text: 'Broj i datum zahtjeva inspekcije:', bold: true }, { text: '<broj>       <dpz>', alignment: 'left' }],
+                            [{ text: 'Metode i procedure:', bold: true },{ text: 'Inspekcija automatskih mjerila nivoa tečnosti - AMN (RU-19.04.)', alignment: 'left' }],
+                            [{ text: '', bold: true },{ text: 'Procedura za metode inspekcije (PR-19)', alignment: 'left' }],
                         ],
                     },
                     layout: {
                         hLineWidth: (i, node) => {
                             // Prvi red sa granicom
-                            if (i === 1 || i === 6) return 1; // Horizontalne linije za prve 4 reda
+                            if (i === 1 || i === 9) return 1; // Horizontalne linije za prve 4 reda
+                            return 0; // Uklanja horizontalne linije za ostale redove
+                        },
+                        vLineWidth: (i, node) => {
+                            // Granice između kolona
+                            return (i === 0) ? 0 : 0; // Prva vertikalna linija (između prvog i drugog stupca)
+                        },
+                        hLineColor: (i, node) => {
+                            return 'black'; // Boja horizontalnih linija
+                        },
+                        vLineColor: (i, node) => {
+                            return 'black'; // Boja vertikalnih linija
+                        },
+                        paddingLeft: (i, node) => {
+                            return 5; // Padding sa leve strane
+                        },
+                        paddingRight: (i, node) => {
+                            return 5; // Padding sa desne strane
+                        },
+                        paddingTop: (i, node) => {
+                            return 10; // Padding sa vrha
+                        },
+                        paddingBottom: (i, node) => {
+                            return 5; // Padding sa dna
+                        },
+                    },
+                    margin: [0, 30], // Razmak iznad tabele
+                },
+                // Korišćena mjerna oprema
+                {
+                    style: 'normal',
+                    table: {
+                        widths: ['25%', '75%'],
+                        body: [
+                            [
+                                { text: 'Korištena mjerna oprema:', bold: true,  margin: [5, 0], },
+                                {
+                                    ol: [
+                                        'Mjerna letva/ALMIO/162-2019',
+                                        'Mjerna letva/ALMIO/0116-2016',
+                                        'Data Logger/MSR Electronic/410379',
+                                        'Termometar stakleni/Tlos Zagreb/212-2017',
+                                    ],
+                                    margin: [0, 0, 0, 20], // Ukloni margine
+                                }
+                            ],
+                        ],
+                    },
+                    layout: {
+                        hLineWidth: (i, node) => {
+                            // Prvi red sa granicom
+                            if (i === 1) return 1; // Horizontalne linije za prve 4 reda
+                            return 0; // Uklanja horizontalne linije za ostale redove
+                        },
+                        vLineWidth: (i, node) => {
+                            // Granice između kolona
+                            return (i === 0) ? 0 : 0; // Prva vertikalna linija (između prvog i drugog stupca)
+                        },
+                        hLineColor: (i, node) => {
+                            return 'black'; // Boja horizontalnih linija
+                        },
+                        vLineColor: (i, node) => {
+                            return 'black'; // Boja vertikalnih linija
+                        },
+                        paddingLeft: (i, node) => {
+                            return 5; // Padding sa leve strane
+                        },
+                        paddingRight: (i, node) => {
+                            return 5; // Padding sa desne strane
+                        },
+                        paddingTop: (i, node) => {
+                            return 10; // Padding sa vrha
+                        },
+                        paddingBottom: (i, node) => {
+                            return 5; // Padding sa dna
+                        },
+                    },
+                    margin: [0, 0, 0, 40], // Razmak iznad tabele
+                },
+                // Rezultati mjerenja
+                 // Dodaj informacije o laboratoriji
+                 {
+                    style: 'resultHeader',
+                    table: {
+                        widths: ['100%'],
+                        body: [
+                            [{ text: 'REZULTATI MJERENJA:', bold: true }],
+                        ],
+                    },
+                    layout: {
+                        hLineWidth: (i, node) => {
+                            // Prvi red sa granicom
+                            if (i === 1) return 1; // Horizontalne linije za prve 4 reda
                             return 0; // Uklanja horizontalne linije za ostale redove
                         },
                         vLineWidth: (i, node) => {
@@ -82,78 +179,90 @@ const InspectionReport = ({ reportData, inspectionResults }) => {
                         },
                     },
                 },
-                // Dodaj metode i procedure
-                {
-                    text: 'Metode i procedure:',
-                    style: 'normal',
-                },
-                {
-                    ul: [
-                        'Inspekcija automatskih mjerila nivoa tečnosti - AMN (RU-19.04.)',
-                        'Procedura za metode inspekcije (PR-19)',
-                    ],
-                },
-                // Dodaj korišćenu mjerna oprema
-                {
-                    text: 'Korištena mjerna oprema:',
-                    style: 'normal',
-                },
-                {
-                    ul: [
-                        'Mjerna letva/ALMIO/162-2019',
-                        'Mjerna letva/ALMIO/0116-2016',
-                        'Data Logger/MSR Electronic/410379',
-                        'Termometar stakleni/Tlos Zagreb/212-2017',
-                    ],
-                },
-                // Rezultati mjerenja
-                {
-                    text: 'REZULTATI MJERENJA',
-                    style: 'header',
-                    margin: [0, 20],
-                },
                 {
                     table: {
-                        widths: ['*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*'],
+                        widths: ['6%', '9%', '8%', '8%', '*', '7%', '5%', '*', '*', '5%', '5%', '*', '*', '*', '*'],
                         body: [
+                            // Glava tabele
                             [
-                                { text: 'Proizvođač', style: 'tableHeader' },
-                                { text: 'Tip', style: 'tableHeader' },
-                                { text: 'Službena oznaka mjerila', style: 'tableHeader' },
-                                { text: 'Serijski broj', style: 'tableHeader' },
-                                { text: 'Broj mjerenja', style: 'tableHeader' },
-                                { text: 'Pokazivanje etalona (mm)', style: 'tableHeader' },
-                                { text: 'Pokazivanje AMN (mm)', style: 'tableHeader' },
-                                { text: 'Greška (mm)', style: 'tableHeader' },
-                                { text: 'GDG (mm)', style: 'tableHeader' },
-                                { text: 'T[ºC]', style: 'tableHeader' },
-                                { text: 'rH[%]', style: 'tableHeader' },
-                                { text: 'Provjera ispravnosti ugradnje', style: 'tableHeader' },
-                                { text: 'Provjera natpisa i oznaka', style: 'tableHeader' },
-                                { text: 'Provjera cjelovitosti i integriteta', style: 'tableHeader' },
-                                { text: 'Rezultati inspekcije', style: 'tableHeader' },
+                                { text: 'Proizvođač', style: 'tableHeader', fontSize: '7', alignment: 'center', margin: [0, 15] }, // Margin top i bottom
+                                { text: 'Tip', style: 'tableHeader', fontSize: '7' , alignment: 'center' , margin: [0, 15] },
+                                { text: 'Službena oznaka mjerila', style: 'tableHeader', fontSize: '7', alignment: 'center' ,},
+                                { text: 'Serijski broj', style: 'tableHeader', fontSize: '7' , alignment: 'center' , margin: [0, 15]},
+                                { text: 'Broj mjerenja', style: 'tableHeader', fontSize: '7', alignment: 'center',  },
+                                { text: 'Pokazivanje etalona (mm)', style: 'tableHeader', fontSize: '7', alignment: 'center', },
+                                { text: 'Pokazivanje AMN (mm)', style: 'tableHeader', fontSize: '7', alignment: 'center', },
+                                { text: 'Greška (mm)', style: 'tableHeader', fontSize: '7', alignment: 'center', margin: [0, 15]  },
+                                { text: 'GDG (mm)', style: 'tableHeader', fontSize: '7' , alignment: 'center', margin: [0, 15] },
+                                { text: 'T[ºC]', style: 'tableHeader', fontSize: '7', alignment: 'center' , margin: [0, 15] },
+                                { text: 'rH[%]', style: 'tableHeader', fontSize: '7' , alignment: 'center', margin: [0, 15] },
+                                { text: 'Provjera ispravnosti ugradnje', style: 'tableHeader', fontSize: '7', alignment: 'center', },
+                                { text: 'Provjera natpisa i oznaka', style: 'tableHeader', fontSize: '7', alignment: 'center', },
+                                { text: 'Provjera cjelovitosti i integriteta', style: 'tableHeader', fontSize: '7' , alignment: 'center', },
+                                { text: 'Rezultati inspekcije', style: 'tableHeader', fontSize: '7', alignment: 'center',  },
                             ],
-                            ...inspectionResults.map(result => [
-                                'SEEBIT',
-                                'SEETAC S200, SEETAC K200',
-                                'BA D-8-1009',
-                                result.serialNumber,
-                                result.measureCount,
-                                result.referenceResults.join(', '),
-                                result.amnResults.join(', '),
-                                result.errors.join(', '),
-                                '±4',
-                                result.temperature,
-                                result.humidity,
-                                result.installationCheck ? 'OK' : 'Nije OK',
-                                result.labelCheck ? 'OK' : 'Nije OK',
-                                result.integrityCheck ? 'OK' : 'Nije OK',
-                                result.inspectionResult ? 'Zadovoljava' : 'Ne zadovoljava',
-                            ]),
+                            // Redovi sa rezultatima
+                            ...inspectionResults.flatMap(result => {
+                                // Izlazni niz za sve redove
+                                const rows = [];
+
+                                // Proverimo da li imamo dovoljno rezultata
+                                const measurementCount = Math.min(3, result.referenceResults.length, result.amnResults.length, result.errors.length);
+
+                                // Dodavanje zajedničkih podataka samo jednom
+                                const commonDataRow = [
+                                    { text: result.manufacturer || '', rowSpan: measurementCount, margin: [0, 15] }, // Proizvođač
+                                    { text: result.type || '', rowSpan: measurementCount, margin: [0, 8] }, // Tip
+                                    { text: result.officialLabel || '', rowSpan: measurementCount, margin: [0, 15] }, // Službena oznaka
+                                    { text: result.probe || '', rowSpan: measurementCount, margin: [0, 15] }, // Serijski broj
+                                ];
+
+                                // Iteriramo kroz rezultate i dodajemo ih u niz redova
+                                for (let i = 0; i < measurementCount; i++) {
+                                    if (i === 0) {
+                                        // Prvi red dobija zajedničke podatke
+                                        rows.push([...commonDataRow, i + 1,
+                                            result.referenceResults[i] || '', // Pokazivanje etalona
+                                            result.amnResults[i] || '', // Pokazivanje AMN
+                                            result.errors[i] || '', // Greška
+                                            '±4', // Max greška
+                                            { text: result.temperature || '', rowSpan: measurementCount, margin: [0, 15] }, // T[ºC] sa rowSpan
+                                            { text: result.humidity || '', rowSpan: measurementCount, margin: [0, 15] }, // rH[%] sa rowSpan
+                                            { text: result.installationCheck ? 'DA' : 'NE', alignment: 'center', rowSpan: measurementCount, margin: [0, 15] }, // Provjera ispravnosti sa rowSpan
+                                            { text: result.labelCheck ? 'DA' : 'NE', alignment: 'center', rowSpan: measurementCount, margin: [0, 15] }, // Provjera natpisa sa rowSpan
+                                            { text: result.integrityCheck ? 'DA' : 'NE', alignment: 'center', rowSpan: measurementCount, margin: [0, 15] }, // Provjera integriteta sa rowSpan
+                                            { text: result.inspectionResult ? 'DA' : 'NE', alignment: 'center', rowSpan: measurementCount, margin: [0, 15] } // Rezultati inspekcije sa rowSpan
+                                        ]);
+                                    } else {
+                                        // Za sledeće redove dodajemo samo rezultate
+                                        rows.push([
+                                            '', // Proizvođač ostaje prazan
+                                            '', // Tip ostaje prazan
+                                            '', // Službena oznaka ostaje prazna
+                                            '', // Serijski broj ostaje prazan
+                                            i + 1, // Broj mjerenja
+                                            result.referenceResults[i] || '', // Pokazivanje etalona
+                                            result.amnResults[i] || '', // Pokazivanje AMN
+                                            result.errors[i] || '', // Greška
+                                            '±4', // Max greška
+                                            '', // T[ºC] ostaje prazno
+                                            '', // rH[%] ostaje prazno
+                                            '', // Provjera ispravnosti ostaje prazna
+                                            '', // Provjera natpisa ostaje prazna
+                                            '', // Provjera integriteta ostaje prazna
+                                            '' // Rezultati inspekcije ostaje prazno
+                                        ]);
+                                    }
+                                }
+
+                                return rows; // Vratimo sve redove
+                            }),
                         ],
                     },
                     layout: 'lightHorizontalLines', // koristi lagane horizontalne linije
+                    style: 'result',
                 },
+
                 // Napomena i potpisi
                 {
                     text: '* Napomena: Ispunjavanje prvog uvjeta prilikom umjeravanja, da odstupanje mjerenja etalona mora biti unutar vrijednosti 1mm.',
@@ -208,15 +317,14 @@ const InspectionReport = ({ reportData, inspectionResults }) => {
             },
             styles: {
                 header: { fontSize: 14, bold: true, margin: [0, 10, 0, 10] },
-                normal: { fontSize: 10, margin: [0, 5] },
+                normal: { fontSize: 11, margin: [0, 5] },
                 tableHeader: { fillColor: '#f3f3f3', bold: true, fontSize: 9, margin: [0, 5] },
-                note: { fontSize: 9, italics: true, margin: [0, 10] },
+                note: { fontSize: 8, italics: true, margin: [0, 10] },
                 footer: { fontSize: 10, margin: [0, 20] },
                 headerText: {
-                    fontSize: 14,
                     bold: true,
                     alignment: 'center',
-                    margin: [0, 10], // Razmak od 10 pikseli sa vrha i dna
+                    // margin: [0, 10], // Razmak od 10 pikseli sa vrha i dna
                     // Opcionalno, dodajte padding ako je potrebno
                     // padding: [10, 0], // Razmak od 10 pikseli sa vrha i dna (samo za vizuelni efekat)
                 },
@@ -227,9 +335,28 @@ const InspectionReport = ({ reportData, inspectionResults }) => {
                     // Opcionalno, dodajte padding ako je potrebno
                     // padding: [10, 0], // Razmak od 10 pikseli sa vrha i dna (samo za vizuelni efekat)
                 },
+                result: {
+                    fontSize: 8,
+                    bold: false,
+                    alignment: 'center',
+                    border:[false, false, true, false]
+                    // Opcionalno, dodajte padding ako je potrebno
+                    // padding: [10, 0], // Razmak od 10 pikseli sa vrha i dna (samo za vizuelni efekat)
+                },
+                resultHeader: {
+                    fontSize: 11,
+                    bold: false,
+                    alignment: 'center',
+                    border:[false, false, true, false],
+                    fillColor: '#f3f3f3',
+                    // Opcionalno, dodajte padding ako je potrebno
+                    // padding: [10, 0], // Razmak od 10 pikseli sa vrha i dna (samo za vizuelni efekat)
+                },
+                
             },
         };
     
+        // console.log(JSON.stringify(documentDefinition, null, 2));
         pdfMake.createPdf(documentDefinition).download('izvjestaj.pdf');
     };
     

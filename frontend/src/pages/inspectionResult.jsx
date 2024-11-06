@@ -184,9 +184,9 @@ function InspectionResult() {
     const resetNewResult = () => {
         setNewResult({
             probe: '',
-            manufacturer: '',
-            type: '',
-            officialLabel: '',
+            manufacturer: 'SEEBIT',
+            type: 'SEETAC S200, SEETAC K200',
+            officialLabel: 'BA D-8-1009',
             referenceResults: ['', '', ''],
             amnResults: ['', '', ''],
             errors: ['', '', ''],
