@@ -26,18 +26,36 @@ const ClientForm = () => {
         idbroj: client.idbroj || '',
         pdvbroj: client.pdvbroj || '',
         sttn_broj: client.sttn_broj || '',
-        status: client.status ,
+        status: false,
+        description: client.description || '',
+        logo: null // Postavljamo logo na null
         // startDate: formatDate(client.created_at),
         // end_date: formatDate(client.end_date),
     });
 
-    console.log(formData);
+    const [logoPreview, setLogoPreview] = useState(null); // State for logo preview
 
     const handleChange = (e) => {
         const { name, value } = e.target;
+
         if (name === 'status') {
-            // Convert the selected value to boolean
             setFormData({ ...formData, [name]: value === 'Active' });
+        } else if (name === 'logo') {
+            const file = e.target.files[0];
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    // Postavljamo logo kao binarni string
+                    setFormData(prev => ({ ...prev, logo: reader.result }));
+                    setLogoPreview(reader.result); // Postavljamo prethodni logo
+                };
+                reader.readAsDataURL(file); // Čitamo datoteku kao Data URL
+            } else {
+                // Ako se ne izabere datoteka, resetujemo prethodni logo
+                setLogoPreview(null);
+                setFormData(prev => ({ ...prev, logo: null })); // Postavljamo logo na null
+            }
         } else {
             setFormData({ ...formData, [name]: value });
         }
@@ -45,8 +63,17 @@ const ClientForm = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // Logiku za slanje podataka kao JSON
+        const dataToSubmit = {
+            ...formData,
+            logo: formData.logo // Uključujemo logo, koji je sada binarni string
+        };
+
+        console.log("Data to submit:", JSON.stringify(dataToSubmit));
+
         try {
-            await saveClient(formData);
+            await saveClient(dataToSubmit); // Pošaljemo JSON na API
             toast.success("Client saved successfully!");
             navigate('/clients');
         } catch (error) {
@@ -84,6 +111,26 @@ const ClientForm = () => {
                     
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-16">
+
+                    {/* Logo Preview or Existing Logo */}
+                    <div className="col-span-1 md:col-span-2 mt-4 flex justify-center">
+                        {logoPreview ? (
+                            <img 
+                                src={logoPreview} // Preview of the newly uploaded logo
+                                alt="Logo Preview" 
+                                className="max-w-[300px] max-h-[200px] w-auto h-auto rounded-lg border border-gray-300 mt-2" 
+                            />
+                        ) : client.logo ? (
+                            <img 
+                                src={client.logo} // Display the existing logo from the client data
+                                alt="Client Logo" 
+                                className="max-w-[300px] max-h-[200px] w-auto h-auto rounded-lg border border-gray-300 mt-2"
+                            />
+                        ) : (
+                            <span>No logo available</span> // Inform user that no logo is available
+                        )}
+                    </div>
+
                         <div>
                             <label className="block text-gray-700 font-medium mb-2">Naziv Kompanije:</label>
                             <input 
@@ -96,6 +143,20 @@ const ClientForm = () => {
                             />
                             {/* readOnly --- ako ne zelis da se moze editirati input  */}
                         </div>
+
+                        <div>
+                            <label className="block text-gray-700 font-medium mb-2">Logo:</label>
+                            <input 
+                                type="file" 
+                                name="logo" 
+                                onChange={handleChange} 
+                                accept="image/*" 
+                                disabled={!permissions.includes('create_clients')}
+                                className={`w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-300 ${!permissions.includes('create_clients') ? 'bg-gray-200' : ''}`}
+                            />
+                        </div>
+
+                     
 
                         <div>
                             <label className="block text-gray-700 font-medium mb-2">Address:</label>
