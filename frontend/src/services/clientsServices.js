@@ -4,6 +4,10 @@ export const getClients = async () => {
     return await api.get("/clients/");
 };
 
+export const getClient = async (clientId) => {
+    return await api.get(`/clients/${clientId}`);
+};
+
 export const saveClient = async (clientData) => {
     console.log(clientData);
     if (clientData.id) {

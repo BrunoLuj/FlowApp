@@ -22,6 +22,39 @@ export const getClients = async (req, res) => {
     }
 };
 
+export const getClient = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        // Fetch the client data by ID from the model
+        const client = await clientsModel.getClientById(id);
+
+        // If no client is found, return a 404 error
+        if (!client) {
+            return res.status(404).json({ error: 'Client not found' });
+        }
+
+        // Check and convert the logo to base64 if it exists
+        if (client.logo) {
+            try {
+                // Convert binary logo data to base64 string and prepend the image type
+                const base64Logo = client.logo.toString('base64');
+                client.logo = `data:image/png;base64,${base64Logo}`;
+            } catch (logoError) {
+                console.error(`Error converting logo for client ${client.id}:`, logoError);
+                client.logo = null; // Set logo to null if conversion fails
+            }
+        }
+
+        // Send back the client data with the base64-encoded logo
+        res.json(client);
+    } catch (error) {
+        console.error("Error fetching client:", error);
+        res.status(500).json({ error: 'Error fetching client' });
+    }
+};
+
+
 export const addClients = async (req, res) => {
     const { company_name, contact_person, email, phone, address, idbroj, pdvbroj, sttn_broj, status, description, logo } = req.body;
 

@@ -8,8 +8,6 @@ function InspectionResult() {
     const location = useLocation();
     const reportData = location.state?.reportData;
 
-    console.log(reportData);
-
     const [inspectionResults, setInspectionResults] = useState([]);
     const [showReport, setShowReport] = useState(false);
     const [editIndex, setEditIndex] = useState(null);
@@ -106,7 +104,6 @@ function InspectionResult() {
             && newResult.labelCheck 
             && newResult.integrityCheck; 
     
-        // Only update the state if the value changes
         if (allConditionsMet !== newResult.inspectionResult) {
             setNewResult((prev) => ({
                 ...prev,
@@ -552,7 +549,7 @@ function InspectionResult() {
         >
             <div className="p-4 relative">
                 <h2 className="text-xl font-bold mb-4">Izvještaj</h2>
-                <InspectionReport inspectionResults={inspectionResults} projectId={reportData.projectId} />
+                <InspectionReport inspectionResults={inspectionResults} projectId={reportData.projectId} projectData={reportData} />
                 
                
             </div>
