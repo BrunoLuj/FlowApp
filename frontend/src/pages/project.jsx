@@ -15,7 +15,6 @@ const ProjectForm = () => {
     const [roles, setRoles] = useState([]);
     const [selectedUsers, setSelectedUsers] = useState([]);
     const project = location.state?.project || {};
-    console.log(project);
     const { permissions } = useStore();
 
     const formatDate = (dateString) => {

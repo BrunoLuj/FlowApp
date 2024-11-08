@@ -18,7 +18,6 @@ const Projects = () => {
     const fetchProjects = async () => {
       try {
         const response = await getProjects(); // Pozovi API funkciju
-        console.log(response);
         setProjects(response.data);
       } catch (err) {
         setError(err);
@@ -66,7 +65,6 @@ const Projects = () => {
   };
 
   const startEditing = (project) => {
-    console.log(project);
     navigate('/project', { state: { project } });
   };
 

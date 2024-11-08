@@ -9,7 +9,6 @@ const UserMultiSelectDropdown = ({ users, selectedUsers, onSelectionChange }) =>
 
     useEffect(() => {
         setOptions(users);
-        console.log(users);
     }, [users]);
 
     useEffect(() => {
@@ -37,8 +36,6 @@ const UserMultiSelectDropdown = ({ users, selectedUsers, onSelectionChange }) =>
     const filteredOptions = options.filter(user => 
         `${user.fullname}`.toLowerCase().includes(filter.toLowerCase()) // Prilagodba za fullName
     );
-
-    console.log(filteredOptions)
 
     return (
         <div className="relative" ref={dropdownRef}>
