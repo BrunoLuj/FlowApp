@@ -9,6 +9,7 @@ const UserMultiSelectDropdown = ({ users, selectedUsers, onSelectionChange }) =>
 
     useEffect(() => {
         setOptions(users);
+        console.log(users);
     }, [users]);
 
     useEffect(() => {
@@ -34,8 +35,10 @@ const UserMultiSelectDropdown = ({ users, selectedUsers, onSelectionChange }) =>
     };
 
     const filteredOptions = options.filter(user => 
-        `${user.firstname} ${user.lastname}`.toLowerCase().includes(filter.toLowerCase())
+        `${user.fullname}`.toLowerCase().includes(filter.toLowerCase()) // Prilagodba za fullName
     );
+
+    console.log(filteredOptions)
 
     return (
         <div className="relative" ref={dropdownRef}>
@@ -47,7 +50,7 @@ const UserMultiSelectDropdown = ({ users, selectedUsers, onSelectionChange }) =>
                     {selectedUsers.length > 1 
                         ? '' 
                         : selectedUsers.length === 1 
-                            ? `${selectedUsers[0].firstname} ${selectedUsers[0].lastname}` 
+                            ? selectedUsers[0].fullname  // Prikazivanje fullName
                             : 'Odaberi korisnike...'}
                 </span>
                 <span className="ml-2">
@@ -77,7 +80,7 @@ const UserMultiSelectDropdown = ({ users, selectedUsers, onSelectionChange }) =>
                                     onChange={() => handleCheckboxChange(user)}
                                     className="mr-2"
                                 />
-                                <span>{user.firstname} {user.lastname}</span>
+                                <span>{user.fullname}</span>
                             </div>
                         ))}
                     </div>

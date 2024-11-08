@@ -144,12 +144,12 @@ const Projects = () => {
                     {Array.isArray(project.service_executors) && project.service_executors.length > 0 
                         ? project.service_executors.map(executor => {
                             const user = JSON.parse(executor);
-                            return user.fullName;
+                            return user.fullname;
                         }).join(', ') 
                         : 'Nema izvršitelja'}
                 </td>
                 <td className="py-3 px-4 border-b">{project.status}</td>
-                <td className="py-3 px-4 border-b">{new Date(project.created_at).toLocaleDateString()}</td>
+                <td className="py-3 px-4 border-b">{new Date(project.start_date).toLocaleDateString()}</td>
                 <td className="py-3 px-4 border-b">{new Date(project.end_date).toLocaleDateString()}</td>
                 <td className="py-3 px-4 border-b">
                   

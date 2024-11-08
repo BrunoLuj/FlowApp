@@ -8,6 +8,8 @@ function InspectionResult() {
     const location = useLocation();
     const reportData = location.state?.reportData;
 
+    console.log(reportData);
+
     const [inspectionResults, setInspectionResults] = useState([]);
     const [showReport, setShowReport] = useState(false);
     const [editIndex, setEditIndex] = useState(null);

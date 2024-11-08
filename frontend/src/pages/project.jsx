@@ -15,6 +15,7 @@ const ProjectForm = () => {
     const [roles, setRoles] = useState([]);
     const [selectedUsers, setSelectedUsers] = useState([]);
     const project = location.state?.project || {};
+    console.log(project);
     const { permissions } = useStore();
 
     const formatDate = (dateString) => {
@@ -26,6 +27,7 @@ const ProjectForm = () => {
     const [formData, setFormData] = useState({
         id: project.id || '',
         name: project.name || '',
+        client_id: project.client_id || '',
         responsible_person: project.responsible_person || '',
         service_executors: project.service_executors || [],
         project_type: project.project_type || '',
@@ -47,7 +49,7 @@ const ProjectForm = () => {
                 setRoles(rolesResponse.data);
 
             // Postavi odabrane korisnike ako postoji projekt
-            if (project.service_executors) {
+            if (project && project.service_executors) {
                 const selectedServiceExecutors = project.service_executors.map(item => JSON.parse(item));
                 setSelectedUsers(selectedServiceExecutors);
             }
@@ -65,26 +67,49 @@ const ProjectForm = () => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
+    
+        if (name === 'start_date' || name === 'end_date') {
+            const updatedFormData = { ...formData, [name]: value };
+    
+            // Provjera valjanosti datuma
+            if (!isEndDateValid(updatedFormData.start_date, updatedFormData.end_date)) {
+                toast.error("Datum završetka mora biti kasniji od datuma početka.");
+                return;
+            }
+    
+            setFormData(updatedFormData);
+        } else if (name === 'client_id') {
+            const selectedClient = clients.find(client => client.id === Number(value));
+            const clientName = selectedClient ? selectedClient.company_name : '';
+            setFormData({ ...formData, client_id: value, name: clientName });
+        } else {
+            setFormData({ ...formData, [name]: value });
+        }
     };
+    
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        // Validacija
-        if (!formData.name || !formData.responsible_person) {
+    
+        if (!formData.client_id || !formData.responsible_person) {
             toast.error("Molimo popunite obavezna polja.");
             return;
         }
-        
-            // Pripremi niz objekata kao stringove
-            const serviceExecutors = selectedUsers.map(user => 
-                JSON.stringify({ id: user.id, fullName: user.firstname + ' ' + user.lastname })
-            );
-
-            const updatedFormData = {
-                ...formData,
-                service_executors: serviceExecutors, // Sada šalješ objekte
-            };
+    
+        if (!isEndDateValid(formData.start_date, formData.end_date)) {
+            toast.error("Datum završetka mora biti kasniji od datuma početka.");
+            return;
+        }
+    
+        const serviceExecutors = selectedUsers.map(user =>
+            JSON.stringify({ id: user.id, fullname: user.fullname })
+        );
+    
+        const updatedFormData = {
+            ...formData,
+            service_executors: serviceExecutors,
+            client_name: formData.client_name,
+        };
     
         try {
             await saveProject(updatedFormData);
@@ -94,8 +119,13 @@ const ProjectForm = () => {
             toast.error(error.response?.data?.message || "An error occurred. Please try again.");
         }
     };
+    
 
-
+    const isEndDateValid = (startDate, endDate) => {
+        if (!startDate || !endDate) return true;
+        return new Date(endDate) > new Date(startDate);
+    };
+    
     const handleGenerateReport = () => {
         const reportData = {
             name: formData.name,
@@ -108,7 +138,8 @@ const ProjectForm = () => {
             description: formData.description,
             budget: formData.budget,
             costs: formData.costs,
-            id: formData.id
+            id: formData.id,
+            client_id: formData.client_id
         };
         
         if(reportData.project_type === "AMN"){
@@ -163,15 +194,15 @@ const ProjectForm = () => {
                         <div>
                             <label className="block text-gray-700 font-medium mb-2">Naziv klijenta:</label>
                             <select 
-                                name="name" 
-                                value={formData.name} 
+                                name="client_id" 
+                                value={formData.client_id} 
                                 onChange={handleChange} 
                                 disabled={!permissions.includes('create_projects')}
                                 className={`w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-300 ${!permissions.includes('create_projects') ? 'bg-gray-200' : ''}`}
                             >
                                 <option value="">Odaberite klijenta</option>
                                 {clients.map(client => (
-                                    <option key={client.id} value={client.company_name}>
+                                    <option key={client.id} value={client.id}>
                                         {client.company_name}
                                     </option>
                                 ))}
@@ -190,8 +221,8 @@ const ProjectForm = () => {
                             >
                                 <option value="">Odaberite odgovornu osobu</option>
                                 {responsiblePersons.map(user => (
-                                    <option key={user.id} value={user.firstname + ' ' + user.lastname}>
-                                        {user.firstname + ' ' + user.lastname}
+                                    <option key={user.id} value={user.fullname}>
+                                        {user.fullname}
                                     </option>
                                 ))}
                             </select>
