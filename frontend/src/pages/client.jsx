@@ -26,7 +26,7 @@ const ClientForm = () => {
         idbroj: client.idbroj || '',
         pdvbroj: client.pdvbroj || '',
         sttn_broj: client.sttn_broj || '',
-        status: false,
+        status: client.status,
         description: client.description || '',
         logo: null // Postavljamo logo na null
         // startDate: formatDate(client.created_at),
