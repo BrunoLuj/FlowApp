@@ -376,6 +376,24 @@ const InspectionReport = ({  inspectionResults, projectId, projectData }) => {
         };
     
         // console.log(JSON.stringify(documentDefinition, null, 2));
+        return documentDefinition;
+    };
+
+    const printPDF = () => {
+        const documentDefinition = generatePDF();
+        pdfMake.createPdf(documentDefinition).print();
+        // pdfMake.createPdf(documentDefinition).getBlob((blob) => {
+        //     const fileURL = URL.createObjectURL(blob);
+        //     const a = document.createElement('a');
+        //     a.href = fileURL;
+        //     a.download = 'izvjestaj.pdf';
+        //     a.click();
+        //     URL.revokeObjectURL(fileURL);
+        // });
+    };
+
+    const downloadPDF = () => {
+        const documentDefinition = generatePDF();
         pdfMake.createPdf(documentDefinition).download('izvjestaj.pdf');
     };
     
@@ -387,10 +405,10 @@ const InspectionReport = ({  inspectionResults, projectId, projectData }) => {
             </button> */}
             {/* Fiksirani dugmadi na vrhu */}
             <div className="fixed top-14 left-0 right-0 p-4 z-10 shadow-md flex justify-between w-full bg-slate-800">
-                <button onClick={generatePDF} className="px-4 py-2 bg-blue-500 text-white rounded-md shadow-md">
-                    Spremi kao PDF
+                <button onClick={downloadPDF} className="px-4 py-2 bg-blue-500 text-white rounded-md shadow-md">
+                    Download
                 </button>
-                <button className="px-4 py-2 bg-green-500 text-white rounded-md shadow-md">Download</button>
+                <button onClick={printPDF}  className="px-4 py-2 bg-green-500 text-white rounded-md shadow-md">Print</button>
                 {/* Možete dodati druge dugmadi ovdje */}
                 {/* <button onClick={handlePrint} className="px-4 py-2 bg-blue-500 text-white rounded">
                     Štampaj Izvještaj
