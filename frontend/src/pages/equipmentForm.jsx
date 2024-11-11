@@ -1,21 +1,41 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
-import { saveEquipment, fetchEquipment } from '../services/equipmentServices';
+import useStore from '../store';
+import { saveEquipment, fetchEquipment, deleteEquipment } from '../services/equipmentServices';
 
 const EquipmentTabs = () => {
     const [activeTab, setActiveTab] = useState('Sonda'); // Default active tab
     const [equipmentData, setEquipmentData] = useState({});
     const [equipmentList, setEquipmentList] = useState([]);
+
+    const location = useLocation();
+    const client = location.state?.client;
+    console.log(client)
+    const { permissions } = useStore();
     
     // Fetch equipment data based on active tab
     const fetchEquipmentData = async (type) => {
         try {
-            const data = await fetchEquipment(type);
-            setEquipmentList(data);
+            console.log('Fetching equipment data...');
+            const data = await fetchEquipment(client.id, type);
+            
+            console.log('Fetched data:', data.data); // Prikazivanje podataka u konzoli
+    
+            setEquipmentList(data.data);  // Postavite podatke u stanje
+
+            console.log('Equipment List:', equipmentList); 
+            console.log('Type of equipmentList:', Array.isArray(equipmentList)); // Da li je niz?
+    
         } catch (error) {
+            console.error('Failed to fetch data:', error);
             toast.error('Failed to fetch equipment data.');
         }
     };
+    
+    useEffect(() => {
+        console.log('Equipment List:', equipmentList);  // Ovde proverite stanje
+    }, [equipmentList]);
 
     // Handle tab change
     const handleTabChange = (type) => {
@@ -33,12 +53,15 @@ const EquipmentTabs = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
+    
         try {
-            await saveEquipment(activeTab, equipmentData); // Send data to backend
+            await saveEquipment(activeTab, {
+                ...equipmentData,
+                clientId: client.id, // ID klijenta koji može biti dinamicki dodeljen ili dobijen iz sesije
+            });
             toast.success(`${activeTab} saved successfully!`);
-            fetchEquipmentData(activeTab); // Reload the equipment list
-            setEquipmentData({}); // Clear form after submit
+            fetchEquipmentData(activeTab);
+            setEquipmentData({});
         } catch (error) {
             toast.error('Error saving equipment.');
         }
@@ -47,6 +70,25 @@ const EquipmentTabs = () => {
     useEffect(() => {
         fetchEquipmentData(activeTab); // Load data for default tab
     }, [activeTab]);
+
+    const handleDelete = async (id) => {
+        try {
+            await deleteEquipment(id);
+            toast.success('Equipment deleted successfully!');
+            fetchEquipmentData(activeTab); // Refresh the list after deletion
+        } catch (error) {
+            toast.error('Error deleting equipment.');
+        }
+    };
+    
+    const handleEdit = (equipment) => {
+        setEquipmentData({
+            name: equipment.name,
+            serialNumber: equipment.serial_number,
+            description: equipment.description,
+            id: equipment.id, // Add ID to the form data for the update
+        });
+    };
 
     return (
         <div className="container mx-auto p-6">
@@ -97,21 +139,31 @@ const EquipmentTabs = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {equipmentList.map((equipment) => (
-                                <tr key={equipment.id} className="hover:bg-gray-50">
-                                    <td className="px-4 py-2 border-b">{equipment.name}</td>
-                                    <td className="px-4 py-2 border-b">{equipment.serialNumber}</td>
-                                    <td className="px-4 py-2 border-b">{equipment.description}</td>
-                                    <td className="px-4 py-2 border-b">
-                                        <button
-                                            // onClick={() => handleDelete(equipment.id)}
-                                            className="text-red-600 hover:text-red-800"
-                                        >
-                                            Delete
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
+                            {equipmentList && equipmentList.length > 0 ? (
+                                equipmentList.map((equipment) => (
+                                    <tr key={equipment.id} className="hover:bg-gray-50">
+                                        <td className="px-4 py-2 border-b">{equipment.name}</td>
+                                        <td className="px-4 py-2 border-b">{equipment.serial_number}</td>
+                                        <td className="px-4 py-2 border-b">{equipment.description}</td>
+                                        <td className="px-4 py-2 border-b">
+                                            <button
+                                                onClick={() => handleEdit(equipment)}
+                                                className="text-blue-600 hover:text-blue-800 mr-3"
+                                            >
+                                                Edit
+                                            </button>
+                                            <button
+                                                // onClick={() => handleDelete(equipment.id)}
+                                                className="text-red-600 hover:text-red-800"
+                                            >
+                                                Delete
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr><td colSpan="4" className="text-center py-2">No equipment found.</td></tr>
+                            )}
                         </tbody>
                     </table>
                 </div>

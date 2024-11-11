@@ -87,7 +87,7 @@ const ClientForm = () => {
     };
 
     const handleNavigateToEquipment = () => {
-        navigate('/equipment', { state: { client } }); // Preusmjeravanje na EquipmentForm i slanje podataka o klijentu
+        navigate('/equipment', { state: { client } });
     };
 
     const removeProject = async (client_id) => {
