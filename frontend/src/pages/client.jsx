@@ -86,9 +86,8 @@ const ClientForm = () => {
         console.log("Izvještaj generiran za projekat:", formData);
     };
 
-    const handleGenerateCertificate = () => {
-        // Logika za generiranje certifikata
-        console.log("Certifikat generiran za projekat:", formData);
+    const handleNavigateToEquipment = () => {
+        navigate('/equipment', { state: { client } }); // Preusmjeravanje na EquipmentForm i slanje podataka o klijentu
     };
 
     const removeProject = async (client_id) => {
@@ -101,9 +100,11 @@ const ClientForm = () => {
             <div className="w-full">
                 <h2 className="text-3xl p-4 font-bold text-center">{client.company_name || 'New Client'}</h2>
                 <div className="absolute right-4">
-                    <button type="button" onClick={handleGenerateReport} className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition mr-2">Generiraj izvještaj</button>
+                    {/* <button type="button" onClick={handleGenerateReport} className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition mr-2">Generiraj izvještaj</button> */}
                     {permissions.includes('create_clients') && (
-                        <button type="button" onClick={handleGenerateCertificate} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">Generiraj certifikat</button>
+                    <button type="button" onClick={handleNavigateToEquipment} className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition mr-2">
+                        Add Equipment
+                    </button>
                     )}
                 </div>
 
