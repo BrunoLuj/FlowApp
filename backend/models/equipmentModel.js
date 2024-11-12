@@ -17,12 +17,12 @@ export const addEquipment = async (type, equipmentData) => {
             values = [clientId, name, equipmentData.volume, serialNumber, description, equipmentData.manufacturer, equipmentData.volumetype, equipmentData.officialmark, equipmentData.serialNumberDevice, equipmentData.status];
             break;
         case 'Rezervoar':
-            query = 'INSERT INTO rezervoar (client_id, capacity, serial_number, description) VALUES ($1, $2, $3, $4)';
-            values = [clientId, equipmentData.capacity, serialNumber, description];
+            query = 'INSERT INTO rezervoar (client_id, name, capacity, serial_number, description, manufacturer, officialmark, tanktype, fuel, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)';
+            values = [clientId, name, equipmentData.capacity, serialNumber, description, equipmentData.manufacturer, equipmentData.officialmark, equipmentData.tanktype, equipmentData.fuel, equipmentData.status];
             break;
         case 'Mjerna Letva':
-            query = 'INSERT INTO mjerna_letva (client_id, length, serial_number, description) VALUES ($1, $2, $3, $4)';
-            values = [clientId, equipmentData.length, serialNumber, description];
+            query = 'INSERT INTO mjerna_letva (client_id, name, length, serial_number, description, manufacturer, status) VALUES ($1, $2, $3, $4, $5, $6, $7)';
+            values = [clientId, name, equipmentData.length, serialNumber, description, equipmentData.manufacturer, equipmentData.status];
             break;
         default:
             throw new Error('Unknown equipment type');
@@ -54,12 +54,12 @@ export const updateEquipment = async (id, type, equipmentData) => {
             values = [name, equipmentData.volume, serialNumber, description, equipmentData.manufacturer, equipmentData.volumetype, equipmentData.officialmark, equipmentData.serialNumberDevice, equipmentData.status, id];
             break;
         case 'Rezervoar':
-            query = 'UPDATE rezervoar SET capacity = $1, serial_number = $2, description = $3 WHERE id = $4';
-            values = [equipmentData.capacity, serialNumber, description, id];
+            query = 'UPDATE rezervoar SET name = $1, capacity = $2, serial_number = $3, description = $4, manufacturer = $5, officialmark = $6, tanktype = $7, fuel = $8, status = $9 WHERE id = $10';
+            values = [name, equipmentData.capacity, serialNumber, description, equipmentData.manufacturer, equipmentData.officialmark, equipmentData.tanktype, equipmentData.fuel, equipmentData.status, id];
             break;
         case 'Mjerna Letva':
-            query = 'UPDATE mjerna_letva SET length = $1, serial_number = $2, description = $3 WHERE id = $4';
-            values = [equipmentData.length, serialNumber, description, id];
+            query = 'UPDATE mjerna_letva SET name = $1, length = $2, serial_number = $3, description = $4, manufacturer = $5, status = $6 WHERE id = $7';
+            values = [name, equipmentData.length, serialNumber, description, equipmentData.manufacturer, equipmentData.status, id];
             break;
         default:
             throw new Error('Unknown equipment type');
