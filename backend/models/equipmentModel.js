@@ -46,8 +46,8 @@ export const updateEquipment = async (id, type, equipmentData) => {
 
     switch (type) {
         case 'Sonda':
-            query = 'UPDATE sonda SET name = $1, serial_number = $2, description = $3 WHERE id = $4';
-            values = [name, serialNumber, description, id];
+            query = 'UPDATE sonda SET name = $1, serial_number = $2, description = $3, serial_number_controller = $4, sondatype = $5, manufacturer = $6, officialmark = $7, tank = $8, fuel = $9 WHERE id = $10';
+            values = [name, serialNumber, description, equipmentData.serialNumberController, equipmentData.sondatype, equipmentData.manufacturer, equipmentData.officialmark, equipmentData.tank, equipmentData.fuel, id];
             break;
         case 'Volumetar':
             query = 'UPDATE volumetar SET volume = $1, serial_number = $2, description = $3 WHERE id = $4';
