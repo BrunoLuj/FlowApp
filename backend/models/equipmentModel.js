@@ -9,8 +9,8 @@ export const addEquipment = async (type, equipmentData) => {
     // Form the query based on the equipment type
     switch (type) {
         case 'Sonda':
-            query = 'INSERT INTO sonda (client_id, name, serial_number, description) VALUES ($1, $2, $3, $4)';
-            values = [clientId, name, serialNumber, description];
+            query = 'INSERT INTO sonda (client_id, name, serial_number, description, serial_number_controller, sondatype, manufacturer, officialmark, tank, fuel) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)';
+            values = [clientId, name, serialNumber, description, equipmentData.serialNumberController, equipmentData.sondatype, equipmentData.manufacturer, equipmentData.officialmark, equipmentData.tank, equipmentData.fuel];
             break;
         case 'Volumetar':
             query = 'INSERT INTO volumetar (client_id, volume, serial_number, description) VALUES ($1, $2, $3, $4)';

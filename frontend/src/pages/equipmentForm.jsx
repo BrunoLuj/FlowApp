@@ -174,7 +174,7 @@ const EquipmentTabs = () => {
 
 // Reusable form components for each equipment type
 const SondaForm = ({ equipmentData, handleChange }) => (
-    <div className="space-y-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
         <div>
             <label className="block text-lg font-medium">Name:</label>
             <input
@@ -196,6 +196,66 @@ const SondaForm = ({ equipmentData, handleChange }) => (
             />
         </div>
         <div>
+            <label className="block text-lg font-medium">Serial Number Controller:</label>
+            <input
+                type="text"
+                name="serialNumberController"
+                value={equipmentData.serialNumberController || ''}
+                onChange={handleChange}
+                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+            />
+        </div>
+        <div>
+            <label className="block text-lg font-medium">Sonda Type:</label>
+            <input
+                type="text"
+                name="sondatype"
+                value={equipmentData.sondatype || ''}
+                onChange={handleChange}
+                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+            />
+        </div>
+        <div>
+            <label className="block text-lg font-medium">Manufacturer:</label>
+            <input
+                type="text"
+                name="manufacturer"
+                value={equipmentData.manufacturer || ''}
+                onChange={handleChange}
+                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+            />
+        </div>
+        <div>
+            <label className="block text-lg font-medium">Official mark:</label>
+            <input
+                type="text"
+                name="officialmark"
+                value={equipmentData.officialmark || ''}
+                onChange={handleChange}
+                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+            />
+        </div>
+        <div>
+            <label className="block text-lg font-medium">Tank:</label>
+            <input
+                type="text"
+                name="tank"
+                value={equipmentData.tank || ''}
+                onChange={handleChange}
+                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+            />
+        </div>
+        <div>
+            <label className="block text-lg font-medium">Fuel:</label>
+            <input
+                type="text"
+                name="fuel"
+                value={equipmentData.fuel || ''}
+                onChange={handleChange}
+                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+            />
+        </div>
+        <div className="col-span-1 sm:col-span-2">
             <label className="block text-lg font-medium">Description:</label>
             <textarea
                 name="description"
