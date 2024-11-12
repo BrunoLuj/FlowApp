@@ -73,7 +73,7 @@ const EquipmentTabs = () => {
 
     const handleDelete = async (id) => {
         try {
-            await deleteEquipment(id);
+            await deleteEquipment(id, activeTab);
             toast.success('Equipment deleted successfully!');
             fetchEquipmentData(activeTab); // Refresh the list after deletion
         } catch (error) {
@@ -153,7 +153,7 @@ const EquipmentTabs = () => {
                                                 Edit
                                             </button>
                                             <button
-                                                // onClick={() => handleDelete(equipment.id)}
+                                                onClick={() => handleDelete(equipment.id)}
                                                 className="text-red-600 hover:text-red-800"
                                             >
                                                 Delete

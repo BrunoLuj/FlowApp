@@ -2,71 +2,72 @@ import { pool } from "../libs/database.js";
 
 // Generalna funkcija za dodavanje opreme
 export const addEquipment = async (type, equipmentData) => {
-    const { name, serial_number, description, client_id } = equipmentData;
+    const { name, serialNumber, description, clientId } = equipmentData;
     let query;
     let values;
 
-    // Prema tipu opreme, formiramo upit
+    // Form the query based on the equipment type
     switch (type) {
         case 'Sonda':
             query = 'INSERT INTO sonda (client_id, name, serial_number, description) VALUES ($1, $2, $3, $4)';
-            values = [client_id, name, serial_number, description];
+            values = [clientId, name, serialNumber, description];
             break;
         case 'Volumetar':
             query = 'INSERT INTO volumetar (client_id, volume, serial_number, description) VALUES ($1, $2, $3, $4)';
-            values = [client_id, equipmentData.volume, serial_number, description];
+            values = [clientId, equipmentData.volume, serialNumber, description];
             break;
         case 'Rezervoar':
             query = 'INSERT INTO rezervoar (client_id, capacity, serial_number, description) VALUES ($1, $2, $3, $4)';
-            values = [client_id, equipmentData.capacity, serial_number, description];
+            values = [clientId, equipmentData.capacity, serialNumber, description];
             break;
         case 'Mjerna Letva':
             query = 'INSERT INTO mjerna_letva (client_id, length, serial_number, description) VALUES ($1, $2, $3, $4)';
-            values = [client_id, equipmentData.length, serial_number, description];
+            values = [clientId, equipmentData.length, serialNumber, description];
             break;
         default:
             throw new Error('Unknown equipment type');
     }
 
     try {
-        await client.query(query, values);
-        console.log('Equipment added successfully');
+        // Using the pool to execute the query
+        const result = await pool.query(query, values);
+        console.log('Equipment added successfully', result);
     } catch (error) {
         console.error('Error adding equipment:', error);
-        throw error;
+        throw error;  // Re-throw the error after logging it
     }
 };
 
 // Generalna funkcija za ažuriranje opreme
 export const updateEquipment = async (id, type, equipmentData) => {
-    const { name, serial_number, description, client_id } = equipmentData;
+    const { name, serialNumber, description, clientId } = equipmentData;
     let query;
     let values;
 
     switch (type) {
         case 'Sonda':
             query = 'UPDATE sonda SET name = $1, serial_number = $2, description = $3 WHERE id = $4';
-            values = [name, serial_number, description, id];
+            values = [name, serialNumber, description, id];
             break;
         case 'Volumetar':
             query = 'UPDATE volumetar SET volume = $1, serial_number = $2, description = $3 WHERE id = $4';
-            values = [equipmentData.volume, serial_number, description, id];
+            values = [equipmentData.volume, serialNumber, description, id];
             break;
         case 'Rezervoar':
             query = 'UPDATE rezervoar SET capacity = $1, serial_number = $2, description = $3 WHERE id = $4';
-            values = [equipmentData.capacity, serial_number, description, id];
+            values = [equipmentData.capacity, serialNumber, description, id];
             break;
         case 'Mjerna Letva':
             query = 'UPDATE mjerna_letva SET length = $1, serial_number = $2, description = $3 WHERE id = $4';
-            values = [equipmentData.length, serial_number, description, id];
+            values = [equipmentData.length, serialNumber, description, id];
             break;
         default:
             throw new Error('Unknown equipment type');
     }
 
     try {
-        await client.query(query, values);
-        console.log('Equipment updated successfully');
+        const result = await pool.query(query, values);
+        console.log('Equipment updated successfully', result);
     } catch (error) {
         console.error('Error updating equipment:', error);
         throw error;
@@ -95,8 +96,8 @@ export const deleteEquipment = async (id, type) => {
     }
 
     try {
-        await client.query(query, [id]);
-        console.log('Equipment deleted successfully');
+        const result = await pool.query(query, [id]);
+        console.log('Equipment deleted successfully', result);
     } catch (error) {
         console.error('Error deleting equipment:', error);
         throw error;
@@ -105,7 +106,6 @@ export const deleteEquipment = async (id, type) => {
 
 // Funkcija za dohvat svih oprema za određenog klijenta
 export const getEquipmentByClientId = async (clientId, type) => {
-    console.log("Model console",clientId, type);
     let query;
 
     // Odaberite upit prema vrsti opreme

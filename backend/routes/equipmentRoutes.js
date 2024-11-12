@@ -11,10 +11,10 @@ import {
 const router = express.Router();
 
 // Rute za projekte
-router.get("/:clientId/:type", authMiddleware, checkPermission('view_clients'), getEquipments); // Prikaz svih projekata
-// router.get("/:id", authMiddleware, checkPermission('view_clients'), getEquipment); // Prikaz svih projekata
-router.post("/", authMiddleware, checkPermission('create_clients'), addEquipment); // Dodavanje novog projekta
-router.put("/:id", authMiddleware, checkPermission('update_clients'), updateEquipments); // Ažuriranje postojećeg projekta
-router.delete("/:id", authMiddleware, checkPermission('delete_clients'), deleteEquipments); // Brisanje projekta
+router.get("/:clientId/:type", authMiddleware, checkPermission('view_clients'), getEquipments);
+// router.get("/:id", authMiddleware, checkPermission('view_clients'), getEquipment);
+router.post("/:type", authMiddleware, checkPermission('create_clients'), addEquipment);
+router.put("/:id/:type", authMiddleware, checkPermission('update_clients'), updateEquipments);
+router.delete("/:id/:type", authMiddleware, checkPermission('delete_clients'), deleteEquipments);
 
 export default router;

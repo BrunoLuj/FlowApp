@@ -15,35 +15,6 @@ export const saveEquipment = async (type, equipmentData) => {
     }
 };
 
-export const deleteEquipment = async (type, equipmentData) => {
-    // if (equipmentData.id) {
-    //     return await api.put(`/equipment/${equipmentData.id}/${type}`, equipmentData);
-    // } else {
-    //     return await api.post(`/equipment/${type}`, equipmentData);
-    // }
+export const deleteEquipment = async (id, type) => {
+    return await api.delete(`/equipment/${id}/${type}`);
 };
-
-
-// Funkcija za dohvaćanje opreme za određeni tip
-// export const fetchEquipment = async (type) => {
-//     try {
-//         const response = await axios.get(`${API_URL}/${type}`);
-//         return response.data;
-//     } catch (error) {
-//         console.error("Error fetching equipment:", error);
-//         throw error;
-//     }
-// };
-
-// Funkcija za spremanje nove opreme
-// export const saveEquipment = async (type, equipmentData) => {
-//     try {
-//         await axios.post(API_URL, {
-//             type,
-//             ...equipmentData,
-//         });
-//     } catch (error) {
-//         console.error("Error saving equipment:", error);
-//         throw error;
-//     }
-// };
