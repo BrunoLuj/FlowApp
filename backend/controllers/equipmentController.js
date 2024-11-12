@@ -4,8 +4,6 @@ import * as equipmentModel from '../models/equipmentModel.js';
 export const getEquipments = async (req, res) => {
     const { clientId, type } = req.params;
 
-    console.log("Controller console",clientId, type)
-
     try {
         const equipments = await equipmentModel.getEquipmentByClientId(clientId, type);
         res.json(equipments);
@@ -65,5 +63,22 @@ export const updateCalibrationExpiry = async (req, res) => {
     } catch (error) {
       console.error(error);
       res.status(500).send({ message: 'Error updating calibration expiry date' });
+    }
+};
+
+export const getCalibrationExpiry = async (req, res) => {
+    const { clientId, equipmentId } = req.params;
+
+    console.log(clientId, equipmentId);
+
+    try {
+        // Pozivamo model za dohvat datuma isteka
+        const result = await equipmentModel.getCalibrationExpiry(clientId, equipmentId);
+        
+        // Vraćamo podatke sa trenutnim i prethodnim datumima isteka
+        res.status(200).json(result);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: 'Error fetching calibration expiry date' });
     }
 };

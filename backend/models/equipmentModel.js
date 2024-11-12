@@ -136,7 +136,6 @@ export const getEquipmentByClientId = async (clientId, type) => {
     }
 };
 
-
 // Funkcija za ažuriranje datuma isteka
 export const updateCalibrationExpiry = async (equipmentId, clientId, currentExpiryDate) => {
     try {
@@ -210,3 +209,37 @@ const updateCurrentCalibrationExpiry = async (equipment_id, client_id, current_e
         throw error;
     }
 };
+
+// Funkcija za dohvaćanje trenutnog datuma isteka i povijesti
+export const getCalibrationExpiry = async (clientId, equipmentId) => {
+    console.log("Model", clientId, equipmentId);
+    try {
+        // Dohvati trenutni datum isteka iz calibration_expiries
+        const currentExpiryResult = await pool.query(
+            'SELECT current_expiry_date FROM calibration_expiries WHERE client_id = $1 AND equipment_id = $2',
+            [clientId, equipmentId]
+        );
+    
+        // Dohvati povjesne datume isteka iz calibration_expiry_history
+        const historyResult = await pool.query(
+            'SELECT expiry_date FROM calibration_expiry_history WHERE client_id = $1 AND equipment_id = $2 ORDER BY expiry_date DESC',
+            [clientId, equipmentId]
+        );
+    
+        const currentExpiryDate = currentExpiryResult.rows.length > 0
+            ? currentExpiryResult.rows[0].current_expiry_date
+            : null;
+    
+        const previousExpiryDates = historyResult.rows.map(row => row.expiry_date);
+    
+        // Vratite podatke kao objekat
+        return {
+            current_expiry_date: currentExpiryDate,
+            previous_expiry_dates: previousExpiryDates
+        };
+    } catch (error) {
+        console.error('Error fetching calibration expiries:', error);
+        throw new Error('Error fetching calibration expiries');
+    }
+};
+

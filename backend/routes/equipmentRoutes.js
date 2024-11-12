@@ -6,7 +6,8 @@ import {
     addEquipment,
     updateEquipments,
     deleteEquipments,
-    updateCalibrationExpiry
+    updateCalibrationExpiry,
+    getCalibrationExpiry
 } from "../controllers/equipmentController.js";
 
 const router = express.Router();
@@ -18,5 +19,6 @@ router.post("/:type", authMiddleware, checkPermission('create_clients'), addEqui
 router.put("/:id/:type", authMiddleware, checkPermission('update_clients'), updateEquipments);
 router.delete("/:id/:type", authMiddleware, checkPermission('delete_clients'), deleteEquipments);
 router.post("/calibrationexpiry/:equipmentId/:clientId/:currentExpiryDate", authMiddleware, checkPermission('update_clients'), updateCalibrationExpiry);
+router.get("/calibrationexpiry/:clientId/:equipmentId", authMiddleware, checkPermission('view_clients'), getCalibrationExpiry);
 
 export default router;

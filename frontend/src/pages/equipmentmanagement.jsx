@@ -1,15 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
-import { fetchEquipment, updateCalibrationExpiry } from '../services/equipmentServices';
+import { fetchEquipment, updateCalibrationExpiry, fetchCalibrationExpiriesHistory } from '../services/equipmentServices';
 
 const EquipmentManagement = () => {
   const [equipmentData, setEquipmentData] = useState([]);
-  const [activeTab, setActiveTab] = useState('Sonda');
   const [calibrationExpiries, setCalibrationExpiries] = useState({});
+  const [activeTab, setActiveTab] = useState('Sonda');
 
   const location = useLocation();
   const client = location.state?.client;
+
+  // Funkcija za formatiranje datuma u obliku dd.mm.yyyy
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        const day = String(date.getDate()).padStart(2, '0'); // Dodaje nulu ispred dana ako je < 10
+        const month = String(date.getMonth() + 1).padStart(2, '0'); // Dodaje nulu ispred meseca ako je < 10
+        const year = date.getFullYear();
+        
+        return `${day}.${month}.${year}`;
+    };
 
   // Funkcija za učitavanje opreme prema vrsti
   const fetchEquipmentData = async (type) => {
@@ -24,29 +34,33 @@ const EquipmentManagement = () => {
     }
   };
 
+  // Funkcija za učitavanje podataka o kalibraciji i istoriji
+  const fetchCalibrationData = async () => {
+    try {
+      const newCalibrationExpiries = {};
+
+      // Učitavanje podataka o kalibraciji za svu opremu
+      for (const equipment of equipmentData) {
+        const { data } = await fetchCalibrationExpiriesHistory(client.id, equipment.id);
+        newCalibrationExpiries[equipment.id] = data;
+      }
+
+      setCalibrationExpiries(newCalibrationExpiries);
+    } catch (error) {
+      console.error('Error fetching calibration expiries:', error);
+      toast.error('Failed to fetch calibration expiry data.');
+    }
+  };
+
   useEffect(() => {
     fetchEquipmentData(activeTab); // Učitavanje podataka za trenutni tab
   }, [activeTab]);
 
-  // Funkcija za promenu datuma isteka
-  const handleDateChange = (equipmentId, date) => {
-    setCalibrationExpiries((prevState) => {
-      const equipmentExpiry = prevState[equipmentId] || { current_expiry_date: '', previous_expiry_dates: [] };
-      
-      // Dodaj trenutni datum u istoriju prethodnih datuma
-      const updatedPreviousDates = equipmentExpiry.current_expiry_date
-        ? [...equipmentExpiry.previous_expiry_dates, equipmentExpiry.current_expiry_date]
-        : [...equipmentExpiry.previous_expiry_dates];
-
-      return {
-        ...prevState,
-        [equipmentId]: {
-          current_expiry_date: date,
-          previous_expiry_dates: updatedPreviousDates,
-        },
-      };
-    });
-  };
+  useEffect(() => {
+    if (equipmentData.length > 0) {
+      fetchCalibrationData(); // Učitavanje podataka o kalibracijama
+    }
+  }, [equipmentData]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -71,6 +85,26 @@ const EquipmentManagement = () => {
     setEquipmentData([]); // Resetovanje podataka za novi tab
     fetchEquipmentData(type); // Učitaj podatke za novi tip opreme
   };
+
+    // Funkcija za promenu datuma isteka
+    const handleDateChange = (equipmentId, date) => {
+        setCalibrationExpiries((prevState) => {
+          const equipmentExpiry = prevState[equipmentId] || { current_expiry_date: '', previous_expiry_dates: [] };
+          
+          // Dodaj trenutni datum u istoriju prethodnih datuma
+          const updatedPreviousDates = equipmentExpiry.current_expiry_date
+            ? [...equipmentExpiry.previous_expiry_dates, equipmentExpiry.current_expiry_date]
+            : [...equipmentExpiry.previous_expiry_dates];
+    
+          return {
+            ...prevState,
+            [equipmentId]: {
+              current_expiry_date: date,
+              previous_expiry_dates: updatedPreviousDates,
+            },
+          };
+        });
+      };
 
   return (
     <div className="container mx-auto p-6">
@@ -134,12 +168,12 @@ const EquipmentManagement = () => {
                   <td className="px-4 py-2 border-b">{equipment.name}</td>
                   <td className="px-4 py-2 border-b">{equipment.serial_number}</td>
                   <td className="px-4 py-2 border-b">
-                    {calibrationExpiries[equipment.id]?.current_expiry_date || 'Not Set'}
+                    {formatDate(calibrationExpiries[equipment.id]?.current_expiry_date) || 'Not Set'}
                   </td>
                   <td className="px-4 py-2 border-b">
                     {calibrationExpiries[equipment.id]?.previous_expiry_dates.length > 0 ? (
                       calibrationExpiries[equipment.id].previous_expiry_dates.map((date, index) => (
-                        <div key={index}>{date}</div>
+                        <div key={index}>{formatDate(date)}</div>
                       ))
                     ) : (
                       'No previous expiry dates'

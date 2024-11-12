@@ -46,3 +46,13 @@ export const updateCalibrationExpiry = async (equipmentId, clientId, currentExpi
         throw new Error('Failed to update calibration expiry');
     }
 };
+
+export const fetchCalibrationExpiriesHistory = async (clientId, equipmentId) =>{
+    console.log("Front Services:", clientId, equipmentId )
+    try {
+        return await api.get(`/equipment/calibrationexpiry/${clientId}/${equipmentId}`);
+    } catch (error) {
+        console.error("Error updating calibration expiry:", error);
+        throw new Error('Failed to update calibration expiry');
+    }
+};
