@@ -12,14 +12,14 @@ const EquipmentManagement = () => {
   const client = location.state?.client;
 
   // Funkcija za formatiranje datuma u obliku dd.mm.yyyy
-    const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        const day = String(date.getDate()).padStart(2, '0'); // Dodaje nulu ispred dana ako je < 10
-        const month = String(date.getMonth() + 1).padStart(2, '0'); // Dodaje nulu ispred meseca ako je < 10
-        const year = date.getFullYear();
-        
-        return `${day}.${month}.${year}`;
-    };
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0'); // Dodaje nulu ispred dana ako je < 10
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Dodaje nulu ispred meseca ako je < 10
+    const year = date.getFullYear();
+
+    return `${day}.${month}.${year}`;
+  };
 
   // Funkcija za učitavanje opreme prema vrsti
   const fetchEquipmentData = async (type) => {
@@ -86,38 +86,38 @@ const EquipmentManagement = () => {
     fetchEquipmentData(type); // Učitaj podatke za novi tip opreme
   };
 
-    // Funkcija za promenu datuma isteka
-    const handleDateChange = (equipmentId, date) => {
-        setCalibrationExpiries((prevState) => {
-          const equipmentExpiry = prevState[equipmentId] || { current_expiry_date: '', previous_expiry_dates: [] };
-          
-          // Dodaj trenutni datum u istoriju prethodnih datuma
-          const updatedPreviousDates = equipmentExpiry.current_expiry_date
-            ? [...equipmentExpiry.previous_expiry_dates, equipmentExpiry.current_expiry_date]
-            : [...equipmentExpiry.previous_expiry_dates];
-    
-          return {
-            ...prevState,
-            [equipmentId]: {
-              current_expiry_date: date,
-              previous_expiry_dates: updatedPreviousDates,
-            },
-          };
-        });
+  // Funkcija za promenu datuma isteka
+  const handleDateChange = (equipmentId, date) => {
+    setCalibrationExpiries((prevState) => {
+      const equipmentExpiry = prevState[equipmentId] || { current_expiry_date: '', previous_expiry_dates: [] };
+
+      // Dodaj trenutni datum u istoriju prethodnih datuma
+      const updatedPreviousDates = equipmentExpiry.current_expiry_date
+        ? [...equipmentExpiry.previous_expiry_dates, equipmentExpiry.current_expiry_date]
+        : [...equipmentExpiry.previous_expiry_dates];
+
+      return {
+        ...prevState,
+        [equipmentId]: {
+          current_expiry_date: date,
+          previous_expiry_dates: updatedPreviousDates,
+        },
       };
+    });
+  };
 
   return (
     <div className="container mx-auto p-6">
-      <h2 className="text-2xl font-semibold mb-6">Manage Calibration Expiry Dates</h2>
+      <h2 className="text-3xl font-semibold text-gray-800 mb-6">Manage Calibration Expiry Dates</h2>
 
       {/* Tab Navigation */}
-      <div className="flex overflow-x-auto mb-6 border-b border-gray-300">
+      <div className="flex overflow-x-auto mb-6 border-b-2 border-gray-200">
         {['Sonda', 'Volumetar', 'Rezervoar', 'Mjerna Letva'].map((tab) => (
           <button
             key={tab}
             onClick={() => handleTabChange(tab)}
-            className={`px-6 py-3 text-lg font-medium transition-colors duration-300 whitespace-nowrap
-              ${activeTab === tab ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600 hover:text-blue-600'}`}
+            className={`px-6 py-3 text-lg font-medium transition-all duration-300 whitespace-nowrap
+              ${activeTab === tab ? 'text-blue-700 border-b-4 border-blue-700' : 'text-gray-600 hover:text-blue-600'}`}
           >
             {tab}
           </button>
@@ -125,17 +125,17 @@ const EquipmentManagement = () => {
       </div>
 
       {/* Equipment Form for Current Tab */}
-      <div className="mb-6">
-        <h3 className="text-xl font-medium mb-4">Set Calibration Expiry for {activeTab}</h3>
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="mb-6 bg-gray-50 p-6 rounded-lg shadow-md">
+        <h3 className="text-xl font-medium text-gray-800 mb-4">Set Calibration Expiry for {activeTab}</h3>
+        <form onSubmit={handleSubmit} className="space-y-6">
           {equipmentData?.map((equipment) => (
-            <div key={equipment.id} className="flex items-center space-x-4">
+            <div key={equipment.id} className="flex items-center space-x-4 bg-white p-4 rounded-lg shadow-sm">
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-700">{equipment.name} - {equipment.serial_number}</label>
                 <input
                   type="date"
                   onChange={(e) => handleDateChange(equipment.id, e.target.value)}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="mt-2 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
             </div>
@@ -150,33 +150,33 @@ const EquipmentManagement = () => {
       </div>
 
       {/* Calibration Expiry Table */}
-      <div>
-        <h3 className="text-xl font-medium mb-4">Calibration Expiry Dates</h3>
+      <div className="bg-white p-6 mt-6 rounded-lg shadow-lg">
+        <h3 className="text-xl font-medium text-gray-800 mb-4">Calibration Expiry Dates</h3>
         <div className="overflow-x-auto">
           <table className="w-full table-auto border-collapse">
             <thead>
-              <tr className="bg-gray-100">
-                <th className="px-4 py-2 text-left border-b">Name</th>
-                <th className="px-4 py-2 text-left border-b">Serial Number</th>
-                <th className="px-4 py-2 text-left border-b">Current Calibration Expiry</th>
-                <th className="px-4 py-2 text-left border-b">Previous Calibration Expiry Dates</th>
+              <tr className="bg-gray-200">
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Name</th>
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Serial Number</th>
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Current Calibration Expiry</th>
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Previous Calibration Expiry Dates</th>
               </tr>
             </thead>
             <tbody>
               {equipmentData?.map((equipment) => (
-                <tr key={equipment.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-2 border-b">{equipment.name}</td>
-                  <td className="px-4 py-2 border-b">{equipment.serial_number}</td>
-                  <td className="px-4 py-2 border-b">
+                <tr key={equipment.id} className="hover:bg-blue-50">
+                  <td className="px-6 py-4 text-sm font-medium text-gray-700">{equipment.name}</td>
+                  <td className="px-6 py-4 text-sm font-medium text-gray-700">{equipment.serial_number}</td>
+                  <td className="px-6 py-4 text-sm font-medium text-gray-700">
                     {formatDate(calibrationExpiries[equipment.id]?.current_expiry_date) || 'Not Set'}
                   </td>
-                  <td className="px-4 py-2 border-b">
+                  <td className="px-6 py-4 text-sm font-medium text-gray-700">
                     {calibrationExpiries[equipment.id]?.previous_expiry_dates.length > 0 ? (
                       calibrationExpiries[equipment.id].previous_expiry_dates.map((date, index) => (
-                        <div key={index}>{formatDate(date)}</div>
+                        <div key={index} className="text-sm text-gray-600">{formatDate(date)}</div>
                       ))
                     ) : (
-                      'No previous expiry dates'
+                      <span className="text-sm text-gray-400">No previous expiry dates</span>
                     )}
                   </td>
                 </tr>
