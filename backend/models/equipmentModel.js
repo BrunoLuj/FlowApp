@@ -135,3 +135,78 @@ export const getEquipmentByClientId = async (clientId, type) => {
         throw error;  // Ponovno bacanje greške kako bi se obradila dalje
     }
 };
+
+
+// Funkcija za ažuriranje datuma isteka
+export const updateCalibrationExpiry = async (equipmentId, clientId, currentExpiryDate) => {
+    try {
+        // Provjerite da li postoji datum isteka
+        const result = await pool.query(
+            'SELECT current_expiry_date FROM calibration_expiries WHERE equipment_id = $1 AND client_id = $2',
+            [equipmentId, clientId]
+        );
+
+        if (result.rows.length === 0) {
+            console.log('No expiry date found, adding initial date...');
+            // Ako nema, dodajte početni datum isteka
+            await addInitialCalibrationExpiry(equipmentId, clientId, currentExpiryDate);
+        } else {
+            console.log('Expiry date found, updating...');
+            // Ako postoji, premestite ga u istoriju pre nego što ažurirate trenutni datum
+            const currentDate = result.rows[0].current_expiry_date;
+
+            // Premesti stari datum u istoriju
+            await addToCalibrationExpiryHistory(equipmentId, clientId, currentDate);
+
+            // Ažurirajte trenutni datum isteka
+            await updateCurrentCalibrationExpiry(equipmentId, clientId, currentExpiryDate);
+        }
+
+        console.log('Calibration expiry date updated successfully');
+    } catch (error) {
+        console.error('Error updating calibration expiry date:', error);
+        throw error;
+    }
+};
+
+// Funkcija za dodavanje inicijalnog datuma isteka ako ne postoji
+const addInitialCalibrationExpiry = async (equipment_id, client_id, initial_expiry_date) => {
+    try {
+        const result = await pool.query(
+            'INSERT INTO calibration_expiries (equipment_id, client_id, current_expiry_date, created_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP)',
+            [equipment_id, client_id, initial_expiry_date]
+        );
+        console.log('Initial expiry date added successfully!');
+    } catch (error) {
+        console.error('Error adding initial expiry date:', error);
+        throw error;
+    }
+};
+
+// Funkcija za premještanje starog datuma u istorijsku tabelu
+const addToCalibrationExpiryHistory = async (equipment_id, client_id, expiry_date) => {
+    try {
+        const result = await pool.query(
+            'INSERT INTO calibration_expiry_history (equipment_id, client_id, expiry_date) VALUES ($1, $2, $3)',
+            [equipment_id, client_id, expiry_date]
+        );
+        console.log('Old expiry date moved to history successfully!');
+    } catch (error) {
+        console.error('Error moving old expiry date to history:', error);
+        throw error;
+    }
+};
+
+// Funkcija za ažuriranje trenutnog datuma isteka
+const updateCurrentCalibrationExpiry = async (equipment_id, client_id, current_expiry_date) => {
+    try {
+        const result = await pool.query(
+            'UPDATE calibration_expiries SET current_expiry_date = $1, updated_at = CURRENT_TIMESTAMP WHERE equipment_id = $2 AND client_id = $3',
+            [current_expiry_date, equipment_id, client_id]
+        );
+        console.log('Current expiry date updated successfully!');
+    } catch (error) {
+        console.error('Error updating current expiry date:', error);
+        throw error;
+    }
+};

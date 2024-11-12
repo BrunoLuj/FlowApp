@@ -190,7 +190,6 @@ const EquipmentTabs = () => {
                                 {activeTab === 'Volumetar' && <th className="px-4 py-2 text-left border-b">Device</th>}
                                 {activeTab === 'Volumetar' && <th className="px-4 py-2 text-left border-b">Type</th>}
                                 {activeTab === 'Volumetar' && <th className="px-4 py-2 text-left border-b">Volume</th>}
-                                {activeTab === 'Volumetar' && <th className="px-4 py-2 text-left border-b">Type</th>}
                                 {activeTab === 'Rezervoar' && <th className="px-4 py-2 text-left border-b">Type</th>}
                                 {activeTab === 'Rezervoar' && <th className="px-4 py-2 text-left border-b">Capacity</th>}
                                 {activeTab === 'Rezervoar' && <th className="px-4 py-2 text-left border-b">Fuel</th>}

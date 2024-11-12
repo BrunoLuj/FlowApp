@@ -51,3 +51,19 @@ export const deleteEquipments = async (req, res) => {
         res.status(500).json({ error: 'Failed to delete equipment' });
     }
 };
+
+// Funkcija za ažuriranje datuma isteka
+export const updateCalibrationExpiry = async (req, res) => {
+    const { equipmentId, clientId, currentExpiryDate } = req.params;
+
+    try {
+      // Pozivamo model za ažuriranje datuma isteka
+      await equipmentModel.updateCalibrationExpiry(equipmentId, clientId, currentExpiryDate);
+  
+      // Vraćamo odgovor o uspešnom ažuriranju
+      res.status(200).send({ message: 'Calibration expiry date updated successfully' });
+    } catch (error) {
+      console.error(error);
+      res.status(500).send({ message: 'Error updating calibration expiry date' });
+    }
+};

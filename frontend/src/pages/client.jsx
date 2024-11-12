@@ -81,9 +81,8 @@ const ClientForm = () => {
         }
     };
 
-    const handleGenerateReport = () => {
-        // Logika za generiranje izvještaja
-        console.log("Izvještaj generiran za projekat:", formData);
+    const handleInspectionData = () => {
+        navigate('/equipmentmanagement', { state: { client } });
     };
 
     const handleNavigateToEquipment = () => {
@@ -100,7 +99,7 @@ const ClientForm = () => {
             <div className="w-full">
                 <h2 className="text-3xl p-4 font-bold text-center">{client.company_name || 'New Client'}</h2>
                 <div className="absolute right-4">
-                    {/* <button type="button" onClick={handleGenerateReport} className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition mr-2">Generiraj izvještaj</button> */}
+                    <button type="button" onClick={handleInspectionData} className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition mr-2">Inspection Data</button>
                     {permissions.includes('create_clients') && (
                     <button type="button" onClick={handleNavigateToEquipment} className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition mr-2">
                         Add Equipment
