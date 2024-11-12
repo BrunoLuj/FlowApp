@@ -179,8 +179,23 @@ const EquipmentTabs = () => {
                     <table className="w-full table-auto border-collapse">
                         <thead>
                             <tr className="bg-gray-100">
-                                <th className="px-4 py-2 text-left border-b">Name</th>
+                                {/* <th className="px-4 py-2 text-left border-b">Name</th> */}
                                 <th className="px-4 py-2 text-left border-b">Serial Number</th>
+                                <th className="px-4 py-2 text-left border-b">Manufacturer</th>
+                                <th className="px-4 py-2 text-left border-b">Official Mark</th>
+                                {activeTab === 'Sonda' && <th className="px-4 py-2 text-left border-b">Controller</th>}
+                                {activeTab === 'Sonda' && <th className="px-4 py-2 text-left border-b">Type</th>}
+                                {activeTab === 'Sonda' && <th className="px-4 py-2 text-left border-b">Tank</th>}
+                                {activeTab === 'Sonda' && <th className="px-4 py-2 text-left border-b">Fuel</th>}
+                                {activeTab === 'Volumetar' && <th className="px-4 py-2 text-left border-b">Device</th>}
+                                {activeTab === 'Volumetar' && <th className="px-4 py-2 text-left border-b">Type</th>}
+                                {activeTab === 'Volumetar' && <th className="px-4 py-2 text-left border-b">Volume</th>}
+                                {activeTab === 'Volumetar' && <th className="px-4 py-2 text-left border-b">Type</th>}
+                                {activeTab === 'Rezervoar' && <th className="px-4 py-2 text-left border-b">Type</th>}
+                                {activeTab === 'Rezervoar' && <th className="px-4 py-2 text-left border-b">Capacity</th>}
+                                {activeTab === 'Rezervoar' && <th className="px-4 py-2 text-left border-b">Fuel</th>}
+                                {activeTab === 'Mjerna Letva' && <th className="px-4 py-2 text-left border-b">Length</th>}
+                                <th className="px-4 py-2 text-left border-b">Status</th>
                                 <th className="px-4 py-2 text-left border-b">Description</th>
                                 <th className="px-4 py-2 text-left border-b">Actions</th>
                             </tr>
@@ -189,8 +204,22 @@ const EquipmentTabs = () => {
                             {equipmentList && equipmentList.length > 0 ? (
                                 equipmentList.map((equipment) => (
                                     <tr key={equipment.id} className="hover:bg-gray-50">
-                                        <td className="px-4 py-2 border-b">{equipment.name}</td>
+                                        {/* <td className="px-4 py-2 border-b">{equipment.name}</td> */}
                                         <td className="px-4 py-2 border-b">{equipment.serial_number}</td>
+                                        <td className="px-4 py-2 border-b">{equipment.manufacturer}</td>
+                                        <td className="px-4 py-2 border-b">{equipment.officialmark}</td>
+                                        {activeTab === 'Sonda' && <td className="px-4 py-2 border-b">{equipment.serial_number_controller}</td>}
+                                        {activeTab === 'Sonda' && <td className="px-4 py-2 border-b">{equipment.sondatype}</td>}
+                                        {activeTab === 'Sonda' && <td className="px-4 py-2 border-b">{equipment.tank}</td>}
+                                        {activeTab === 'Sonda' && <td className="px-4 py-2 border-b">{equipment.fuel}</td>}
+                                        {activeTab === 'Volumetar' && <td className="px-4 py-2 border-b">{equipment.serial_number_device}</td>}
+                                        {activeTab === 'Volumetar' && <td className="px-4 py-2 border-b">{equipment.volumetype}</td>}
+                                        {activeTab === 'Volumetar' && <td className="px-4 py-2 border-b">{equipment.volume}</td>}
+                                        {activeTab === 'Rezervoar' && <td className="px-4 py-2 border-b">{equipment.tanktype}</td>}
+                                        {activeTab === 'Rezervoar' && <td className="px-4 py-2 border-b">{equipment.capacity} L</td>}
+                                        {activeTab === 'Rezervoar' && <td className="px-4 py-2 border-b">{equipment.fuel}</td>}
+                                        {activeTab === 'Mjerna Letva' && <td className="px-4 py-2 border-b">{equipment.length}</td>}
+                                        <td className="px-4 py-2 border-b">{equipment.status}</td>
                                         <td className="px-4 py-2 border-b">{equipment.description}</td>
                                         <td className="px-4 py-2 border-b">
                                             <button
