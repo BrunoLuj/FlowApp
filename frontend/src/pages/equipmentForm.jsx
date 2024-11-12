@@ -93,6 +93,7 @@ const EquipmentTabs = () => {
                 officialmark: equipment.officialmark,
                 tank: equipment.tank,
                 fuel: equipment.fuel,
+                status: equipment.status,
                 description: equipment.description,
                 id: equipment.id, // Add ID to the form data for the update
             });
@@ -100,6 +101,12 @@ const EquipmentTabs = () => {
             setEquipmentData({
                 name: equipment.name,
                 serialNumber: equipment.serial_number,
+                manufacturer: equipment.manufacturer,
+                volumetype: equipment.volumetype,
+                officialmark: equipment.officialmark,
+                serialNumberDevice: equipment.serial_number_device,
+                volume: equipment.volume,
+                status: equipment.status,
                 description: equipment.description,
                 id: equipment.id, // Add ID to the form data for the update
             });
@@ -286,6 +293,18 @@ const SondaForm = ({ equipmentData, handleChange }) => (
                 className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
             />
         </div>
+        <div>
+            <label className="block text-lg font-medium">Status:</label>
+            <select
+                name="status"
+                value={equipmentData.status || 'inactive'}
+                onChange={handleChange}
+                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+            >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+            </select>
+        </div>
         <div className="col-span-1 sm:col-span-2">
             <label className="block text-lg font-medium">Description:</label>
             <textarea
@@ -300,13 +319,13 @@ const SondaForm = ({ equipmentData, handleChange }) => (
 );
 
 const VolumetarForm = ({ equipmentData, handleChange }) => (
-    <div className="space-y-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
         <div>
-            <label className="block text-lg font-medium">Volume:</label>
+            <label className="block text-lg font-medium">Name:</label>
             <input
-                type="number"
-                name="volume"
-                value={equipmentData.volume || ''}
+                type="text"
+                name="name"
+                value={equipmentData.name || ''}
                 onChange={handleChange}
                 className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
             />
@@ -322,6 +341,68 @@ const VolumetarForm = ({ equipmentData, handleChange }) => (
             />
         </div>
         <div>
+            <label className="block text-lg font-medium">Manufacturer:</label>
+            <input
+                type="text"
+                name="manufacturer"
+                value={equipmentData.manufacturer || ''}
+                onChange={handleChange}
+                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+            />
+        </div>
+        <div>
+            <label className="block text-lg font-medium">Type:</label>
+            <input
+                type="text"
+                name="volumetype"
+                value={equipmentData.volumetype || ''}
+                onChange={handleChange}
+                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+            />
+        </div>
+        <div>
+            <label className="block text-lg font-medium">Official mark:</label>
+            <input
+                type="text"
+                name="officialmark"
+                value={equipmentData.officialmark || ''}
+                onChange={handleChange}
+                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+            />
+        </div>
+        <div>
+            <label className="block text-lg font-medium">Serial Number Device:</label>
+            <input
+                type="text"
+                name="serialNumberDevice"
+                value={equipmentData.serialNumberDevice || ''}
+                onChange={handleChange}
+                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+            />
+        </div>
+        <div>
+            <label className="block text-lg font-medium">Volume:</label>
+            <input
+                type="number"
+                name="volume"
+                value={equipmentData.volume || ''}
+                onChange={handleChange}
+                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+            />
+        </div>
+        <div>
+            <label className="block text-lg font-medium">Status:</label>
+            <select
+                name="status"
+                value={equipmentData.status || 'inactive'}
+                onChange={handleChange}
+                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+            >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+            </select>
+        </div>
+        <div className='col-span-1 sm:col-span-2'>
             <label className="block text-lg font-medium">Description:</label>
             <textarea
                 name="description"

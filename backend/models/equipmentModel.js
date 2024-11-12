@@ -9,12 +9,12 @@ export const addEquipment = async (type, equipmentData) => {
     // Form the query based on the equipment type
     switch (type) {
         case 'Sonda':
-            query = 'INSERT INTO sonda (client_id, name, serial_number, description, serial_number_controller, sondatype, manufacturer, officialmark, tank, fuel) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)';
-            values = [clientId, name, serialNumber, description, equipmentData.serialNumberController, equipmentData.sondatype, equipmentData.manufacturer, equipmentData.officialmark, equipmentData.tank, equipmentData.fuel];
+            query = 'INSERT INTO sonda (client_id, name, serial_number, description, serial_number_controller, sondatype, manufacturer, officialmark, tank, fuel, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)';
+            values = [clientId, name, serialNumber, description, equipmentData.serialNumberController, equipmentData.sondatype, equipmentData.manufacturer, equipmentData.officialmark, equipmentData.tank, equipmentData.fuel, equipmentData.status];
             break;
         case 'Volumetar':
-            query = 'INSERT INTO volumetar (client_id, volume, serial_number, description) VALUES ($1, $2, $3, $4)';
-            values = [clientId, equipmentData.volume, serialNumber, description];
+            query = 'INSERT INTO volumeters (client_id, name, volume, serial_number, description, manufacturer, volumetype, officialmark, serial_number_device, status ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)';
+            values = [clientId, name, equipmentData.volume, serialNumber, description, equipmentData.manufacturer, equipmentData.volumetype, equipmentData.officialmark, equipmentData.serialNumberDevice, equipmentData.status];
             break;
         case 'Rezervoar':
             query = 'INSERT INTO rezervoar (client_id, capacity, serial_number, description) VALUES ($1, $2, $3, $4)';
@@ -46,12 +46,12 @@ export const updateEquipment = async (id, type, equipmentData) => {
 
     switch (type) {
         case 'Sonda':
-            query = 'UPDATE sonda SET name = $1, serial_number = $2, description = $3, serial_number_controller = $4, sondatype = $5, manufacturer = $6, officialmark = $7, tank = $8, fuel = $9 WHERE id = $10';
-            values = [name, serialNumber, description, equipmentData.serialNumberController, equipmentData.sondatype, equipmentData.manufacturer, equipmentData.officialmark, equipmentData.tank, equipmentData.fuel, id];
+            query = 'UPDATE sonda SET name = $1, serial_number = $2, description = $3, serial_number_controller = $4, sondatype = $5, manufacturer = $6, officialmark = $7, tank = $8, fuel = $9, status = $10 WHERE id = $11';
+            values = [name, serialNumber, description, equipmentData.serialNumberController, equipmentData.sondatype, equipmentData.manufacturer, equipmentData.officialmark, equipmentData.tank, equipmentData.fuel, equipmentData.status, id];
             break;
         case 'Volumetar':
-            query = 'UPDATE volumetar SET volume = $1, serial_number = $2, description = $3 WHERE id = $4';
-            values = [equipmentData.volume, serialNumber, description, id];
+            query = 'UPDATE volumeters SET name = $1, volume = $2, serial_number = $3, description = $4, manufacturer = $5, volumetype = $6, officialmark = $7, serial_number_device = $8, status = $9  WHERE id = $10';
+            values = [name, equipmentData.volume, serialNumber, description, equipmentData.manufacturer, equipmentData.volumetype, equipmentData.officialmark, equipmentData.serialNumberDevice, equipmentData.status, id];
             break;
         case 'Rezervoar':
             query = 'UPDATE rezervoar SET capacity = $1, serial_number = $2, description = $3 WHERE id = $4';
@@ -83,7 +83,7 @@ export const deleteEquipment = async (id, type) => {
             query = 'DELETE FROM sonda WHERE id = $1';
             break;
         case 'Volumetar':
-            query = 'DELETE FROM volumetar WHERE id = $1';
+            query = 'DELETE FROM volumeters WHERE id = $1';
             break;
         case 'Rezervoar':
             query = 'DELETE FROM rezervoar WHERE id = $1';
@@ -114,7 +114,7 @@ export const getEquipmentByClientId = async (clientId, type) => {
             query = 'SELECT * FROM sonda WHERE client_id = $1';
             break;
         case 'Volumetar':
-            query = 'SELECT * FROM volumetar WHERE client_id = $1';
+            query = 'SELECT * FROM volumeters WHERE client_id = $1';
             break;
         case 'Rezervoar':
             query = 'SELECT * FROM rezervoar WHERE client_id = $1';
