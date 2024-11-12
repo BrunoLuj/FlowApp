@@ -40,6 +40,7 @@ const EquipmentTabs = () => {
     // Handle tab change
     const handleTabChange = (type) => {
         setActiveTab(type);
+        setEquipmentData({});
         fetchEquipmentData(type); // Fetch data when tab changes
     };
 
@@ -82,12 +83,42 @@ const EquipmentTabs = () => {
     };
     
     const handleEdit = (equipment) => {
-        setEquipmentData({
-            name: equipment.name,
-            serialNumber: equipment.serial_number,
-            description: equipment.description,
-            id: equipment.id, // Add ID to the form data for the update
-        });
+        if(activeTab === "Sonda"){
+            setEquipmentData({
+                name: equipment.name,
+                serialNumber: equipment.serial_number,
+                serialNumberController: equipment.serial_number_controller,
+                sondatype: equipment.sondatype,
+                manufacturer: equipment.manufacturer,
+                officialmark: equipment.officialmark,
+                tank: equipment.tank,
+                fuel: equipment.fuel,
+                description: equipment.description,
+                id: equipment.id, // Add ID to the form data for the update
+            });
+        }else if(activeTab === "Volumetar"){
+            setEquipmentData({
+                name: equipment.name,
+                serialNumber: equipment.serial_number,
+                description: equipment.description,
+                id: equipment.id, // Add ID to the form data for the update
+            });
+        }else if(activeTab === "Rezervoar"){
+            setEquipmentData({
+                name: equipment.name,
+                serialNumber: equipment.serial_number,
+                description: equipment.description,
+                id: equipment.id, // Add ID to the form data for the update
+            });
+        }else if(activeTab === "Mjerna Letva"){
+            setEquipmentData({
+                name: equipment.name,
+                serialNumber: equipment.serial_number,
+                description: equipment.description,
+                id: equipment.id, // Add ID to the form data for the update
+            });
+        }
+
     };
 
     return (
