@@ -52,11 +52,11 @@ export const deleteEquipments = async (req, res) => {
 
 // Funkcija za ažuriranje datuma isteka
 export const updateCalibrationExpiry = async (req, res) => {
-    const { equipmentId, clientId, currentExpiryDate } = req.params;
+    const { equipmentId, clientId, currentExpiryDate, activeTab } = req.params;
 
     try {
       // Pozivamo model za ažuriranje datuma isteka
-      await equipmentModel.updateCalibrationExpiry(equipmentId, clientId, currentExpiryDate);
+      await equipmentModel.updateCalibrationExpiry(equipmentId, clientId, currentExpiryDate, activeTab);
   
       // Vraćamo odgovor o uspešnom ažuriranju
       res.status(200).send({ message: 'Calibration expiry date updated successfully' });
@@ -67,13 +67,13 @@ export const updateCalibrationExpiry = async (req, res) => {
 };
 
 export const getCalibrationExpiry = async (req, res) => {
-    const { clientId, equipmentId } = req.params;
+    const { clientId, equipmentId, activeTab } = req.params;
 
     console.log(clientId, equipmentId);
 
     try {
         // Pozivamo model za dohvat datuma isteka
-        const result = await equipmentModel.getCalibrationExpiry(clientId, equipmentId);
+        const result = await equipmentModel.getCalibrationExpiry(clientId, equipmentId, activeTab);
         
         // Vraćamo podatke sa trenutnim i prethodnim datumima isteka
         res.status(200).json(result);

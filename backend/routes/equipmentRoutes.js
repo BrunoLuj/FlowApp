@@ -18,7 +18,7 @@ router.get("/:clientId/:type", authMiddleware, checkPermission('view_clients'), 
 router.post("/:type", authMiddleware, checkPermission('create_clients'), addEquipment);
 router.put("/:id/:type", authMiddleware, checkPermission('update_clients'), updateEquipments);
 router.delete("/:id/:type", authMiddleware, checkPermission('delete_clients'), deleteEquipments);
-router.post("/calibrationexpiry/:equipmentId/:clientId/:currentExpiryDate", authMiddleware, checkPermission('update_clients'), updateCalibrationExpiry);
-router.get("/calibrationexpiry/:clientId/:equipmentId", authMiddleware, checkPermission('view_clients'), getCalibrationExpiry);
+router.post("/calibrationexpiry/:equipmentId/:clientId/:currentExpiryDate/:activeTab", authMiddleware, checkPermission('update_clients'), updateCalibrationExpiry);
+router.get("/calibrationexpiry/:clientId/:equipmentId/:activeTab", authMiddleware, checkPermission('view_clients'), getCalibrationExpiry);
 
 export default router;

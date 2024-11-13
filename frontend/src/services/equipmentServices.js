@@ -37,20 +37,20 @@ export const deleteEquipment = async (id, type) => {
 };
 
 // Ažuriraj datum isteka umjeravanja
-export const updateCalibrationExpiry = async (equipmentId, clientId, currentExpiryDate) => {
-    console.log("Front Services:", equipmentId, clientId, currentExpiryDate)
+export const updateCalibrationExpiry = async (equipmentId, clientId, currentExpiryDate, activeTab) => {
+    console.log("Front Services:", equipmentId, clientId, currentExpiryDate, activeTab)
     try {
-        return await api.post(`/equipment/calibrationexpiry/${equipmentId}/${clientId}/${currentExpiryDate}`);
+        return await api.post(`/equipment/calibrationexpiry/${equipmentId}/${clientId}/${currentExpiryDate}/${activeTab}`);
     } catch (error) {
         console.error("Error updating calibration expiry:", error);
         throw new Error('Failed to update calibration expiry');
     }
 };
 
-export const fetchCalibrationExpiriesHistory = async (clientId, equipmentId) =>{
-    console.log("Front Services:", clientId, equipmentId )
+export const fetchCalibrationExpiriesHistory = async (clientId, equipmentId, activeTab) =>{
+    console.log("Front Services:", clientId, equipmentId, activeTab )
     try {
-        return await api.get(`/equipment/calibrationexpiry/${clientId}/${equipmentId}`);
+        return await api.get(`/equipment/calibrationexpiry/${clientId}/${equipmentId}/${activeTab}`);
     } catch (error) {
         console.error("Error updating calibration expiry:", error);
         throw new Error('Failed to update calibration expiry');

@@ -137,28 +137,28 @@ export const getEquipmentByClientId = async (clientId, type) => {
 };
 
 // Funkcija za ažuriranje datuma isteka
-export const updateCalibrationExpiry = async (equipmentId, clientId, currentExpiryDate) => {
+export const updateCalibrationExpiry = async (equipmentId, clientId, currentExpiryDate, activeTab) => {
     try {
         // Provjerite da li postoji datum isteka
         const result = await pool.query(
-            'SELECT current_expiry_date FROM calibration_expiries WHERE equipment_id = $1 AND client_id = $2',
-            [equipmentId, clientId]
+            'SELECT current_expiry_date FROM calibration_expiries WHERE equipment_id = $1 AND client_id = $2 AND active_tab = $3',
+            [equipmentId, clientId, activeTab]
         );
 
         if (result.rows.length === 0) {
             console.log('No expiry date found, adding initial date...');
             // Ako nema, dodajte početni datum isteka
-            await addInitialCalibrationExpiry(equipmentId, clientId, currentExpiryDate);
+            await addInitialCalibrationExpiry(equipmentId, clientId, currentExpiryDate, activeTab);
         } else {
             console.log('Expiry date found, updating...');
             // Ako postoji, premestite ga u istoriju pre nego što ažurirate trenutni datum
             const currentDate = result.rows[0].current_expiry_date;
 
             // Premesti stari datum u istoriju
-            await addToCalibrationExpiryHistory(equipmentId, clientId, currentDate);
+            await addToCalibrationExpiryHistory(equipmentId, clientId, currentDate, activeTab);
 
             // Ažurirajte trenutni datum isteka
-            await updateCurrentCalibrationExpiry(equipmentId, clientId, currentExpiryDate);
+            await updateCurrentCalibrationExpiry(equipmentId, clientId, currentExpiryDate, activeTab);
         }
 
         console.log('Calibration expiry date updated successfully');
@@ -169,11 +169,11 @@ export const updateCalibrationExpiry = async (equipmentId, clientId, currentExpi
 };
 
 // Funkcija za dodavanje inicijalnog datuma isteka ako ne postoji
-const addInitialCalibrationExpiry = async (equipment_id, client_id, initial_expiry_date) => {
+const addInitialCalibrationExpiry = async (equipment_id, client_id, initial_expiry_date, activeTab) => {
     try {
         const result = await pool.query(
-            'INSERT INTO calibration_expiries (equipment_id, client_id, current_expiry_date, created_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP)',
-            [equipment_id, client_id, initial_expiry_date]
+            'INSERT INTO calibration_expiries (equipment_id, client_id, current_expiry_date, active_tab, created_at) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)',
+            [equipment_id, client_id, initial_expiry_date, activeTab]
         );
         console.log('Initial expiry date added successfully!');
     } catch (error) {
@@ -183,11 +183,11 @@ const addInitialCalibrationExpiry = async (equipment_id, client_id, initial_expi
 };
 
 // Funkcija za premještanje starog datuma u istorijsku tabelu
-const addToCalibrationExpiryHistory = async (equipment_id, client_id, expiry_date) => {
+const addToCalibrationExpiryHistory = async (equipment_id, client_id, expiry_date, activeTab) => {
     try {
         const result = await pool.query(
-            'INSERT INTO calibration_expiry_history (equipment_id, client_id, expiry_date) VALUES ($1, $2, $3)',
-            [equipment_id, client_id, expiry_date]
+            'INSERT INTO calibration_expiry_history (equipment_id, client_id, expiry_date, active_tab) VALUES ($1, $2, $3, $4)',
+            [equipment_id, client_id, expiry_date, activeTab]
         );
         console.log('Old expiry date moved to history successfully!');
     } catch (error) {
@@ -196,45 +196,58 @@ const addToCalibrationExpiryHistory = async (equipment_id, client_id, expiry_dat
     }
 };
 
-// Funkcija za ažuriranje trenutnog datuma isteka
-const updateCurrentCalibrationExpiry = async (equipment_id, client_id, current_expiry_date) => {
+// Funkcija za ažuriranje trenutnog datuma isteka za određeni tab
+const updateCurrentCalibrationExpiry = async (equipment_id, client_id, current_expiry_date, activeTab) => {
     try {
+        // Ažuriraj datum isteka u tabeli calibration_expiries za specifičan tip opreme (activeTab)
         const result = await pool.query(
-            'UPDATE calibration_expiries SET current_expiry_date = $1, updated_at = CURRENT_TIMESTAMP WHERE equipment_id = $2 AND client_id = $3',
-            [current_expiry_date, equipment_id, client_id]
+            'UPDATE calibration_expiries SET current_expiry_date = $1, updated_at = CURRENT_TIMESTAMP WHERE equipment_id = $2 AND client_id = $3 AND active_tab = $4',
+            [current_expiry_date, equipment_id, client_id, activeTab] // Dodajemo activeTab kao filter
         );
-        console.log('Current expiry date updated successfully!');
+        
+        if (result.rowCount > 0) {
+            console.log('Current expiry date updated successfully!');
+        } else {
+            console.log('No matching records found to update.');
+        }
     } catch (error) {
         console.error('Error updating current expiry date:', error);
         throw error;
     }
 };
 
-// Funkcija za dohvaćanje trenutnog datuma isteka i povijesti
-export const getCalibrationExpiry = async (clientId, equipmentId) => {
-    console.log("Model", clientId, equipmentId);
+// Funkcija za dohvaćanje trenutnog datuma isteka i povijesti za specifičan tab
+export const getCalibrationExpiry = async (clientId, equipmentId, activeTab) => {
+    console.log("Model", clientId, equipmentId, activeTab);
     try {
-        // Dohvati trenutni datum isteka iz calibration_expiries
+        // Dohvati trenutni datum isteka iz calibration_expiries za specifičan tip opreme (activeTab)
         const currentExpiryResult = await pool.query(
-            'SELECT current_expiry_date FROM calibration_expiries WHERE client_id = $1 AND equipment_id = $2',
-            [clientId, equipmentId]
+            'SELECT current_expiry_date FROM calibration_expiries WHERE client_id = $1 AND equipment_id = $2 AND active_tab = $3',
+            [clientId, equipmentId, activeTab] // Dodajemo activeTab kao filter
         );
     
         // Dohvati povjesne datume isteka iz calibration_expiry_history
         const historyResult = await pool.query(
-            'SELECT expiry_date FROM calibration_expiry_history WHERE client_id = $1 AND equipment_id = $2 ORDER BY expiry_date DESC',
-            [clientId, equipmentId]
+            'SELECT expiry_date FROM calibration_expiry_history WHERE client_id = $1 AND equipment_id = $2 AND active_tab = $3 ORDER BY expiry_date DESC',
+            [clientId, equipmentId, activeTab] // Dodajemo activeTab kao filter
         );
     
         const currentExpiryDate = currentExpiryResult.rows.length > 0
             ? currentExpiryResult.rows[0].current_expiry_date
             : null;
+
+        // Ako je currentExpiryDate tip Date, pretvori ga u string u formatu yyyy-mm-dd
+        const formattedExpiryDate = currentExpiryDate
+            ? new Date(currentExpiryDate).toISOString().split('T')[0] // Pretvara Date u string (yyyy-mm-dd)
+            : null;
+        
+        console.log("Model", formattedExpiryDate); // Ispisuje samo datum (2024-11-20)
     
         const previousExpiryDates = historyResult.rows.map(row => row.expiry_date);
     
         // Vratite podatke kao objekat
         return {
-            current_expiry_date: currentExpiryDate,
+            current_expiry_date: formattedExpiryDate,
             previous_expiry_dates: previousExpiryDates
         };
     } catch (error) {
@@ -242,4 +255,6 @@ export const getCalibrationExpiry = async (clientId, equipmentId) => {
         throw new Error('Error fetching calibration expiries');
     }
 };
+
+
 
