@@ -14,7 +14,6 @@ export const fetchEquipment = async (clientId, type) => {
 // Spremi novu opremu ili ažuriraj postojeću
 export const saveEquipment = async (type, equipmentData) => {
     try {
-        console.log(equipmentData);
         if (equipmentData.id) {
             return await api.put(`/equipment/${equipmentData.id}/${type}`, equipmentData);
         } else {
@@ -38,7 +37,6 @@ export const deleteEquipment = async (id, type) => {
 
 // Ažuriraj datum isteka umjeravanja
 export const updateCalibrationExpiry = async (equipmentId, clientId, currentExpiryDate, activeTab) => {
-    console.log("Front Services:", equipmentId, clientId, currentExpiryDate, activeTab)
     try {
         return await api.post(`/equipment/calibrationexpiry/${equipmentId}/${clientId}/${currentExpiryDate}/${activeTab}`);
     } catch (error) {
@@ -48,7 +46,6 @@ export const updateCalibrationExpiry = async (equipmentId, clientId, currentExpi
 };
 
 export const fetchCalibrationExpiriesHistory = async (clientId, equipmentId, activeTab) =>{
-    console.log("Front Services:", clientId, equipmentId, activeTab )
     try {
         return await api.get(`/equipment/calibrationexpiry/${clientId}/${equipmentId}/${activeTab}`);
     } catch (error) {

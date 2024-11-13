@@ -11,21 +11,13 @@ const EquipmentTabs = () => {
 
     const location = useLocation();
     const client = location.state?.client;
-    console.log(client)
     const { permissions } = useStore();
     
     // Fetch equipment data based on active tab
     const fetchEquipmentData = async (type) => {
         try {
-            console.log('Fetching equipment data...');
             const data = await fetchEquipment(client.id, type);
-            
-            console.log('Fetched data:', data.data); // Prikazivanje podataka u konzoli
-    
             setEquipmentList(data.data);  // Postavite podatke u stanje
-
-            console.log('Equipment List:', equipmentList); 
-            console.log('Type of equipmentList:', Array.isArray(equipmentList)); // Da li je niz?
     
         } catch (error) {
             console.error('Failed to fetch data:', error);
@@ -34,7 +26,6 @@ const EquipmentTabs = () => {
     };
     
     useEffect(() => {
-        console.log('Equipment List:', equipmentList);  // Ovde proverite stanje
     }, [equipmentList]);
 
     // Handle tab change

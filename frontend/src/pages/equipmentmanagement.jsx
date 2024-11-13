@@ -25,12 +25,10 @@ const EquipmentManagement = () => {
   // Funkcija za učitavanje opreme prema vrsti
   const fetchEquipmentData = async (type) => {
     try {
-      console.log('Fetching equipment data...');
       const data = await fetchEquipment(client.id, type);
-      console.log('Fetched data:', data.data);
       setEquipmentData(data.data);
     } catch (error) {
-      console.error('Failed to fetch data:', error);
+    //   console.error('Failed to fetch data:', error);
       toast.error('Failed to fetch equipment data.');
     }
   };
@@ -179,6 +177,8 @@ const EquipmentManagement = () => {
             <thead>
               <tr className="bg-gray-200">
                 <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Name</th>
+                {activeTab === 'Volumetar' && <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Device</th>}
+                {activeTab === 'Sonda' && <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Controller</th>}
                 <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Serial Number</th>
                 <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Current Calibration Expiry</th>
                 <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Previous Calibration Expiry Dates</th>
@@ -188,6 +188,8 @@ const EquipmentManagement = () => {
               {equipmentData?.map((equipment) => (
                 <tr key={equipment.id} className="hover:bg-blue-50">
                   <td className="px-6 py-4 text-sm font-medium text-gray-700">{equipment.name}</td>
+                  {activeTab === 'Volumetar' && <td className="px-6 py-4 text-sm font-medium text-gray-700">{equipment.serial_number_device}</td>}
+                  {activeTab === 'Sonda' && <td className="px-6 py-4 text-sm font-medium text-gray-700">{equipment.serial_number_controller}</td>}
                   <td className="px-6 py-4 text-sm font-medium text-gray-700">{equipment.serial_number}</td>
                   <td className="px-6 py-4 text-sm font-medium text-gray-700">
                     {inputDates[equipment.id]
