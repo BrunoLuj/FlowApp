@@ -15,4 +15,8 @@ export const saveProject = async (projectData) => {
 
 export const deleteProject = async (project_id) => {
     return await api.delete(`/projects/${project_id}`);
-}
+};
+
+export const getActiveProjects = async () => {
+    return await api.get("/projects/active");
+};

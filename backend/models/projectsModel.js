@@ -29,3 +29,8 @@ export const deleteProject = async (id) => {
     const result = await pool.query('DELETE FROM projects WHERE id = $1 RETURNING *', [id]);
     return result.rows[0];
 };
+
+export const getActiveProjects = async () => {
+  const result = await pool.query("SELECT * FROM projects WHERE status = 'Active'");
+  return result.rows;
+};

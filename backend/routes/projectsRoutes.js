@@ -6,6 +6,7 @@ import {
     addProjects,
     updateProjects,
     deleteProjects,
+    getActiveProjects
 } from "../controllers/projectsController.js";
 
 const router = express.Router();
@@ -15,5 +16,6 @@ router.get("/", authMiddleware, checkPermission('view_projects'), getProjects); 
 router.post("/", authMiddleware, checkPermission('create_projects'), addProjects); // Dodavanje novog projekta
 router.put("/:id", authMiddleware, checkPermission('update_projects'), updateProjects); // Ažuriranje postojećeg projekta
 router.delete("/:id", authMiddleware, checkPermission('delete_projects'), deleteProjects); // Brisanje projekta
+router.get("/active", authMiddleware, checkPermission('view_projects'), getActiveProjects);
 
 export default router;

@@ -1,19 +1,37 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Line, Bar, Pie } from 'react-chartjs-2';
 import { Chart, registerables } from 'chart.js';
 import { FaClipboardList, FaCheckCircle, FaExclamationTriangle, FaTasks, FaPlus } from 'react-icons/fa';
+import { getActiveProjects} from '../services/projectsServices.js';
 
 Chart.register(...registerables);
 
 const Dashboard = () => {
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('svi'); // Default filter
   const [searchTerm, setSearchTerm] = useState('');
   const [tasks, setTasks] = useState([
-    { id: 1, name: 'Zadatak 1', status: 'U tijeku', dueDate: '2024-10-30' },
-    { id: 2, name: 'Zadatak 2', status: 'Završen', dueDate: '2024-10-20' },
-    { id: 3, name: 'Zadatak 3', status: 'Nezavršeno', dueDate: '2024-11-05' },
-    { id: 4, name: 'Zadatak 4', status: 'U tijeku', dueDate: '2024-10-25' },
+    // { id: 1, name: 'Zadatak 1', status: 'U tijeku', dueDate: '2024-10-30' },
+    // { id: 2, name: 'Zadatak 2', status: 'Završen', dueDate: '2024-10-20' },
+    // { id: 3, name: 'Zadatak 3', status: 'Nezavršeno', dueDate: '2024-11-05' },
+    // { id: 4, name: 'Zadatak 4', status: 'U tijeku', dueDate: '2024-10-25' },
   ]);
+
+  useEffect(() => {
+      const fetchProjects = async () => {
+        try {
+          const response = await getActiveProjects(); // Pozovi API funkciju
+          setTasks(response.data);
+        } catch (err) {
+          setError(err);
+        } finally {
+          setLoading(false);
+        }
+      };
+  
+      fetchProjects();
+    }, []);
 
   const stats = {
     completedMeasurements: 120,
@@ -70,7 +88,7 @@ const Dashboard = () => {
   // Status colors for circles
   const statusColors = {
     'Završen': 'bg-green-500',
-    'U tijeku': 'bg-blue-500',
+    'Active': 'bg-blue-500',
     'Nezavršeno': 'bg-red-500',
   };
 
@@ -164,12 +182,12 @@ const Dashboard = () => {
             <tbody>
               {filteredTasks.map(task => (
                 <tr key={task.id} className="border-b">
-                  <td className="p-4">{task.name}</td>
+                  <td className="p-4">{task.project_type}</td>
                   <td className="p-4 flex items-center">
                     <span className={`w-4 h-4 rounded-full ${statusColors[task.status]} mr-2`}></span>
                     {task.status}
                   </td>
-                  <td className="p-4">{task.dueDate}</td>
+                  <td className="p-4">{task.end_date}</td>
                   <td className="p-4">
                     <button className="text-blue-500 mr-2">Uredi</button>
                     <button className="text-red-500">Obriši</button>

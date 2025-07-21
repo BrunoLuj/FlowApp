@@ -51,3 +51,12 @@ export const deleteProjects = async (req, res) => {
         res.status(500).json({ error: 'Error deleting project' });
     }
 };
+
+export const getActiveProjects = async (req, res) => {
+    try {
+        const projects = await projectModel.getActiveProjects();
+        res.json(projects);
+    } catch (error) {
+        res.status(500).json({ error: 'Error fetching projects' });
+    }
+};
