@@ -131,7 +131,7 @@ const ProjectForm = () => {
           </div>
 
           {/* STTN */}
-          <div>
+          {/*<div>
             <label className="block mb-1 font-medium">STTN:</label>
             <input
               type="text"

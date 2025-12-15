@@ -101,7 +101,7 @@ const Clients = () => {
               <th className="py-3 px-4 border-b text-left">Address</th>
               <th className="py-3 px-4 border-b text-left">ID Number</th>
               <th className="py-3 px-4 border-b text-left">PDV Number</th>
-              <th className="py-3 px-4 border-b text-left">STTN Number</th>
+              {/*<th className="py-3 px-4 border-b text-left">STTN Number</th>*/}
               <th className="py-3 px-4 border-b text-left">Contact Person</th>
               <th className="py-3 px-4 border-b text-left">Phone</th>
               <th className="py-3 px-4 border-b text-left">Email</th>
@@ -123,7 +123,7 @@ const Clients = () => {
                   <td className="py-3 px-4 border-b">{client.address}</td>
                   <td className="py-3 px-4 border-b">{client.idbroj}</td>
                   <td className="py-3 px-4 border-b">{client.pdvbroj}</td>
-                  <td className="py-3 px-4 border-b">{client.sttn_broj}</td>
+                  {/*<td className="py-3 px-4 border-b">{client.sttn_broj}</td>*/}
                   <td className="py-3 px-4 border-b">{client.contact_person}</td>
                   <td className="py-3 px-4 border-b">{client.phone}</td>
                   <td className="py-3 px-4 border-b">{client.email}</td>
