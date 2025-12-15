@@ -62,13 +62,13 @@ const ChangePassword = () => {
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
-            <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-8">
+        <div className="flex items-center justify-center min-h-screen bg-gray-100 p-6">
+            <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-6">
                 <h2 className="text-2xl font-semibold mb-6 text-center">Change Password</h2>
                 {error && <div className="mb-4 text-red-600">{error}</div>}
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label className="block text-gray-700 font-medium mb-1" htmlFor="currentPassword">Current Password:</label>
+                        <label className="block text-gray-700 font-medium mb-2" htmlFor="currentPassword">Current Password:</label>
                         <div className="relative">
                             <input 
                                 type={showCurrentPassword ? 'text' : 'password'} 
@@ -76,7 +76,7 @@ const ChangePassword = () => {
                                 value={formData.currentPassword} 
                                 onChange={handleChange} 
                                 required
-                                className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-400 transition duration-150"
+                                className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-300 transition duration-150"
                             />
                             <button type="button" className="absolute right-3 top-3" onClick={() => setShowCurrentPassword(!showCurrentPassword)}>
                                 {showCurrentPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
@@ -84,7 +84,7 @@ const ChangePassword = () => {
                         </div>
                     </div>
                     <div>
-                        <label className="block text-gray-700 font-medium mb-1" htmlFor="newPassword">New Password:</label>
+                        <label className="block text-gray-700 font-medium mb-2" htmlFor="newPassword">New Password:</label>
                         <div className="relative">
                             <input 
                                 type={showNewPassword ? 'text' : 'password'} 
@@ -92,7 +92,7 @@ const ChangePassword = () => {
                                 value={formData.newPassword} 
                                 onChange={handleChange} 
                                 required
-                                className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-400 transition duration-150"
+                                className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-300 transition duration-150"
                             />
                             <button type="button" className="absolute right-3 top-3" onClick={() => setShowNewPassword(!showNewPassword)}>
                                 {showNewPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
@@ -100,7 +100,7 @@ const ChangePassword = () => {
                         </div>
                     </div>
                     <div>
-                        <label className="block text-gray-700 font-medium mb-1" htmlFor="confirmPassword">Confirm New Password:</label>
+                        <label className="block text-gray-700 font-medium mb-2" htmlFor="confirmPassword">Confirm New Password:</label>
                         <div className="relative">
                             <input 
                                 type={showConfirmPassword ? 'text' : 'password'} 
@@ -108,17 +108,17 @@ const ChangePassword = () => {
                                 value={formData.confirmPassword} 
                                 onChange={handleChange} 
                                 required
-                                className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-400 transition duration-150"
+                                className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-300 transition duration-150"
                             />
                             <button type="button" className="absolute right-3 top-3" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
                                 {showConfirmPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
                             </button>
                         </div>
                     </div>
-                    <div className="flex justify-end">
+                    <div className="flex justify-end mt-4">
                         <button 
                             type="submit" 
-                            className="w-full bg-blue-600 text-white px-5 py-3 rounded-lg hover:bg-blue-700 transition duration-200"
+                            className="w-full bg-gradient-to-r from-blue-500 to-blue-700 text-white px-6 py-3 rounded-lg hover:from-blue-600 hover:to-blue-800 transition duration-200"
                         >
                             Change Password
                         </button>

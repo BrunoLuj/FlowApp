@@ -31,8 +31,7 @@ const Navbar = () => {
 
   // Track active link
   useEffect(() => {
-    const currentPath = location.pathname;
-    const activeIndex = links.findIndex(link => link.link === currentPath);
+    const activeIndex = links.findIndex(link => link.link === location.pathname);
     if (activeIndex !== -1) setSelected(activeIndex);
   }, [location.pathname]);
 
@@ -88,7 +87,7 @@ const Navbar = () => {
               {isUserMenuOpen && (
                 <div 
                   ref={userMenuRef} 
-                  className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-50 overflow-hidden border border-gray-200 transition transform scale-95 animate-scale-in"
+                  className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-50 overflow-hidden border border-gray-200 transition-transform duration-200 transform scale-95 hover:scale-100"
                 >
                   <h3 className="px-4 py-2 text-xs font-semibold text-gray-600">{t('user options')}</h3>
                   <Link to="/profile" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-100 transition">
@@ -133,8 +132,7 @@ const Navbar = () => {
                 className={`flex items-center gap-2 px-3 py-2 rounded-full transition-all duration-300 group
                   ${index === selected 
                     ? "bg-gradient-to-r from-blue-600 to-blue-400 text-white shadow-lg" 
-                    : "text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"}
-                `}
+                    : "text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"}`}
                 onClick={() => {
                   setSelected(index);
                   isMobile && setMobileMenuOpen(false);
@@ -155,19 +153,6 @@ const Navbar = () => {
           ))}
         </div>
       </aside>
-
-      {/* Optional animation class for user menu */}
-      <style>
-        {`
-          @keyframes scale-in {
-            0% { transform: scale(0.95); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-          }
-          .animate-scale-in {
-            animation: scale-in 0.15s ease-out forwards;
-          }
-        `}
-      </style>
     </div>
   );
 };

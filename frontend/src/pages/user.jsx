@@ -1,14 +1,30 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import useStore from '../store';
-import { deleteUser, getRoles, getUsers, saveUser } from '../services/usersServices';
+import { deleteUser, getRoles, saveUser } from '../services/usersServices';
 import { toast } from 'sonner';
-
 
 const UserForm = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { permissions } = useStore();
+  const user = location.state?.user || {};
+  const [roles, setRoles] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const [formData, setFormData] = useState({
+    id: user.id || null,
+    firstname: user.firstname || '',
+    lastname: user.lastname || '',
+    email: user.email || '',
+    address: user.address || '',
+    contact: user.contact || '',
+    country: user.country || '',
+    currency: user.currency || '',
+    roles_id: user.roles_id || '',
+    status: user.status || false,
+    description: user.description || '',
+  });
   const countryCurrencyList = [
     { country: "Afghanistan", currency: "AFN" },
     { country: "Albania", currency: "ALL" },
@@ -192,38 +208,20 @@ const UserForm = () => {
     { country: "Yemen", currency: "YER" },
     { country: "Zambia", currency: "ZMW" },
     { country: "Zimbabwe", currency: "ZWL" },
-    ];
-
-  const user = location.state?.user || {};
-  const [roles, setRoles] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  const [formData, setFormData] = useState({
-    id: user.id || null,
-    firstname: user.firstname || '',
-    lastname: user.lastname || '',
-    email: user.email || '',
-    address: user.address || '',
-    contact: user.contact || '',
-    country: user.country || '',
-    currency: user.currency || '',
-    roles_id: user.roles_id || '',
-    status: user.status || false,
-    description: user.description || '',
-  });
+  ];
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchRoles = async () => {
       try {
-        const rolesResponse = await getRoles();
-        setRoles(rolesResponse.data);
-      } catch (err) {
+        const res = await getRoles();
+        setRoles(res.data);
+      } catch {
         toast.error("Failed to load roles");
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
+    fetchRoles();
   }, []);
 
   const handleChange = (e) => {
@@ -260,172 +258,183 @@ const UserForm = () => {
   if (loading) return <div className="p-6">Loading...</div>;
 
   return (
-    <div className="bg-gray-100 min-h-screen p-4 mt-14 sm:ml-16">
-      <h2 className="text-3xl font-bold text-center mb-6">
-        {user.id ? `${user.firstname} ${user.lastname}` : 'New User'}
-      </h2>
+    <div className="bg-gray-100 min-h-screen p-6 mt-14 sm:ml-16">
+      <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl p-8">
+        <h2 className="text-3xl font-bold text-center mb-6">
+          {user.id ? `${user.firstname} ${user.lastname}` : 'New User'}
+        </h2>
 
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Firstname */}
-          <div>
-            <label className="block text-gray-700 mb-2">First Name</label>
-            <input
-              type="text"
-              name="firstname"
-              value={formData.firstname}
-              onChange={handleChange}
-              readOnly={!permissions.includes('create_users')}
-              className={`w-full border p-3 rounded-lg focus:ring focus:ring-blue-300 ${!permissions.includes('create_users') ? 'bg-gray-200' : ''}`}
-            />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Firstname */}
+            <div>
+              <label className="block text-gray-700 mb-2">First Name</label>
+              <input
+                type="text"
+                name="firstname"
+                value={formData.firstname}
+                onChange={handleChange}
+                readOnly={!permissions.includes('create_users')}
+                className={`w-full border p-3 rounded-xl focus:ring focus:ring-blue-400 ${!permissions.includes('create_users') ? 'bg-gray-200' : 'bg-white'}`}
+              />
+            </div>
+
+            {/* Lastname */}
+            <div>
+              <label className="block text-gray-700 mb-2">Last Name</label>
+              <input
+                type="text"
+                name="lastname"
+                value={formData.lastname}
+                onChange={handleChange}
+                readOnly={!permissions.includes('create_users')}
+                className={`w-full border p-3 rounded-xl focus:ring focus:ring-blue-400 ${!permissions.includes('create_users') ? 'bg-gray-200' : 'bg-white'}`}
+              />
+            </div>
+
+            {/* Email */}
+            <div>
+              <label className="block text-gray-700 mb-2">Email</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                readOnly={!permissions.includes('create_users')}
+                className={`w-full border p-3 rounded-xl focus:ring focus:ring-blue-400 ${!permissions.includes('create_users') ? 'bg-gray-200' : 'bg-white'}`}
+              />
+            </div>
+
+            {/* Address */}
+            <div>
+              <label className="block text-gray-700 mb-2">Address</label>
+              <input
+                type="text"
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                readOnly={!permissions.includes('create_users')}
+                className={`w-full border p-3 rounded-xl focus:ring focus:ring-blue-400 ${!permissions.includes('create_users') ? 'bg-gray-200' : 'bg-white'}`}
+              />
+            </div>
+
+            {/* Contact */}
+            <div>
+              <label className="block text-gray-700 mb-2">Phone</label>
+              <input
+                type="text"
+                name="contact"
+                value={formData.contact}
+                onChange={handleChange}
+                readOnly={!permissions.includes('create_users')}
+                className={`w-full border p-3 rounded-xl focus:ring focus:ring-blue-400 ${!permissions.includes('create_users') ? 'bg-gray-200' : 'bg-white'}`}
+              />
+            </div>
+
+            {/* Role */}
+            <div>
+              <label className="block text-gray-700 mb-2">Role</label>
+              <select
+                name="roles_id"
+                value={formData.roles_id}
+                onChange={handleChange}
+                disabled={!permissions.includes('create_users')}
+                className={`w-full border p-3 rounded-xl focus:ring focus:ring-blue-400 ${!permissions.includes('create_users') ? 'bg-gray-200' : 'bg-white'}`}
+              >
+                <option value="" disabled>Select role</option>
+                {roles.map(role => (
+                  <option key={role.id} value={role.id}>{role.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Status */}
+            <div>
+              <label className="block text-gray-700 mb-2">Status</label>
+              <select
+                name="status"
+                value={formData.status ? 'Active' : 'Inactive'}
+                onChange={handleChange}
+                disabled={!permissions.includes('create_users')}
+                className={`w-full border p-3 rounded-xl focus:ring focus:ring-blue-400 ${!permissions.includes('create_users') ? 'bg-gray-200' : 'bg-white'}`}
+              >
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
+
+            {/* Country */}
+            <div>
+              <label className="block text-gray-700 mb-2">Country</label>
+              <select
+                name="country"
+                value={formData.country}
+                onChange={(e) => {
+                  const selected = countryCurrencyList.find(c => c.country === e.target.value);
+                  setFormData({ ...formData, country: selected.country, currency: selected.currency });
+                }}
+                disabled={!permissions.includes('create_users')}
+                className={`w-full border p-3 rounded-xl focus:ring focus:ring-blue-400 ${!permissions.includes('create_users') ? 'bg-gray-200' : 'bg-white'}`}
+              >
+                <option value="">Select country</option>
+                {countryCurrencyList.map((c) => (
+                  <option key={c.country} value={c.country}>{c.country}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Currency */}
+            <div>
+              <label className="block text-gray-700 mb-2">Currency</label>
+              <input
+                type="text"
+                name="currency"
+                value={formData.currency}
+                readOnly
+                className="w-full border p-3 rounded-xl bg-gray-100"
+              />
+            </div>
+
+            {/* Description */}
+            <div className="md:col-span-2">
+              <label className="block text-gray-700 mb-2">Description</label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                readOnly={!permissions.includes('create_users')}
+                className={`w-full border p-3 rounded-xl focus:ring focus:ring-blue-400 ${!permissions.includes('create_users') ? 'bg-gray-200' : 'bg-white'}`}
+                rows="4"
+              />
+            </div>
           </div>
 
-          {/* Lastname */}
-          <div>
-            <label className="block text-gray-700 mb-2">Last Name</label>
-            <input
-              type="text"
-              name="lastname"
-              value={formData.lastname}
-              onChange={handleChange}
-              readOnly={!permissions.includes('create_users')}
-              className={`w-full border p-3 rounded-lg focus:ring focus:ring-blue-300 ${!permissions.includes('create_users') ? 'bg-gray-200' : ''}`}
-            />
+          {/* Buttons */}
+          <div className="flex flex-wrap gap-4 mt-6 justify-end">
+            {permissions.includes('update_users') && (
+              <button
+                type="submit"
+                className="py-3 px-6 rounded-xl text-white font-semibold
+                           bg-gradient-to-r from-blue-500 to-blue-700
+                           hover:from-blue-600 hover:to-blue-800 transition"
+              >
+                Save
+              </button>
+            )}
+            {permissions.includes('delete_users') && user.id && (
+              <button
+                type="button"
+                onClick={handleRemove}
+                className="py-3 px-6 rounded-xl text-white font-semibold
+                           bg-gradient-to-r from-red-500 to-red-700
+                           hover:from-red-600 hover:to-red-800 transition"
+              >
+                Delete
+              </button>
+            )}
           </div>
-
-          {/* Email */}
-          <div>
-            <label className="block text-gray-700 mb-2">Email</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              readOnly={!permissions.includes('create_users')}
-              className={`w-full border p-3 rounded-lg focus:ring focus:ring-blue-300 ${!permissions.includes('create_users') ? 'bg-gray-200' : ''}`}
-            />
-          </div>
-
-          {/* Address */}
-          <div>
-            <label className="block text-gray-700 mb-2">Address</label>
-            <input
-              type="text"
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              readOnly={!permissions.includes('create_users')}
-              className={`w-full border p-3 rounded-lg focus:ring focus:ring-blue-300 ${!permissions.includes('create_users') ? 'bg-gray-200' : ''}`}
-            />
-          </div>
-
-          {/* Contact */}
-          <div>
-            <label className="block text-gray-700 mb-2">Phone</label>
-            <input
-              type="text"
-              name="contact"
-              value={formData.contact}
-              onChange={handleChange}
-              readOnly={!permissions.includes('create_users')}
-              className={`w-full border p-3 rounded-lg focus:ring focus:ring-blue-300 ${!permissions.includes('create_users') ? 'bg-gray-200' : ''}`}
-            />
-          </div>
-
-          {/* Role */}
-          <div>
-            <label className="block text-gray-700 mb-2">Role</label>
-            <select
-              name="roles_id"
-              value={formData.roles_id}
-              onChange={handleChange}
-              disabled={!permissions.includes('create_users')}
-              className={`w-full border p-3 rounded-lg focus:ring focus:ring-blue-300 ${!permissions.includes('create_users') ? 'bg-gray-200' : ''}`}
-            >
-              <option value="" disabled>Select role</option>
-              {roles.map(role => (
-                <option key={role.id} value={role.id}>{role.name}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Status */}
-          <div>
-            <label className="block text-gray-700 mb-2">Status</label>
-            <select
-              name="status"
-              value={formData.status ? 'Active' : 'Inactive'}
-              onChange={handleChange}
-              disabled={!permissions.includes('create_users')}
-              className={`w-full border p-3 rounded-lg focus:ring focus:ring-blue-300 ${!permissions.includes('create_users') ? 'bg-gray-200' : ''}`}
-            >
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
-          </div>
-
-          {/* Country */}
-        <select
-            name="country"
-            value={formData.country}
-            onChange={(e) => {
-                const selected = countryCurrencyList.find(c => c.country === e.target.value);
-                setFormData({
-                ...formData,
-                country: selected.country,
-                currency: selected.currency
-                });
-            }}
-            disabled={!permissions.includes('create_users')}
-            className={`w-full border p-3 rounded-lg focus:ring focus:ring-blue-300 ${!permissions.includes('create_users') ? 'bg-gray-200' : ''}`}
-            >
-            <option value="">Select country</option>
-            {countryCurrencyList.map((c) => (
-                <option key={c.country} value={c.country}>{c.country}</option>
-            ))}
-        </select>
-
-
-          {/* Currency */}
-          <div>
-            <label className="block text-gray-700 mb-2">Currency</label>
-            <input
-              type="text"
-              name="currency"
-              value={formData.currency}
-              onChange={handleChange}
-              readOnly={!permissions.includes('create_users')}
-              className={`w-full border p-3 rounded-lg focus:ring focus:ring-blue-300 ${!permissions.includes('create_users') ? 'bg-gray-200' : ''}`}
-            />
-          </div>
-
-          {/* Description */}
-          <div className="md:col-span-2">
-            <label className="block text-gray-700 mb-2">Description</label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              readOnly={!permissions.includes('create_users')}
-              className={`w-full border p-3 rounded-lg focus:ring focus:ring-blue-300 ${!permissions.includes('create_users') ? 'bg-gray-200' : ''}`}
-              rows="4"
-            />
-          </div>
-        </div>
-
-        <div className="flex flex-col sm:flex-row justify-between mt-6 gap-2">
-          {permissions.includes('update_users') && (
-            <button type="submit" className="bg-blue-600 text-white px-5 py-3 rounded-lg hover:bg-blue-700 transition">
-              Save
-            </button>
-          )}
-          {permissions.includes('delete_users') && user.id && (
-            <button type="button" onClick={handleRemove} className="bg-red-600 text-white px-5 py-3 rounded-lg hover:bg-red-700 transition">
-              Delete
-            </button>
-          )}
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   );
 };

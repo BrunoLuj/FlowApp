@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useStore from '../store/index.js';
 import { deleteUser, getUsers, getRoles } from '../services/usersServices.js';
+import { FaSearch } from 'react-icons/fa';
+import { toast } from 'sonner';
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -9,8 +11,6 @@ const Users = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-
   const navigate = useNavigate();
   const { permissions } = useStore();
 
@@ -22,6 +22,7 @@ const Users = () => {
         setRoles(rolesResponse.data);
       } catch (err) {
         setError(err);
+        toast.error("Failed to load users or roles");
       } finally {
         setLoading(false);
       }
@@ -29,110 +30,100 @@ const Users = () => {
     fetchData();
   }, []);
 
-  if (loading) return <div className="p-6">Loading...</div>;
-  if (error) return <div className="p-6 text-red-500">Error: {error.message}</div>;
+  if (loading) return <div className="text-center py-6 text-gray-500">Loading...</div>;
+  if (error) return <div className="text-center py-6 text-red-500">{error.message}</div>;
 
   const roleMap = Object.fromEntries(roles.map(r => [r.id, r.name]));
 
-  const filteredUsers = users.filter(user => {
-    const matchesName = user.firstname.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      statusFilter === 'all' ||
-      (statusFilter === 'active' && user.status) ||
-      (statusFilter === 'inactive' && !user.status);
-    return matchesName && matchesStatus;
-  });
+  const filteredUsers = users.filter(user =>
+    user.firstname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.lastname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const removeUser = async (user) => {
     if (!window.confirm(`Are you sure you want to remove ${user.firstname}?`)) return;
-    await deleteUser(user.id);
-    setUsers(users.filter(u => u.id !== user.id));
+    try {
+      await deleteUser(user.id);
+      setUsers(prev => prev.filter(u => u.id !== user.id));
+      toast.success(`${user.firstname} removed successfully`);
+    } catch {
+      toast.error("Failed to remove user");
+    }
   };
 
-  const startEditing = (user) => {
-    navigate('/user', { state: { user } });
-  };
+  const startEditing = (user) => navigate('/user', { state: { user } });
+  const openUser = (user) => navigate('/user', { state: { user } });
+
+  const getStatusClass = (active) => active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
+  const getStatusText = (active) => active ? 'Active' : 'Inactive';
 
   return (
     <div className="bg-gray-100 min-h-screen p-4 mt-14 sm:ml-16">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6">
-        <h1 className="text-2xl font-bold mb-4 sm:mb-0">Users</h1>
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+        <h1 className="text-3xl font-bold text-gray-800">Users</h1>
         {permissions.includes('create_users') && (
           <button
-            onClick={() => navigate('/user/')}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
+            onClick={() => navigate('/user')}
+            className="px-6 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold shadow-lg hover:scale-105 transition transform"
           >
             Add User
           </button>
         )}
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row sm:space-x-4 mb-6 gap-2">
+      {/* Search */}
+      <div className="relative mb-6 w-full sm:w-96">
         <input
           type="text"
-          placeholder="Search by user name"
+          placeholder="Search by name or email"
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
-          className="border border-gray-300 p-3 rounded-lg shadow-sm focus:outline-none focus:ring focus:ring-blue-300 transition w-full sm:w-1/2"
+          className="w-full p-3 rounded-xl border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 pl-10 transition"
         />
-        <select
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
-          className="border border-gray-300 p-3 rounded-lg shadow-sm focus:outline-none focus:ring focus:ring-blue-300 transition w-full sm:w-1/4"
-        >
-          <option value="all">All</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </select>
+        <FaSearch className="absolute left-3 top-3 text-gray-400"/>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto bg-white rounded-lg shadow">
-        <table className="min-w-full divide-y divide-gray-200">
+      {/* Users Table */}
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-white rounded-2xl shadow-xl overflow-hidden">
           <thead className="bg-gray-50">
             <tr>
-              {['First Name', 'Last Name', 'Email', 'Role', 'Contact', 'Address', 'Country', 'Currency', 'Status', 'Actions'].map(header => (
-                <th key={header} className="px-4 py-3 text-left text-sm font-medium text-gray-700">
-                  {header}
-                </th>
+              {['First Name','Last Name','Email','Role','Contact','Address','Country','Currency','Status','Actions'].map(h => (
+                <th key={h} className="p-3 text-left text-gray-600">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
-            {filteredUsers.map(user => (
-              <tr
-                key={user.id}
-                className="hover:bg-gray-50 cursor-pointer transition"
-                onClick={() => startEditing(user)}
-              >
-                <td className="px-4 py-3">{user.firstname}</td>
-                <td className="px-4 py-3">{user.lastname}</td>
-                <td className="px-4 py-3">{user.email}</td>
-                <td className="px-4 py-3">{roleMap[user.roles_id] || 'Unknown'}</td>
-                <td className="px-4 py-3">{user.contact}</td>
-                <td className="px-4 py-3">{user.address}</td>
-                <td className="px-4 py-3">{user.country}</td>
-                <td className="px-4 py-3">{user.currency}</td>
-                <td className="px-4 py-3">
-                  <span className={`px-3 py-1 rounded-full text-white text-sm ${user.status ? 'bg-green-500' : 'bg-red-500'}`}>
-                    {user.status ? 'Active' : 'Inactive'}
+          <tbody>
+            {filteredUsers.length === 0 ? (
+              <tr>
+                <td colSpan={10} className="text-center py-6 text-gray-500">No users found</td>
+              </tr>
+            ) : filteredUsers.map(user => (
+              <tr key={user.id} className="hover:bg-gray-50 cursor-pointer transition" onClick={() => openUser(user)}>
+                <td className="p-3 border-b">{user.firstname}</td>
+                <td className="p-3 border-b">{user.lastname}</td>
+                <td className="p-3 border-b">{user.email}</td>
+                <td className="p-3 border-b">{roleMap[user.roles_id] || 'Unknown'}</td>
+                <td className="p-3 border-b">{user.contact}</td>
+                <td className="p-3 border-b">{user.address}</td>
+                <td className="p-3 border-b">{user.country}</td>
+                <td className="p-3 border-b">{user.currency}</td>
+                <td className="p-3 border-b text-center">
+                  <span className={`px-3 py-1 rounded-full font-semibold ${getStatusClass(user.status)}`}>
+                    {getStatusText(user.status)}
                   </span>
                 </td>
-                <td className="px-4 py-3 flex space-x-2">
+                <td className="p-3 border-b flex gap-2 flex-wrap">
                   {permissions.includes('update_users') && (
-                    <button
-                      onClick={e => { e.stopPropagation(); startEditing(user); }}
-                      className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-md transition"
-                    >
+                    <button onClick={e => { e.stopPropagation(); startEditing(user); }}
+                      className="bg-yellow-400 text-white px-4 py-1 rounded-lg shadow hover:bg-yellow-500 transition">
                       Edit
                     </button>
                   )}
                   {permissions.includes('delete_users') && (
-                    <button
-                      onClick={e => { e.stopPropagation(); removeUser(user); }}
-                      className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md transition"
-                    >
+                    <button onClick={e => { e.stopPropagation(); removeUser(user); }}
+                      className="bg-red-500 text-white px-4 py-1 rounded-lg shadow hover:bg-red-600 transition">
                       Remove
                     </button>
                   )}

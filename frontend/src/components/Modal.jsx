@@ -1,13 +1,20 @@
 import React, { useEffect } from 'react';
+import PropTypes from 'prop-types'; // Add PropTypes for better validation
 
 const Modal = ({ children, onClose }) => {
-    // Zatvaranje na ESC
+    // Zatvaranje modala kada pritisneš ESC
     useEffect(() => {
         const handleEsc = (e) => {
             if (e.key === 'Escape') onClose();
         };
+
+        // Dodavanje listenera na ESC
         window.addEventListener('keydown', handleEsc);
-        return () => window.removeEventListener('keydown', handleEsc);
+
+        // Čišćenje listenera prilikom unmount-a
+        return () => {
+            window.removeEventListener('keydown', handleEsc);
+        };
     }, [onClose]);
 
     return (
@@ -29,6 +36,12 @@ const Modal = ({ children, onClose }) => {
             </div>
         </div>
     );
+};
+
+// PropTypes validation for better maintainability and safety
+Modal.propTypes = {
+    children: PropTypes.node.isRequired,  // children is required and can be any renderable node
+    onClose: PropTypes.func.isRequired,   // onClose is a required function
 };
 
 export default Modal;

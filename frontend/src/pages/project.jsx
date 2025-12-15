@@ -44,7 +44,6 @@ const ProjectForm = () => {
   };
 
   const handleSubmit = async (e) => {
-    console.log(formData);
     e.preventDefault();
     if (!formData.client_id || !formData.name) {
       toast.error('Molimo odaberite klijenta i unesite naziv lokacije.');
@@ -65,26 +64,26 @@ const ProjectForm = () => {
       await deleteProject(project.id);
       toast.success('Project deleted successfully!');
       navigate('/projects');
-    } catch (err) {
+    } catch {
       toast.error('Došlo je do greške pri brisanju.');
     }
   };
 
   return (
     <div className="bg-gray-100 min-h-screen p-4 mt-14 sm:ml-16">
-      <div className="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow">
-        <h2 className="text-2xl font-bold mb-6">{project.id ? 'Edit Project' : 'New Project'}</h2>
+      <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-xl">
+        <h2 className="text-3xl font-bold mb-6 text-gray-800">{project.id ? 'Edit Project' : 'New Project'}</h2>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Klijent */}
           <div>
-            <label className="block mb-1 font-medium">Klijent:</label>
+            <label className="block mb-2 font-medium text-gray-700">Klijent:</label>
             <select
               name="client_id"
               value={formData.client_id}
               onChange={handleChange}
               disabled={!permissions.includes('create_projects')}
-              className="w-full border p-2 rounded"
+              className="w-full p-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
             >
               <option value="">Odaberite klijenta</option>
               {clients.map(c => (
@@ -93,75 +92,63 @@ const ProjectForm = () => {
             </select>
           </div>
 
-          {/* Naziv */}
+          {/* Naziv lokacije */}
           <div>
-            <label className="block mb-1 font-medium">Naziv lokacije:</label>
+            <label className="block mb-2 font-medium text-gray-700">Naziv lokacije:</label>
             <input
               type="text"
               name="name"
               value={formData.name}
               onChange={handleChange}
               disabled={!permissions.includes('create_projects')}
-              className="w-full border p-2 rounded"
+              className="w-full p-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
             />
           </div>
 
-          {/* Address */}
-          <div>
-            <label className="block mb-1 font-medium">Adresa:</label>
-            <input
-              type="text"
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              className="w-full border p-2 rounded"
-            />
-          </div>
-
-          {/* City */}
-          <div>
-            <label className="block mb-1 font-medium">Grad:</label>
-            <input
-              type="text"
-              name="city"
-              value={formData.city}
-              onChange={handleChange}
-              className="w-full border p-2 rounded"
-            />
-          </div>
-
-          {/* STTN */}
-          {/*<div>
-            <label className="block mb-1 font-medium">STTN:</label>
-            <input
-              type="text"
-              name="sttn"
-              value={formData.sttn}
-              onChange={handleChange}
-              className="w-full border p-2 rounded"
-            />
+          {/* Adresa i Grad */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block mb-2 font-medium text-gray-700">Adresa:</label>
+              <input
+                type="text"
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                className="w-full p-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
+              />
+            </div>
+            <div>
+              <label className="block mb-2 font-medium text-gray-700">Grad:</label>
+              <input
+                type="text"
+                name="city"
+                value={formData.city}
+                onChange={handleChange}
+                className="w-full p-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
+              />
+            </div>
           </div>
 
           {/* GPS */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block mb-1 font-medium">GPS Lat:</label>
+              <label className="block mb-2 font-medium text-gray-700">GPS Lat:</label>
               <input
                 type="text"
                 name="gps_lat"
                 value={formData.gps_lat}
                 onChange={handleChange}
-                className="w-full border p-2 rounded"
+                className="w-full p-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
               />
             </div>
             <div>
-              <label className="block mb-1 font-medium">GPS Lng:</label>
+              <label className="block mb-2 font-medium text-gray-700">GPS Lng:</label>
               <input
                 type="text"
                 name="gps_lng"
                 value={formData.gps_lng}
                 onChange={handleChange}
-                className="w-full border p-2 rounded"
+                className="w-full p-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
               />
             </div>
           </div>
@@ -176,20 +163,24 @@ const ProjectForm = () => {
                 onChange={handleChange}
                 className="mr-2"
               />
-              Active
+              <span className="font-medium text-gray-700">Active</span>
             </label>
           </div>
 
           {/* Dugmad */}
-          <div className="flex space-x-4">
-            <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+          <div className="flex flex-wrap gap-4">
+            <button
+              type="submit"
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold shadow-lg hover:scale-105 transition transform"
+            >
               Spremi
             </button>
+
             {project.id && permissions.includes('delete_projects') && (
               <button
                 type="button"
                 onClick={handleDelete}
-                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                className="px-6 py-3 rounded-xl bg-red-500 text-white font-semibold shadow-lg hover:bg-red-600 transition"
               >
                 Izbriši
               </button>

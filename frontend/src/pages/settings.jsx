@@ -9,10 +9,9 @@ const Settings = () => {
     const [defaultWorkOrderType, setDefaultWorkOrderType] = useState('');
 
     useEffect(() => {
-        // Ako imaš backend za globalne postavke
         const fetchSettings = async () => {
             try {
-                const res = await api.get('/settings'); // backend endpoint za admin settings
+                const res = await api.get('/settings');
                 const settings = res.data;
                 setDefaultWorkOrderType(settings.defaultWorkOrderType);
             } catch (err) {
@@ -35,52 +34,56 @@ const Settings = () => {
         }
     };
 
-    if (loading) return <p>Loading...</p>;
+    if (loading) return <div className="p-6">Loading...</div>;
 
     return (
-        <div className="p-4 sm:ml-16 mt-14 max-w-3xl mx-auto">
-            <h1 className="text-2xl font-semibold mb-6">Admin Settings</h1>
+        <div className="bg-gray-100 min-h-screen p-6 mt-14 sm:ml-16">
+            <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-6">
+                <h1 className="text-2xl font-semibold mb-6 text-center">Admin Settings</h1>
 
-            <div className="mb-4">
-                <label className="block mb-1">Theme</label>
-                <select
-                    value={theme}
-                    onChange={(e) => setTheme(e.target.value)}
-                    className="border rounded px-3 py-2 w-full"
-                >
-                    <option value="light">Light</option>
-                    <option value="dark">Dark</option>
-                </select>
+                <div className="mb-6">
+                    <label className="block text-gray-700 mb-2">Theme</label>
+                    <select
+                        value={theme}
+                        onChange={(e) => setTheme(e.target.value)}
+                        className="w-full border p-3 rounded-lg bg-white focus:outline-none focus:ring focus:ring-blue-300"
+                    >
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                    </select>
+                </div>
+
+                <div className="mb-6">
+                    <label className="block text-gray-700 mb-2">Language</label>
+                    <select
+                        value={language}
+                        onChange={(e) => setLanguage(e.target.value)}
+                        className="w-full border p-3 rounded-lg bg-white focus:outline-none focus:ring focus:ring-blue-300"
+                    >
+                        <option value="en">English</option>
+                        <option value="hr">Hrvatski</option>
+                    </select>
+                </div>
+
+                <div className="mb-6">
+                    <label className="block text-gray-700 mb-2">Default Work Order Type</label>
+                    <input
+                        type="text"
+                        value={defaultWorkOrderType}
+                        onChange={(e) => setDefaultWorkOrderType(e.target.value)}
+                        className="w-full border p-3 rounded-lg bg-white focus:outline-none focus:ring focus:ring-blue-300"
+                    />
+                </div>
+
+                <div className="flex justify-end mt-4">
+                    <button
+                        onClick={handleSave}
+                        className="bg-gradient-to-r from-blue-500 to-blue-700 text-white px-6 py-3 rounded-lg hover:from-blue-600 hover:to-blue-800 transition"
+                    >
+                        Save Settings
+                    </button>
+                </div>
             </div>
-
-            <div className="mb-4">
-                <label className="block mb-1">Language</label>
-                <select
-                    value={language}
-                    onChange={(e) => setLanguage(e.target.value)}
-                    className="border rounded px-3 py-2 w-full"
-                >
-                    <option value="en">English</option>
-                    <option value="hr">Hrvatski</option>
-                </select>
-            </div>
-
-            <div className="mb-4">
-                <label className="block mb-1">Default Work Order Type</label>
-                <input
-                    type="text"
-                    value={defaultWorkOrderType}
-                    onChange={(e) => setDefaultWorkOrderType(e.target.value)}
-                    className="border rounded px-3 py-2 w-full"
-                />
-            </div>
-
-            <button
-                onClick={handleSave}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            >
-                Save Settings
-            </button>
         </div>
     );
 };

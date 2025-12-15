@@ -14,7 +14,7 @@ const WORK_ORDER_TYPES = [
 ];
 
 const WORK_ORDER_STATUS = [
-    { value: 'New', label: 'New' }, // task je kreiran, ali nije nikome dodijeljen niti planiran
+    { value: 'New', label: 'New' },
     { value: 'Open', label: 'Open' },
     { value: 'In Progress', label: 'In Progress' },
     { value: 'Completed', label: 'Completed' },
@@ -34,7 +34,7 @@ const CreateWorkOrder = () => {
         type: editingWO?.type || WORK_ORDER_TYPES[0].value,
         status: editingWO?.status || 'Open',
         description: editingWO?.description || '',
-        assigned_to: editingWO?.assigned_to || [], // array of user IDs
+        assigned_to: editingWO?.assigned_to || [],
         start_date: editingWO?.start_date || '',
         end_date: editingWO?.end_date || '',
         planned_date: editingWO?.planned_date || ''
@@ -72,7 +72,7 @@ const CreateWorkOrder = () => {
         try {
             await saveWorkOrder(form);
             toast.success(editingWO ? "Work order updated!" : "Work order created!");
-            navigate('/work-order');
+            navigate('/work-orders');
         } catch (error) {
             console.error(error);
             toast.error("Error saving work order");
@@ -84,12 +84,14 @@ const CreateWorkOrder = () => {
         label: `${u.firstname || ''} ${u.lastname || ''}`.trim()
     }));
 
-
     return (
         <div className="bg-gray-100 min-h-screen p-6 mt-14 sm:ml-16">
-            <div className="bg-white rounded-lg shadow p-6 max-w-3xl mx-auto">
-                <h1 className="text-2xl font-semibold mb-4">{editingWO ? "Edit Work Order" : "Create Work Order"}</h1>
-                <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="bg-white rounded-xl shadow-lg p-8 max-w-3xl mx-auto">
+                <h1 className="text-3xl font-bold mb-6 text-gray-800">
+                    {editingWO ? "Edit Work Order" : "Create Work Order"}
+                </h1>
+
+                <form onSubmit={handleSubmit} className="space-y-5">
 
                     <input
                         type="text"
@@ -97,7 +99,7 @@ const CreateWorkOrder = () => {
                         placeholder="Title"
                         value={form.title}
                         onChange={handleChange}
-                        className="w-full border rounded px-3 py-2"
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                         required
                     />
 
@@ -105,7 +107,7 @@ const CreateWorkOrder = () => {
                         name="project_id"
                         value={form.project_id}
                         onChange={handleChange}
-                        className="w-full border rounded px-3 py-2"
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                         required
                     >
                         <option value="">Select Project</option>
@@ -116,25 +118,24 @@ const CreateWorkOrder = () => {
                         ))}
                     </select>
 
-                    <select
-                        name="type"
-                        value={form.type}
-                        onChange={handleChange}
-                        className="w-full border rounded px-3 py-2"
-                        required
-                    >
-                        {WORK_ORDER_TYPES.map(t => (
-                            <option key={t.value} value={t.value}>{t.label}</option>
-                        ))}
-                    </select>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <select
+                            name="type"
+                            value={form.type}
+                            onChange={handleChange}
+                            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                            required
+                        >
+                            {WORK_ORDER_TYPES.map(t => (
+                                <option key={t.value} value={t.value}>{t.label}</option>
+                            ))}
+                        </select>
 
-                    <div>
-                        <label className="block text-sm mb-1">Status</label>
                         <select
                             name="status"
                             value={form.status}
                             onChange={handleChange}
-                            className="w-full border rounded px-3 py-2"
+                            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                             required
                         >
                             {WORK_ORDER_STATUS.map(s => (
@@ -148,13 +149,12 @@ const CreateWorkOrder = () => {
                         placeholder="Description"
                         value={form.description}
                         onChange={handleChange}
-                        className="w-full border rounded px-3 py-2"
-                        rows={3}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                        rows={4}
                     />
 
-                    {/* Multi-select za Assigned To */}
                     <div>
-                        <label className="block mb-1">Assign To</label>
+                        <label className="block text-sm font-medium mb-1">Assign To</label>
                         <Select
                             isMulti
                             options={userOptions}
@@ -173,7 +173,7 @@ const CreateWorkOrder = () => {
                                 name="start_date"
                                 value={form.start_date}
                                 onChange={handleChange}
-                                className="w-full border rounded px-3 py-2"
+                                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                             />
                         </div>
                         <div>
@@ -183,7 +183,7 @@ const CreateWorkOrder = () => {
                                 name="end_date"
                                 value={form.end_date}
                                 onChange={handleChange}
-                                className="w-full border rounded px-3 py-2"
+                                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                             />
                         </div>
                         <div>
@@ -193,7 +193,7 @@ const CreateWorkOrder = () => {
                                 name="planned_date"
                                 value={form.planned_date}
                                 onChange={handleChange}
-                                className="w-full border rounded px-3 py-2"
+                                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                                 required
                             />
                         </div>
@@ -201,7 +201,7 @@ const CreateWorkOrder = () => {
 
                     <button
                         type="submit"
-                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                        className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold shadow hover:scale-105 transition"
                     >
                         {editingWO ? "Update Work Order" : "Create Work Order"}
                     </button>
