@@ -5,11 +5,20 @@ export const getAllProjects = async () => {
     return result.rows;
 };
 
-export const createProject = async (name, project_type, status, start_date, end_date, responsible_person,service_executors, description, client_id ) => {
+/*export const createProject = async (name, project_type, status, start_date, end_date, responsible_person,service_executors, description, client_id ) => {
     const result = await pool.query(
         'INSERT INTO projects (name, project_type, status, start_date, end_date, responsible_person, service_executors, description, client_id ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
         [name, project_type, status, start_date, end_date, responsible_person, service_executors, description, client_id]
     );
+    return result.rows[0];
+};*/
+
+export const createProject = async (client_id, name, address, city, gps_lat, gps_lng, active ) => {
+    const result = await pool.query(
+        'INSERT INTO projects (client_id, name, address, city, gps_lat, gps_lng, active ) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+        [client_id, name, address, city, gps_lat, gps_lng, active]
+    );
+    console.log(result);
     return result.rows[0];
 };
 

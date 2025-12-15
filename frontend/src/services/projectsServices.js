@@ -5,7 +5,6 @@ export const getProjects = async () => {
 };
 
 export const saveProject = async (projectData) => {
-    console.log(projectData);
     if (projectData.id) {
         return await api.put(`/projects/${projectData.id}`, projectData);
     } else {

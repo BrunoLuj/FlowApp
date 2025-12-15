@@ -10,14 +10,17 @@ export const getProjects = async (req, res) => {
 };
 
 export const addProjects = async (req, res) => {
-    const { name, project_type, status, end_date, start_date, responsible_person, service_executors, description, client_id } = req.body;
+    console.log(req.body);
+    //const { name, project_type, status, end_date, start_date, responsible_person, service_executors, description, client_id } = req.body;
+    const { client_id, name, address, city, gps_lat, gps_lng, active } = req.body;
     console.log(req.body);
     try {
-        const newProject = await projectModel.createProject(name, project_type, status, end_date, start_date, responsible_person, service_executors, description, client_id );
+        const newProject = await projectModel.createProject(client_id, name, address, city, gps_lat, gps_lng, active );
         console.log(newProject);
         res.status(201).json(newProject);
     } catch (error) {
-        res.status(500).json({ error: 'Error creating project' });
+        console.error('Error creating project:', error);
+        res.status(500).json({ error: 'Error creating project', error });
     }
 };
 

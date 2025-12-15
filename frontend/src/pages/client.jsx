@@ -25,7 +25,7 @@ const ClientForm = () => {
         address: client.address || '',
         idbroj: client.idbroj || '',
         pdvbroj: client.pdvbroj || '',
-        sttn_broj: client.sttn_broj || '',
+        //sttn_broj: client.sttn_broj || '',
         status: client.status,
         description: client.description || '',
         logo: null // Postavljamo logo na null
@@ -194,8 +194,8 @@ const ClientForm = () => {
                             />
                         </div>
 
-                        <div>
-                            <label className="block text-gray-700 font-medium mb-2">STTN broj:</label>
+                         {/* <div>
+                          <label className="block text-gray-700 font-medium mb-2">STTN broj:</label>
                             <input 
                                 type="number" 
                                 name="sttn_broj" 
@@ -204,7 +204,7 @@ const ClientForm = () => {
                                 readOnly={!permissions.includes('create_clients')} 
                                 className={`w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring focus:ring-blue-300 ${!permissions.includes('create_clients') ? 'bg-gray-200' : ''}`} 
                             />
-                        </div>
+                        </div>*/}
 
                         <div 
                         // className="col-span-1 md:col-span-2"
