@@ -18,6 +18,7 @@ import ChangePassword from "./pages/changepassword";
 import InspectionResult from "./pages/inspectionResult";
 import EquipmentForm from "./pages/equipmentForm";
 import EquipmentManagement from "./pages/equipmentmanagement";
+import ProjectDetails from "./pages/projectDetails";
 
 const RootLayout = () => {
     const { user } = useStore((state) => state);
@@ -55,6 +56,7 @@ function App() {
                         <Route path="/inspectionResult" element={<InspectionResult />} />
                         <Route path="/equipment" element={<EquipmentForm />} />
                         <Route path="/equipmentmanagement" element={<EquipmentManagement/>} />
+                        <Route path="/project-details" element={<ProjectDetails/>} />
                     </Route>
                     <Route path="/sign-in" element={<SignIn />} />
                     <Route path="/sign-up" element={<SignUp />} />

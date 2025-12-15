@@ -130,6 +130,18 @@ const ProjectForm = () => {
             />
           </div>
 
+          {/* STTN */}
+          <div>
+            <label className="block mb-1 font-medium">STTN:</label>
+            <input
+              type="text"
+              name="sttn"
+              value={formData.sttn}
+              onChange={handleChange}
+              className="w-full border p-2 rounded"
+            />
+          </div>
+
           {/* GPS */}
           <div className="grid grid-cols-2 gap-4">
             <div>

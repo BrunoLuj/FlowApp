@@ -1,7 +1,19 @@
 import { pool } from "../libs/database.js";
 
-export const getAllProjects = async () => {
+/*export const getAllProjects = async () => {
     const result = await pool.query('SELECT * FROM projects');
+    return result.rows;
+};*/
+
+export const getAllProjects = async () => {
+    const result = await pool.query(`
+        SELECT 
+            p.*, 
+            c.id AS client_id, 
+            c.company_name AS client_name
+        FROM projects p
+        JOIN clients c ON p.client_id = c.id
+    `);
     return result.rows;
 };
 
@@ -15,21 +27,20 @@ export const getAllProjects = async () => {
 
 export const createProject = async (client_id, name, address, city, gps_lat, gps_lng, active ) => {
     const result = await pool.query(
-        'INSERT INTO projects (client_id, name, address, city, gps_lat, gps_lng, active ) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+        'INSERT INTO projects (client_id, name, address, city, gps_lat, gps_lng, active, sttn ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
         [client_id, name, address, city, gps_lat, gps_lng, active]
     );
-    console.log(result);
     return result.rows[0];
 };
 
-export const updateProject = async (id, name, project_type, status, start_date, end_date, responsible_person, service_executors, description, client_id ) => {
+export const updateProject = async (client_id, name, address, city, gps_lat, gps_lng, active, sttn, id ) => {
     try {
-        const result = await pool.query('UPDATE projects SET name = $1, project_type = $2, status = $3, end_date = $4, start_date = $5, responsible_person = $6, service_executors = $7, description = $8, client_id = $9 WHERE id = $10 RETURNING *', 
-            [name, project_type, status, end_date , start_date, responsible_person, service_executors, description, client_id, id]);
+        const result = await pool.query('UPDATE projects SET client_id = $1, name = $2, address = $3, city = $4, gps_lat = $5, gps_lng = $6, active = $7, sttn = $8 WHERE id = $9 RETURNING *', 
+            [client_id, name, address, city, gps_lat, gps_lng, active, sttn, id]);
         return result.rows[0];
     } catch (error) {
         console.log(error.error);
-        console.error('Error updating project:', error); // Prikaz greške
+        console.error('Error updating project:', error);
         throw error;
     }
 };

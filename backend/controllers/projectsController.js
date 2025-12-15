@@ -10,33 +10,28 @@ export const getProjects = async (req, res) => {
 };
 
 export const addProjects = async (req, res) => {
-    console.log(req.body);
     //const { name, project_type, status, end_date, start_date, responsible_person, service_executors, description, client_id } = req.body;
-    const { client_id, name, address, city, gps_lat, gps_lng, active } = req.body;
-    console.log(req.body);
+    const { client_id, name, address, city, gps_lat, gps_lng, active, sttn } = req.body;
     try {
-        const newProject = await projectModel.createProject(client_id, name, address, city, gps_lat, gps_lng, active );
+        const newProject = await projectModel.createProject(client_id, name, address, city, gps_lat, gps_lng, active, sttn );
         console.log(newProject);
         res.status(201).json(newProject);
     } catch (error) {
-        console.error('Error creating project:', error);
         res.status(500).json({ error: 'Error creating project', error });
     }
 };
 
 export const updateProjects = async (req, res) => {
     const { id } = req.params;
-    const { name, project_type, status, start_date, end_date, responsible_person, service_executors, description, client_id  } = req.body;
-    console.log(req.body);
+    const { client_id, name, address, city, gps_lat, gps_lng, active, sttn } = req.body;
     try {
-        const updatedProject = await projectModel.updateProject(id, name, project_type, status, start_date, end_date, responsible_person, service_executors, description, client_id );
+        const updatedProject = await projectModel.updateProject(client_id, name, address, city, gps_lat, gps_lng, active, sttn, id );
         if (updatedProject) {
             res.json(updatedProject);
         } else {
             res.status(404).json({ error: 'Project not found' });
         }
     } catch (error) {
-        // console.error('Error updating project:', error);
         res.status(500).json({ error: 'Error updating project' });
     }
 };

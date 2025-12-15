@@ -37,8 +37,13 @@ const Projects = () => {
   };
 
   const openProject = (project) => {
-    navigate(`/projects/${project.id}`);
+    navigate('/project-details', { state: { project } });
   };
+
+  const startEditing = (project) => {
+    navigate('/project', { state: { project } });
+  };
+
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error loading projects</div>;
@@ -74,6 +79,7 @@ const Projects = () => {
               <th className="p-3 text-left">Name</th>
               <th className="p-3 text-left">Address</th>
               <th className="p-3 text-left">City</th>
+              <th className="p-3 text-left">STTN</th>
               <th className="p-3 text-left">Active</th>
               <th className="p-3 text-left">Created</th>
               <th className="p-3 text-left">Actions</th>
@@ -86,10 +92,11 @@ const Projects = () => {
                 className="border-t hover:bg-gray-50 cursor-pointer"
                 onClick={() => openProject(project)}
               >
-                <td className="p-3">{project.client_id}</td>
+                <td className="p-3">{project.client_name}</td>
                 <td className="p-3 font-medium">{project.name}</td>
                 <td className="p-3">{project.address}</td>
                 <td className="p-3">{project.city}</td>
+                <td className="p-3">{project.sttn}</td>
                 <td className="p-3">{project.active ? 'Yes' : 'No'}</td>
                 <td className="p-3">
                   {new Date(project.created_at).toLocaleDateString()}
@@ -99,7 +106,7 @@ const Projects = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate('/project', { state: project });
+                        startEditing(project);
                       }}
                       className="bg-yellow-500 text-white px-3 py-1 rounded"
                     >
@@ -108,10 +115,7 @@ const Projects = () => {
                   )}
                   {permissions.includes('delete_projects') && (
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeProject(project);
-                      }}
+                      onClick={(e) => { e.stopPropagation(); removeProject(project); }}
                       className="bg-red-500 text-white px-3 py-1 rounded"
                     >
                       Remove
