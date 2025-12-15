@@ -20,9 +20,6 @@ const checkPermission = (permission) => {
     
         try {
             const userToken = JWT.verify(token, process.env.JWT_SECRET);
-
-            console.log(userToken.roles_id);
-            console.log(permission);
     
             const result = await pool.query(`
                 SELECT p.name 
@@ -30,8 +27,6 @@ const checkPermission = (permission) => {
                 JOIN permissions p ON rp.permission_id = p.id
                 WHERE rp.role_id = $1 AND p.name = $2`, 
                 [userToken.roles_id, permission]);
-
-                console.log(result);
             
             if (result.rows.length === 0) {
                 return res.status(403).send('Forbidden');
