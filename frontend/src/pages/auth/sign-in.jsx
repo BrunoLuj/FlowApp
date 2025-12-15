@@ -1,30 +1,22 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import * as z from "zod";
-import useStore from "../../store";
-import { useTranslation } from 'react-i18next';
+import React, { useState, useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
+import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../../components/ui/card";
-import { Separator } from "../../components/separator.jsx";
-import Input from "../../components/ui/input"; 
-import { Button } from "../../components/ui/button"; 
 import { BiLoader } from "react-icons/bi";
-import { AiOutlineEye, AiOutlineEyeInvisible } from 'react-icons/ai';
-import { toast } from 'sonner';
-import { signIn } from '../../services/authServices.js';
-import i18n from 'i18next';
-import { fetchTranslations } from '../../services/translationServices.js';
+import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import useStore from "../../store";
+import { signIn } from "../../services/authServices.js";
+import { useTranslation } from "react-i18next";
 
 const SignIn = () => {
   const { t, i18n } = useTranslation();
-  const { user, setCredentials } = useStore((state) => state);
+  const { user, setCredentials } = useStore();
   const navigate = useNavigate();
+
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState(localStorage.getItem("language") || "en");
-  const { language, setLanguage } = useStore((state) => state);
-
 
   const LoginSchema = z.object({
     email: z.string({ required_error: t("Email is required!") }).email({ message: t("Invalid Email address!") }),
@@ -36,38 +28,13 @@ const SignIn = () => {
   });
 
   useEffect(() => {
-    if (user) {
-      navigate("/overview");
-    }
+    if (user) navigate("/overview");
   }, [user, navigate]);
-
-  const handleLanguageChange = (e) => {
-    const newLang = e.target.value;
-  
-    // Promijeni jezik u i18next
-    i18n.changeLanguage(newLang).then(async () => {
-      // Učitaj prijevode za novi jezik s servera
-      const translations = await fetchTranslations(newLang);
-      
-      // Ažuriraj i18next resurse za novi jezik
-      i18n.addResourceBundle(newLang, 'translation', translations, true, true);
-      
-      // Postavi novi jezik u zustand store
-      setLanguage(newLang);
-      
-      // Spremi novi jezik u localStorage
-      localStorage.setItem('language', newLang);
-      
-      // Ažuriraj stanje u aplikaciji (ako treba)
-      setSelectedLanguage(newLang); 
-    });
-  };
 
   const onSubmit = useCallback(async (data) => {
     setLoading(true);
     try {
       const { data: res } = await signIn(data);
-
       if (res?.user) {
         toast.success(res?.message);
         const userInfo = { ...res?.user, token: res.token };
@@ -85,83 +52,64 @@ const SignIn = () => {
   }, [navigate, setCredentials, setError]);
 
   return (
-    <div className='flex items-center justify-center w-full min-h-screen py-10'>
-      <Card className="w-[400px] bg-white dark:bg-black/20 shadow-md overflow-hidden">
-        <div className='p-6 md:-8'>
-          <CardHeader className="py-0">
-            <CardTitle className="mb-8 text-center dark:text-white">{t("Sign In")}</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
-              <div className='mb-8 space-y-6'>
-                <div className='mb-8 space-y-6 text-center'>{t("googleSignIn")}</div>
-                <Separator />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600">
+      <div className="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-8 animate-fadeIn">
+        <h1 className="text-3xl font-bold text-center text-gray-800 dark:text-white mb-8">Sign In</h1>
 
-                <Input
-                  disabled={loading}
-                  id="email"
-                  label={t("email")}
-                  name="email"
-                  type="email"
-                  placeholder={t("emailPlaceholder")}
-                  error={errors.email?.message}
-                  {...register("email")}
-                  className="text-sm border dark:border-gray-800 dark:bg-transparent dark:placeholder:text-gray-700 dark:text-gray-800 dark:outline-none"
-                />
+        <button className="w-full flex items-center justify-center bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-md mb-6 transition">
+          Sign in with Google
+        </button>
 
-                <div className='relative'>
-                  <Input
-                    disabled={loading}
-                    id="password"
-                    label={t("password")}
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder={t("passwordPlaceholder")}
-                    error={errors.password?.message}
-                    {...register("password")}
-                    className="text-sm border dark:border-gray-800 dark:bg-transparent dark:placeholder:text-gray-700 dark:text-gray-800 dark:outline-none"
-                  />
-                  <button
-                    type="button"
-                    className="absolute right-3 top-3/4 transform -translate-y-1/2 text-gray-500"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
-                  </button>
-                </div>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <div className="relative">
+            <input
+              type="email"
+              placeholder=" "
+              {...register("email")}
+              disabled={loading}
+              className="peer w-full border-b-2 border-gray-300 dark:border-gray-700 bg-transparent py-2 text-gray-900 dark:text-gray-200 placeholder-transparent focus:border-violet-600 focus:outline-none transition"
+            />
+            <label className="absolute left-0 top-2 text-gray-500 text-sm peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:text-base peer-focus:-top-3 peer-focus:text-violet-600 peer-focus:text-sm transition">
+              Email
+            </label>
+            {errors.email && <p className="text-red-600 text-sm mt-1">{errors.email.message}</p>}
+          </div>
 
-                <div>
-                  <label htmlFor="language" className="block text-sm font-medium text-gray-700">{t("language")}</label>
-                  <select
-                    id="language"
-                    value={selectedLanguage}
-                    onChange={handleLanguageChange} // Promjena jezika odmah
-                    className="mt-2 pt-1 pb-1 text-sm border block w-full dark:bg-transparent dark:border-gray-800  rounded-md shadow-sm focus:ring-indigo-500 focus:border-gray-800 dark:outline-none"
-                  >
-                    <option value="en">{t("english")}</option>
-                    <option value="hr">{t("croatian")}</option>
-                  </select>
-                  {errors.language && <p className="text-red-600 text-sm">{errors.language.message}</p>}
-                </div>
-              </div>
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder=" "
+              {...register("password")}
+              disabled={loading}
+              className="peer w-full border-b-2 border-gray-300 dark:border-gray-700 bg-transparent py-2 text-gray-900 dark:text-gray-200 placeholder-transparent focus:border-violet-600 focus:outline-none transition"
+            />
+            <label className="absolute left-0 top-2 text-gray-500 text-sm peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:text-base peer-focus:-top-3 peer-focus:text-violet-600 peer-focus:text-sm transition">
+              Password
+            </label>
+            <button
+              type="button"
+              className="absolute right-0 top-2 text-gray-500"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
+            </button>
+            {errors.password && <p className="text-red-600 text-sm mt-1">{errors.password.message}</p>}
+          </div>
 
-              <Button
-                type="submit"
-                className="w-full bg-violet-800"
-                disabled={loading}
-              >
-                {loading ? <BiLoader className="text-2xl text-white animate-spin" /> : t("signIn")}
-              </Button>
-            </form>
-          </CardContent>
-        </div>
-        <CardFooter className="justify-center gap-2">
-          <p className='text-sm text-gray-600'>{t("dontHaveAccount")}!</p>
-          <Link to="/sign-up" className='text-sm font-semibold text-violet-600 hover:underline'>
-            {t("createAccount")}
-          </Link>
-        </CardFooter>
-      </Card>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-semibold py-2 px-4 rounded-xl transition flex justify-center items-center"
+          >
+            {loading ? <BiLoader className="animate-spin text-2xl" /> : "Sign In"}
+          </button>
+        </form>
+
+        <p className="text-center text-gray-600 dark:text-gray-400 mt-6">
+          Don't have an account?{" "}
+          <Link to="/sign-up" className="text-violet-600 hover:underline font-semibold">Sign Up</Link>
+        </p>
+      </div>
     </div>
   );
 };
