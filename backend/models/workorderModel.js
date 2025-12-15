@@ -1,16 +1,42 @@
 import { pool } from "../libs/database.js";
 
-// Dohvati sve work ordere
 export const getAllWorkOrders = async () => {
-    const result = await pool.query(`
-        SELECT wo.*, p.name AS project_name, c.company_name AS client_name
-        FROM work_orders wo
-        JOIN projects p ON wo.project_id = p.id
-        JOIN clients c ON p.client_id = c.id
-        ORDER BY wo.created_at DESC
-    `);
-    return result.rows;
+    try {
+        // Dohvati sve work ordere zajedno s projektom i klijentom
+        const result = await pool.query(`
+            SELECT wo.*, 
+                   p.name AS project_name, 
+                   c.company_name AS client_name
+            FROM work_orders wo
+            JOIN projects p ON wo.project_id = p.id
+            JOIN clients c ON p.client_id = c.id
+            ORDER BY wo.created_at DESC
+        `);
+
+        const workOrders = result.rows;
+
+        // Dohvati sve korisnike
+        const usersRes = await pool.query(`SELECT id, firstname, lastname FROM users`);
+        const users = usersRes.rows;
+
+        // Mapiraj assigned_to ID-jeve u stvarne korisnike
+        const workOrdersWithUsers = workOrders.map(wo => {
+            // assigned_to je već niz brojeva jer je jsonb
+            const assignedIds = wo.assigned_to || [];
+
+            // Filter korisnika po ID-jevima
+            const assigned_users = users.filter(u => assignedIds.includes(u.id));
+
+            return { ...wo, assigned_users };
+        });
+
+        return workOrdersWithUsers;
+    } catch (error) {
+        console.error('Error fetching work orders:', error);
+        throw error;
+    }
 };
+
 
 // Dohvati samo active work ordere (status != Completed)
 export const getActiveWorkOrders = async () => {
@@ -26,12 +52,12 @@ export const getActiveWorkOrders = async () => {
 };
 
 // Kreiranje novog work ordera
-export const createWorkOrder = async (project_id, type, title, description, assigned_to, planned_date) => {
+export const createWorkOrder = async (project_id, type, title, description, assigned_to, planned_date, start_date, end_date, status) => {
     const result = await pool.query(
         `INSERT INTO work_orders 
-        (project_id, type, title, description, assigned_to, planned_date) 
-        VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
-        [project_id, type, title, description, assigned_to, planned_date]
+        (project_id, type, title, description, assigned_to, planned_date, start_date, end_date, status) 
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+        [project_id, type, title, description,  JSON.stringify(assigned_to), planned_date, start_date, end_date, status]
     );
     return result.rows[0];
 };

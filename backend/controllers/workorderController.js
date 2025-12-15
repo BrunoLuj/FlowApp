@@ -24,9 +24,9 @@ export const getActiveWorkOrders = async (req, res) => {
 
 // POST /work-orders
 export const addWorkOrder = async (req, res) => {
-    const { project_id, type, title, description, assigned_to, planned_date } = req.body;
+    const { project_id, type, title, description, assigned_to, planned_date, start_date, end_date, status } = req.body;
     try {
-        const newWO = await workOrdersModel.createWorkOrder(project_id, type, title, description, assigned_to, planned_date);
+        const newWO = await workOrdersModel.createWorkOrder(project_id, type, title, description, assigned_to, planned_date, start_date, end_date, status);
         res.status(201).json(newWO);
     } catch (error) {
         console.error(error);

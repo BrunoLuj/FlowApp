@@ -2,13 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getWorkOrders, deleteWorkOrder } from '../services/workorderServices';
 import { toast } from 'sonner';
+import Modal from '../components/Modal';
 
 const WorkOrdersList = () => {
     const navigate = useNavigate();
     const [workOrders, setWorkOrders] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [selectedWO, setSelectedWO] = useState(null); // za modal
 
-    // Fetch work orders s backendom
     const fetchWorkOrders = async () => {
         try {
             setLoading(true);
@@ -61,27 +62,31 @@ const WorkOrdersList = () => {
                                 <th className="p-3 text-left">Project</th>
                                 <th className="p-3 text-left">Client</th>
                                 <th className="p-3 text-left">Status</th>
-                                <th className="p-3 text-left">Planned</th>
+                                <th className="p-3 text-left">Start</th>
                                 <th className="p-3 text-left">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {workOrders.map((wo) => (
-                                <tr key={wo.id} className="border-t hover:bg-gray-50 cursor-pointer">
+                                <tr
+                                    key={wo.id}
+                                    className="border-t hover:bg-gray-50 cursor-pointer"
+                                    onClick={() => setSelectedWO(wo)}
+                                >
                                     <td className="p-3">{wo.title}</td>
                                     <td className="p-3">{wo.project_name}</td>
                                     <td className="p-3">{wo.client_name}</td>
                                     <td className="p-3">{wo.status}</td>
-                                    <td className="p-3">{wo.planned_date}</td>
+                                    <td className="p-3">{new Date(wo.start_date).toLocaleDateString()}</td>
                                     <td className="p-3">
                                         <button
-                                            onClick={() => navigate(`/work-orders/edit/${wo.id}`, { state: { workOrder: wo } })}
+                                            onClick={(e) => { e.stopPropagation(); navigate(`/work-orders/edit/${wo.id}`, { state: { workOrder: wo } }); }}
                                             className="text-blue-600 mr-2"
                                         >
                                             Edit
                                         </button>
                                         <button
-                                            onClick={() => handleDelete(wo.id)}
+                                            onClick={(e) => { e.stopPropagation(); handleDelete(wo.id); }}
                                             className="text-red-600"
                                         >
                                             Delete
@@ -92,6 +97,21 @@ const WorkOrdersList = () => {
                         </tbody>
                     </table>
                 </div>
+            )}
+
+            {/* Modal za detalje */}
+            {selectedWO && (
+                <Modal onClose={() => setSelectedWO(null)}>
+                    <h2 className="text-xl font-semibold mb-2">{selectedWO.title}</h2>
+                    <p><strong>Project:</strong> {selectedWO.project_name}</p>
+                    <p><strong>Client:</strong> {selectedWO.client_name}</p>
+                    <p><strong>Status:</strong> {selectedWO.status}</p>
+                    <p><strong>Planned Date:</strong> {new Date(selectedWO.planned_date).toLocaleDateString() || '-'}</p>
+                    <p><strong>Start Date:</strong> {new Date(selectedWO.start_date).toLocaleDateString() || '-'}</p>
+                    <p><strong>End Date:</strong> {new Date(selectedWO.end_date).toLocaleDateString() || '-'}</p>
+                    <p><strong>Description:</strong> {selectedWO.description || '-'}</p>
+                    <p><strong>Assigned Users:</strong> {selectedWO.assigned_users?.map(u => `${u.firstname} ${u.lastname}`).join(', ') || '-'}</p>
+                </Modal>
             )}
         </div>
     );
