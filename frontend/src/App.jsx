@@ -19,6 +19,7 @@ import InspectionResult from "./pages/inspectionResult";
 import EquipmentForm from "./pages/equipmentForm";
 import EquipmentManagement from "./pages/equipmentmanagement";
 import ProjectDetails from "./pages/projectDetails";
+import CreateWorkOrder from "./pages/workorder";
 
 const RootLayout = () => {
     const { user } = useStore((state) => state);
@@ -57,6 +58,7 @@ function App() {
                         <Route path="/equipment" element={<EquipmentForm />} />
                         <Route path="/equipmentmanagement" element={<EquipmentManagement/>} />
                         <Route path="/project-details" element={<ProjectDetails/>} />
+                        <Route path="/work-order" element={<CreateWorkOrder/>} />
                     </Route>
                     <Route path="/sign-in" element={<SignIn />} />
                     <Route path="/sign-up" element={<SignUp />} />

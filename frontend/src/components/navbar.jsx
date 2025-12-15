@@ -26,6 +26,7 @@ const Navbar = () => {
     { label: t("dashboard"), link: "/overview", icon: <FaTachometerAlt />, permission: 'view_dashboard' },
     { label: t("clients"), link: "/clients", icon: <FaUsers />, permission: 'view_clients' },
     { label: t("projects"), link: "/projects", icon: <FaClipboardList />, permission: 'view_projects' },
+    { label: t("work_order"), link: "/work-order", icon: <FaClipboardList />, permission: 'view_projects' },
     { label: t("users"), link: "/users", icon: <FaRegUser />, permission: 'view_users' },
     { label: t("settings"), link: "/settings", icon: <FaCog />, permission: 'view_settings' },
   ];

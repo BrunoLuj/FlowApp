@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from 'react-router-dom';
 
 const dummyProject = {
   id: 1,
@@ -6,8 +7,8 @@ const dummyProject = {
   client_name: "Klijent ABC",
   address: "Biljesevo 123",
   city: "Sarajevo",
-  gps_lat: "43.8563",
-  gps_lng: "18.4131",
+  gps_lat: "44.1524271",
+  gps_lng: "17.79245701",
   responsible_person: "Marko Marković",
   status: "Active",
   created_at: "2025-12-15",
@@ -30,13 +31,17 @@ const dummyCalibration = [
 
 const ProjectDetails = () => {
   const [activeTab, setActiveTab] = useState("workOrders");
+  const navigate = useNavigate();
 
   return (
     <div className="bg-gray-100 min-h-screen p-6 mt-14 sm:ml-16">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">{dummyProject.name}</h1>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+        <button
+          onClick={() => navigate(`/projects/${dummyProject.id}/work-orders/create`)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+        >
           Add Work Order
         </button>
       </div>
@@ -46,10 +51,19 @@ const ProjectDetails = () => {
         <div><strong>Client:</strong> {dummyProject.client_name}</div>
         <div><strong>Address:</strong> {dummyProject.address}</div>
         <div><strong>City:</strong> {dummyProject.city}</div>
-        <div><strong>GPS:</strong> {dummyProject.gps_lat}, {dummyProject.gps_lng}</div>
         <div><strong>Responsible:</strong> {dummyProject.responsible_person}</div>
         <div><strong>Status:</strong> {dummyProject.status}</div>
         <div><strong>Created:</strong> {dummyProject.created_at}</div>
+        <a
+          href={`https://www.google.com/maps/@${dummyProject.gps_lat},${dummyProject.gps_lng},17z`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center 
+                    text-sm font-medium text-blue-700  
+                   "
+          >
+          📍 Geo Location
+        </a>
       </div>
 
       {/* Tabs */}
@@ -89,7 +103,12 @@ const ProjectDetails = () => {
               {dummyWorkOrders.map(wo => (
                 <tr key={wo.id} className="border-t hover:bg-gray-50 cursor-pointer">
                   <td className="p-3">{wo.title}</td>
-                  <td className="p-3">{wo.status}</td>
+                  <td className="p-3">
+                    <span className={`px-2 py-1 rounded text-sm 
+                      ${wo.status === "Completed" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
+                      {wo.status}
+                    </span>
+                  </td>
                   <td className="p-3">{wo.date}</td>
                 </tr>
               ))}
