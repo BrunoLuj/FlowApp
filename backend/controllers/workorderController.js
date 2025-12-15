@@ -1,4 +1,4 @@
-import * as workOrdersModel from '../models/workOrdersModel.js';
+import * as workOrdersModel from '../models/workorderModel.js';
 
 // GET /work-orders
 export const getWorkOrders = async (req, res) => {

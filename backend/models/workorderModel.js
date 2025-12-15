@@ -1,9 +1,9 @@
-import pool from '../db.js';
+import { pool } from "../libs/database.js";
 
 // Dohvati sve work ordere
 export const getAllWorkOrders = async () => {
     const result = await pool.query(`
-        SELECT wo.*, p.name AS project_name, c.name AS client_name
+        SELECT wo.*, p.name AS project_name, c.company_name AS client_name
         FROM work_orders wo
         JOIN projects p ON wo.project_id = p.id
         JOIN clients c ON p.client_id = c.id

@@ -7,7 +7,7 @@ import {
     addWorkOrder,
     updateWorkOrder,
     deleteWorkOrder
-} from "../controllers/workOrdersController.js";
+} from "../controllers/workorderController.js";
 
 const router = express.Router();
 

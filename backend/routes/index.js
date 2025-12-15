@@ -8,6 +8,7 @@ import projectsRoutes from "./projectsRoutes.js";
 import translationRoutes from "./translationRoutes.js";
 import inspectionsRoutes from "./inspectionsRoutes.js";
 import equipmentRoutes from "./equipmentRoutes.js";
+import workorderRoutes from "./workorderRoutes.js";
 
 const router = express.Router();
 
@@ -20,5 +21,6 @@ router.use("/transaction", transactionRoutes);
 router.use("/translations", translationRoutes);
 router.use("/inspections", inspectionsRoutes);
 router.use("/equipment", equipmentRoutes);
+router.use("/work-orders", workorderRoutes);
 
 export default router;
