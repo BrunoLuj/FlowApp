@@ -1,17 +1,20 @@
 import express from "express";
 import authMiddleware from "../middleware/authMiddleware.js";
-import checkPermission  from "../middleware/permissionsMiddleware.js";
+import checkPermission from "../middleware/permissionsMiddleware.js";
 import {
-
-} from "../controllers/workorderController.js";
+    getWorkOrders,
+    getActiveWorkOrders,
+    addWorkOrder,
+    updateWorkOrder,
+    deleteWorkOrder
+} from "../controllers/workOrdersController.js";
 
 const router = express.Router();
 
-// Rute za projekte
-router.get("/", authMiddleware, checkPermission('view_projects'), getProjects); 
-router.post("/", authMiddleware, checkPermission('create_projects'), addProjects);
-router.put("/:id", authMiddleware, checkPermission('update_projects'), updateProjects);
-router.delete("/:id", authMiddleware, checkPermission('delete_projects'), deleteProjects);
-router.get("/active", authMiddleware, checkPermission('view_projects'), getActiveProjects);
+router.get("/", authMiddleware, checkPermission('view_work_orders'), getWorkOrders);
+router.get("/active", authMiddleware, checkPermission('view_work_orders'), getActiveWorkOrders);
+router.post("/", authMiddleware, checkPermission('create_work_orders'), addWorkOrder);
+router.put("/:id", authMiddleware, checkPermission('update_work_orders'), updateWorkOrder);
+router.delete("/:id", authMiddleware, checkPermission('delete_work_orders'), deleteWorkOrder);
 
 export default router;

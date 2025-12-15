@@ -1,60 +1,68 @@
-import * as projectModel from '../models/projectsModel.js';
+import * as workOrdersModel from '../models/workOrdersModel.js';
 
+// GET /work-orders
 export const getWorkOrders = async (req, res) => {
     try {
-        const projects = await projectModel.getAllWorkOrders();
-        res.json(projects);
+        const workOrders = await workOrdersModel.getAllWorkOrders();
+        res.json(workOrders);
     } catch (error) {
-        res.status(500).json({ error: 'Error fetching projects' });
+        console.error(error);
+        res.status(500).json({ error: 'Error fetching work orders' });
     }
 };
 
-export const addWorkOrder = async (req, res) => {
-    //const { name, project_type, status, end_date, start_date, responsible_person, service_executors, description, client_id } = req.body;
-    const { client_id, name, address, city, gps_lat, gps_lng, active, sttn } = req.body;
+// GET /work-orders/active
+export const getActiveWorkOrders = async (req, res) => {
     try {
-        const newProject = await projectModel.createWorkOrder(client_id, name, address, city, gps_lat, gps_lng, active, sttn );
-        console.log(newProject);
-        res.status(201).json(newProject);
+        const workOrders = await workOrdersModel.getActiveWorkOrders();
+        res.json(workOrders);
     } catch (error) {
-        res.status(500).json({ error: 'Error creating project', error });
+        console.error(error);
+        res.status(500).json({ error: 'Error fetching active work orders' });
     }
 };
 
+// POST /work-orders
+export const addWorkOrder = async (req, res) => {
+    const { project_id, type, title, description, assigned_to, planned_date } = req.body;
+    try {
+        const newWO = await workOrdersModel.createWorkOrder(project_id, type, title, description, assigned_to, planned_date);
+        res.status(201).json(newWO);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error creating work order' });
+    }
+};
+
+// PUT /work-orders/:id
 export const updateWorkOrder = async (req, res) => {
     const { id } = req.params;
-    const { client_id, name, address, city, gps_lat, gps_lng, active, sttn } = req.body;
+    const { project_id, type, title, description, assigned_to, planned_date, status } = req.body;
     try {
-        const updatedProject = await projectModel.updateWorkOder(client_id, name, address, city, gps_lat, gps_lng, active, sttn, id );
-        if (updatedProject) {
-            res.json(updatedProject);
+        const updatedWO = await workOrdersModel.updateWorkOrder(id, project_id, type, title, description, assigned_to, planned_date, status);
+        if (updatedWO) {
+            res.json(updatedWO);
         } else {
-            res.status(404).json({ error: 'Project not found' });
+            res.status(404).json({ error: 'Work order not found' });
         }
     } catch (error) {
-        res.status(500).json({ error: 'Error updating project' });
+        console.error(error);
+        res.status(500).json({ error: 'Error updating work order' });
     }
 };
 
+// DELETE /work-orders/:id
 export const deleteWorkOrder = async (req, res) => {
     const { id } = req.params;
     try {
-        const deletedProject = await projectModel.deleteWorkOrder(id);
-        if (deletedProject) {
-            res.json({ message: 'Project deleted' });
+        const deletedWO = await workOrdersModel.deleteWorkOrder(id);
+        if (deletedWO) {
+            res.json({ message: 'Work order deleted' });
         } else {
-            res.status(404).json({ error: 'Project not found' });
+            res.status(404).json({ error: 'Work order not found' });
         }
     } catch (error) {
-        res.status(500).json({ error: 'Error deleting project' });
-    }
-};
-
-export const getActiveWorkOrders = async (req, res) => {
-    try {
-        const projects = await projectModel.getActiveWorkOrders();
-        res.json(projects);
-    } catch (error) {
-        res.status(500).json({ error: 'Error fetching projects' });
+        console.error(error);
+        res.status(500).json({ error: 'Error deleting work order' });
     }
 };

@@ -1,44 +1,57 @@
-import { pool } from "../libs/database.js";
+import pool from '../db.js';
 
-
+// Dohvati sve work ordere
 export const getAllWorkOrders = async () => {
     const result = await pool.query(`
-        SELECT 
-            p.*, 
-            c.id AS client_id, 
-            c.company_name AS client_name
-        FROM projects p
+        SELECT wo.*, p.name AS project_name, c.name AS client_name
+        FROM work_orders wo
+        JOIN projects p ON wo.project_id = p.id
         JOIN clients c ON p.client_id = c.id
+        ORDER BY wo.created_at DESC
     `);
     return result.rows;
 };
 
-export const createWorkOrder= async (client_id, name, address, city, gps_lat, gps_lng, active ) => {
+// Dohvati samo active work ordere (status != Completed)
+export const getActiveWorkOrders = async () => {
+    const result = await pool.query(`
+        SELECT wo.*, p.name AS project_name, c.name AS client_name
+        FROM work_orders wo
+        JOIN projects p ON wo.project_id = p.id
+        JOIN clients c ON p.client_id = c.id
+        WHERE wo.status != 'Completed'
+        ORDER BY wo.planned_date ASC
+    `);
+    return result.rows;
+};
+
+// Kreiranje novog work ordera
+export const createWorkOrder = async (project_id, type, title, description, assigned_to, planned_date) => {
     const result = await pool.query(
-        'INSERT INTO projects (client_id, name, address, city, gps_lat, gps_lng, active, sttn ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
-        [client_id, name, address, city, gps_lat, gps_lng, active]
+        `INSERT INTO work_orders 
+        (project_id, type, title, description, assigned_to, planned_date) 
+        VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+        [project_id, type, title, description, assigned_to, planned_date]
     );
     return result.rows[0];
 };
 
-export const updateWorkOder = async (client_id, name, address, city, gps_lat, gps_lng, active, sttn, id ) => {
-    try {
-        const result = await pool.query('UPDATE projects SET client_id = $1, name = $2, address = $3, city = $4, gps_lat = $5, gps_lng = $6, active = $7, sttn = $8 WHERE id = $9 RETURNING *', 
-            [client_id, name, address, city, gps_lat, gps_lng, active, sttn, id]);
-        return result.rows[0];
-    } catch (error) {
-        console.log(error.error);
-        console.error('Error updating project:', error);
-        throw error;
-    }
-};
-
-export const deleteWorkOrder = async (id) => {
-    const result = await pool.query('DELETE FROM projects WHERE id = $1 RETURNING *', [id]);
+// Update postojećeg work ordera
+export const updateWorkOrder = async (id, project_id, type, title, description, assigned_to, planned_date, status) => {
+    const result = await pool.query(
+        `UPDATE work_orders
+         SET project_id=$1, type=$2, title=$3, description=$4, assigned_to=$5, planned_date=$6, status=$7, updated_at=NOW()
+         WHERE id=$8 RETURNING *`,
+         [project_id, type, title, description, assigned_to, planned_date, status, id]
+    );
     return result.rows[0];
 };
 
-export const getActiveWorkOrders = async () => {
-  const result = await pool.query("SELECT * FROM projects WHERE status = 'Active'");
-  return result.rows;
+// Brisanje work ordera
+export const deleteWorkOrder = async (id) => {
+    const result = await pool.query(
+        `DELETE FROM work_orders WHERE id=$1 RETURNING *`,
+        [id]
+    );
+    return result.rows[0];
 };
