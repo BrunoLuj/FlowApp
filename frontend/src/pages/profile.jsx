@@ -146,7 +146,7 @@ const Profile = () => {
                         {permissions.includes('update_profile') && (
                             <button
                                 type="submit"
-                                className="bg-gradient-to-r from-blue-500 to-blue-700 text-white px-5 py-3 rounded-lg hover:from-blue-600 hover:to-blue-800 transition w-full sm:w-auto"
+                                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold shadow hover:scale-105 transition"
                             >
                                 Update
                             </button>

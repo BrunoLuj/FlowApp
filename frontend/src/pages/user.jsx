@@ -414,9 +414,7 @@ const UserForm = () => {
             {permissions.includes('update_users') && (
               <button
                 type="submit"
-                className="py-3 px-6 rounded-xl text-white font-semibold
-                           bg-gradient-to-r from-blue-500 to-blue-700
-                           hover:from-blue-600 hover:to-blue-800 transition"
+                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold shadow hover:scale-105 transition"
               >
                 Save
               </button>
@@ -425,9 +423,7 @@ const UserForm = () => {
               <button
                 type="button"
                 onClick={handleRemove}
-                className="py-3 px-6 rounded-xl text-white font-semibold
-                           bg-gradient-to-r from-red-500 to-red-700
-                           hover:from-red-600 hover:to-red-800 transition"
+                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-red-500 to-pink-500 text-white font-semibold shadow hover:scale-105 transition"
               >
                 Delete
               </button>

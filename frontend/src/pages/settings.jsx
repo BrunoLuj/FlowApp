@@ -78,7 +78,7 @@ const Settings = () => {
                 <div className="flex justify-end mt-4">
                     <button
                         onClick={handleSave}
-                        className="bg-gradient-to-r from-blue-500 to-blue-700 text-white px-6 py-3 rounded-lg hover:from-blue-600 hover:to-blue-800 transition"
+                        className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold shadow hover:scale-105 transition"
                     >
                         Save Settings
                     </button>
