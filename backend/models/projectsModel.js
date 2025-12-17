@@ -25,10 +25,10 @@ export const getAllProjects = async () => {
     return result.rows[0];
 };*/
 
-export const createProject = async (client_id, name, address, city, gps_lat, gps_lng, active ) => {
+export const createProject = async (client_id, name, address, city, gps_lat, gps_lng, active, sttn ) => {
     const result = await pool.query(
         'INSERT INTO projects (client_id, name, address, city, gps_lat, gps_lng, active, sttn ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
-        [client_id, name, address, city, gps_lat, gps_lng, active]
+        [client_id, name, address, city, gps_lat, gps_lng, active, sttn]
     );
     return result.rows[0];
 };

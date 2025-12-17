@@ -24,21 +24,28 @@ const WORK_ORDER_STATUS = [
 const CreateWorkOrder = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const editingWO = location.state?.workOrder;
+    const editingWO = location.state?.wo;
+
+    const toDateInputValue = (date) => {
+        if (!date) return '';
+        return new Date(date).toISOString().slice(0, 10);
+    };
 
     const [projects, setProjects] = useState([]);
     const [users, setUsers] = useState([]);
     const [form, setForm] = useState({
+        id: editingWO?.id ?? null,
         title: editingWO?.title || '',
         project_id: editingWO?.project_id || '',
         type: editingWO?.type || WORK_ORDER_TYPES[0].value,
         status: editingWO?.status || 'Open',
         description: editingWO?.description || '',
         assigned_to: editingWO?.assigned_to || [],
-        start_date: editingWO?.start_date || '',
-        end_date: editingWO?.end_date || '',
-        planned_date: editingWO?.planned_date || ''
+        start_date: toDateInputValue(editingWO?.start_date) || '',
+        end_date: toDateInputValue(editingWO?.end_date) || '',
+        planned_date: toDateInputValue(editingWO?.planned_date) || ''
     });
+
 
     useEffect(() => {
         const fetchData = async () => {
@@ -72,7 +79,7 @@ const CreateWorkOrder = () => {
         try {
             await saveWorkOrder(form);
             toast.success(editingWO ? "Work order updated!" : "Work order created!");
-            navigate('/work-orders');
+            navigate('/work-order');
         } catch (error) {
             console.error(error);
             toast.error("Error saving work order");

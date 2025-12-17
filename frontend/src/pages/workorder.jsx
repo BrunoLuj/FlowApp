@@ -54,7 +54,11 @@ const WorkOrdersList = () => {
         default:
         return "bg-gray-100 text-gray-700";
     }
-    };
+  };
+
+  const startEditing = (wo) => {
+    navigate('/work-orders/create', { state: { wo } });
+  };
 
 
   return (
@@ -105,10 +109,7 @@ const WorkOrdersList = () => {
                     <td className="p-3">{new Date(wo.start_date).toLocaleDateString()}</td>
                     <td className="p-3 flex gap-2">
                         <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/work-orders/edit/${wo.id}`, { state: { workOrder: wo } });
-                        }}
+                        onClick={(e) => { e.stopPropagation(); startEditing(wo); }}
                         className="text-blue-600 hover:text-blue-800"
                         >
                         Edit

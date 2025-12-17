@@ -18,6 +18,7 @@ const ProjectForm = () => {
     name: project.name || '',
     address: project.address || '',
     city: project.city || '',
+    sttn: project.sttn || '',
     gps_lat: project.gps_lat || '',
     gps_lng: project.gps_lng || '',
     active: project.active ?? true,
@@ -123,6 +124,20 @@ const ProjectForm = () => {
                 type="text"
                 name="city"
                 value={formData.city}
+                onChange={handleChange}
+                className="w-full p-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
+              />
+            </div>
+          </div>
+
+          {/* STTN */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block mb-2 font-medium text-gray-700">STTN</label>
+              <input
+                type="text"
+                name="sttn"
+                value={formData.sttn}
                 onChange={handleChange}
                 className="w-full p-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
               />
