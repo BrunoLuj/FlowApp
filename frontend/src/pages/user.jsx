@@ -25,6 +25,7 @@ const UserForm = () => {
     status: user.status || false,
     description: user.description || '',
   });
+  
   const countryCurrencyList = [
     { country: "Afghanistan", currency: "AFN" },
     { country: "Albania", currency: "ALL" },

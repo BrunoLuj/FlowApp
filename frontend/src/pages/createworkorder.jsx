@@ -11,6 +11,7 @@ const WORK_ORDER_TYPES = [
     { value: 'Corrective', label: 'Corrective' },
     { value: 'Calibration', label: 'Calibration' },
     { value: 'Separator Service', label: 'Separator Service' },
+    { value: 'Service', label: 'Service' },
 ];
 
 const WORK_ORDER_STATUS = [
@@ -43,7 +44,7 @@ const CreateWorkOrder = () => {
         assigned_to: editingWO?.assigned_to || [],
         start_date: toDateInputValue(editingWO?.start_date) || '',
         end_date: toDateInputValue(editingWO?.end_date) || '',
-        planned_date: toDateInputValue(editingWO?.planned_date) || ''
+        planned_date: toDateInputValue(editingWO?.planned_date)  || ''
     });
 
 

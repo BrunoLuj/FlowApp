@@ -1,19 +1,9 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from 'react';
+import useStore from '../store';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { FaMapMarkerAlt, FaPlus } from "react-icons/fa";
+import { getClients } from '../services/clientsServices';
 
-const dummyProject = {
-  id: 1,
-  name: "Pumpa Biljesevo",
-  client_name: "Klijent ABC",
-  address: "Biljesevo 123",
-  city: "Sarajevo",
-  gps_lat: "44.1524271",
-  gps_lng: "17.79245701",
-  responsible_person: "Marko Marković",
-  status: "Active",
-  created_at: "2025-12-15",
-};
 
 const dummyWorkOrders = [
   { id: 1, title: "Umjeravanje pumpe", status: "Completed", date: "2025-11-20" },
@@ -32,7 +22,40 @@ const dummyCalibration = [
 
 const ProjectDetails = () => {
   const [activeTab, setActiveTab] = useState("workOrders");
+  const location = useLocation();
   const navigate = useNavigate();
+  const { permissions } = useStore();
+  const [error, setError] = useState(null);
+  const project = location.state?.project || {};
+  const [clients, setClients] = useState([]);
+  const [roles, setRoles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [projects, setProjects] = useState([]);
+
+    const [formData, setFormData] = useState({
+      id: project.id || '',
+      client_id: project.client_id || '',
+      name: project.name || '',
+      address: project.address || '',
+      city: project.city || '',
+      sttn: project.sttn || '',
+      gps_lat: project.gps_lat || '',
+      gps_lng: project.gps_lng || '',
+      active: project.active ?? true,
+    });
+  
+    useEffect(async () => {
+        try {
+          const res = await getClients();
+          console.log(res);
+          setClients(res.data);
+        } catch (err) {
+          setError(err);
+        } finally {
+          setLoading(false);
+        }
+    
+    }, []);
 
   const statusBadge = (status) => {
     switch (status) {
@@ -52,9 +75,9 @@ const ProjectDetails = () => {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-          <h1 className="text-3xl font-bold text-gray-800">{dummyProject.name}</h1>
+          <h1 className="text-3xl font-bold text-gray-800">{formData.name}</h1>
           <button
-            onClick={() => navigate(`/projects/${dummyProject.id}/work-orders/create`)}
+            onClick={() => navigate(`/projects/${formData.id}/work-orders/create`)}
             className="flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold shadow hover:scale-105 transition"
           >
             <FaPlus /> Add Work Order
@@ -63,19 +86,19 @@ const ProjectDetails = () => {
 
         {/* Basic Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 bg-white p-6 rounded-2xl shadow">
-          <div><strong>Client:</strong> {dummyProject.client_name}</div>
-          <div><strong>Address:</strong> {dummyProject.address}</div>
-          <div><strong>City:</strong> {dummyProject.city}</div>
-          <div><strong>Responsible:</strong> {dummyProject.responsible_person}</div>
+          <div><strong>Client:</strong> {formData.company_name}</div>
+          <div><strong>Address:</strong> {formData.address}</div>
+          <div><strong>City:</strong> {formData.city}</div>
+          <div><strong>Responsible:</strong> {formData.contact_person}</div>
           <div>
             <strong>Status:</strong>{" "}
-            <span className={`px-3 py-1 rounded-full text-sm font-semibold ${statusBadge(dummyProject.status)}`}>
-              {dummyProject.status}
+            <span className={`px-3 py-1 rounded-full text-sm font-semibold ${statusBadge(formData.active)}`}>
+              {formData.active}
             </span>
           </div>
-          <div><strong>Created:</strong> {dummyProject.created_at}</div>
+          <div><strong>Created:</strong> {formData.created_at}</div>
           <a
-            href={`https://www.google.com/maps?q=${dummyProject.gps_lat},${dummyProject.gps_lng}`}
+            href={`https://www.google.com/maps?q=${formData.gps_lat},${formData.gps_lng}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-blue-600 font-medium hover:underline"
