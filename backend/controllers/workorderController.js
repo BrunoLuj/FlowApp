@@ -96,9 +96,18 @@ export const addMaterial = async (req, res) => {
     try {
         const order = await workOrdersModel.getWorkOrderById(req.params.id, req.user.clientId);
         if (!order) return res.status(404).json({ error: "Work order not found" });
-        const material = await workOrdersModel.addWorkOrderMaterial(req.params.id, req.body);
+        const material = await workOrdersModel.addWorkOrderMaterial(
+            req.params.id,
+            { ...req.body, user_id: req.user.userId }
+        );
         res.status(201).json(material);
     } catch (error) {
+        if (error.code === "INSUFFICIENT_STOCK") {
+            return res.status(409).json({ error: "Insufficient stock" });
+        }
+        if (error.code === "ITEM_NOT_FOUND") {
+            return res.status(404).json({ error: "Inventory item not found" });
+        }
         console.error(error);
         res.status(500).json({ error: "Error adding material" });
     }

@@ -26,6 +26,7 @@ import Notifications from "./pages/notifications";
 import ServiceCenter from "./pages/serviceCenter";
 import StationDetails from "./pages/stationDetails";
 import Management from "./pages/management";
+import Inventory from "./pages/inventory";
 
 const RootLayout = () => {
     const { user } = useStore((state) => state);
@@ -71,6 +72,7 @@ function App() {
                         <Route path="/service-center" element={<ServiceCenter />} />
                         <Route path="/service-center/stations/:id" element={<StationDetails />} />
                         <Route path="/management" element={<Management />} />
+                        <Route path="/inventory" element={<Inventory />} />
                     </Route>
                     <Route path="/sign-in" element={<SignIn />} />
                     <Route path="/sign-up" element={<SignUp />} />

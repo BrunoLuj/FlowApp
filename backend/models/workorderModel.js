@@ -169,21 +169,85 @@ export const addWorkOrderActivity = async (workOrderId, data, userId) => {
 };
 
 export const addWorkOrderMaterial = async (workOrderId, data) => {
-    const result = await pool.query(
-        `INSERT INTO work_order_materials (
-            work_order_id, item_name, quantity, unit, unit_cost, serial_number
-         ) VALUES ($1, $2, $3, $4, $5, $6)
-         RETURNING *`,
-        [
-            workOrderId,
-            data.item_name,
-            Number(data.quantity) || 1,
-            data.unit || "kom",
-            data.unit_cost || null,
-            data.serial_number || null,
-        ]
-    );
-    return result.rows[0];
+    const connection = await pool.connect();
+    try {
+        await connection.query("BEGIN");
+
+        let inventoryItem = null;
+        let movementId = null;
+        if (data.inventory_item_id && data.warehouse_id) {
+            const itemResult = await connection.query(
+                `SELECT id, name, unit, purchase_price
+                 FROM inventory_items WHERE id = $1 AND active = TRUE`,
+                [data.inventory_item_id]
+            );
+            inventoryItem = itemResult.rows[0];
+            if (!inventoryItem) {
+                const error = new Error("Inventory item not found");
+                error.code = "ITEM_NOT_FOUND";
+                throw error;
+            }
+
+            const quantity = Number(data.quantity) || 1;
+            const stockResult = await connection.query(
+                `UPDATE inventory_stock
+                 SET quantity = quantity - $1, updated_at = NOW()
+                 WHERE warehouse_id = $2 AND item_id = $3
+                   AND quantity >= $1
+                 RETURNING quantity`,
+                [quantity, data.warehouse_id, data.inventory_item_id]
+            );
+            if (!stockResult.rows[0]) {
+                const error = new Error("Insufficient stock");
+                error.code = "INSUFFICIENT_STOCK";
+                throw error;
+            }
+
+            const movement = await connection.query(
+                `INSERT INTO inventory_movements (
+                    warehouse_id, item_id, movement_type, quantity,
+                    reference_type, reference_id, work_order_id, note, unit_cost, created_by
+                 ) VALUES ($1,$2,'issue',$3,'work_order',$4,$4,$5,$6,$7)
+                 RETURNING id`,
+                [
+                    data.warehouse_id,
+                    data.inventory_item_id,
+                    quantity,
+                    workOrderId,
+                    data.note || null,
+                    data.unit_cost || inventoryItem.purchase_price || null,
+                    data.user_id || null,
+                ]
+            );
+            movementId = movement.rows[0].id;
+        }
+
+        const result = await connection.query(
+            `INSERT INTO work_order_materials (
+                work_order_id, item_name, quantity, unit, unit_cost, serial_number,
+                inventory_item_id, warehouse_id, inventory_movement_id
+             ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+             RETURNING *`,
+            [
+                workOrderId,
+                inventoryItem?.name || data.item_name,
+                Number(data.quantity) || 1,
+                inventoryItem?.unit || data.unit || "kom",
+                data.unit_cost || inventoryItem?.purchase_price || null,
+                data.serial_number || null,
+                data.inventory_item_id || null,
+                data.warehouse_id || null,
+                movementId,
+            ]
+        );
+        await connection.query("COMMIT");
+        return result.rows[0];
+    } catch (error) {
+        await connection.query("ROLLBACK");
+        throw error;
+    } finally {
+        connection.release();
+    }
 };
 
 export const addChecklistItem = async (workOrderId, data) => {

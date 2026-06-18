@@ -11,7 +11,8 @@ import {
   FaCog,
   FaHeadset,
   FaBell,
-  FaChartLine
+  FaChartLine,
+  FaBoxes
 } from "react-icons/fa";
 
 export const menu = [
@@ -125,6 +126,12 @@ export const menu = [
         link: "/management",
         icon: <FaChartLine />,
         permission: "view_dashboard"
+      },
+      {
+        label: "Skladište",
+        link: "/inventory",
+        icon: <FaBoxes />,
+        permission: "view_inventory"
       }
     ]
   },

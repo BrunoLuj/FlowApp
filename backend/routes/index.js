@@ -14,6 +14,7 @@ import serviceRequestRoutes from "./serviceRequestRoutes.js";
 import attachmentRoutes from "./attachmentRoutes.js";
 import notificationRoutes from "./notificationRoutes.js";
 import managementRoutes from "./managementRoutes.js";
+import inventoryRoutes from "./inventoryRoutes.js";
 
 const router = express.Router();
 
@@ -32,5 +33,6 @@ router.use("/service-requests", serviceRequestRoutes);
 router.use("/attachments", attachmentRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/management", managementRoutes);
+router.use("/inventory", inventoryRoutes);
 
 export default router;

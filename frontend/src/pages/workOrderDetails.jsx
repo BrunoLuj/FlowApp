@@ -12,6 +12,7 @@ import {
 } from "../services/workorderServices";
 import { downloadAttachment, uploadAttachment } from "../services/serviceCenterServices.js";
 import { downloadBlob } from "../libs/downloadBlob.js";
+import { getAvailableInventory } from "../services/inventoryServices.js";
 
 const WorkOrderDetails = () => {
   const { id } = useParams();
@@ -19,7 +20,10 @@ const WorkOrderDetails = () => {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activity, setActivity] = useState({ description: "", duration_minutes: "" });
-  const [material, setMaterial] = useState({ item_name: "", quantity: 1, unit: "kom" });
+  const [material, setMaterial] = useState({
+    inventory_item_id: "", warehouse_id: "", item_name: "", quantity: 1, unit: "kom",
+  });
+  const [availableInventory, setAvailableInventory] = useState([]);
   const [checklistLabel, setChecklistLabel] = useState("");
   const [completion, setCompletion] = useState({ completion_notes: "", customer_signature_name: "" });
   const [attachmentFile, setAttachmentFile] = useState(null);
@@ -27,8 +31,12 @@ const WorkOrderDetails = () => {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await getWorkOrder(id);
+      const [response, inventoryResponse] = await Promise.all([
+        getWorkOrder(id),
+        getAvailableInventory().catch(() => ({ data: [] })),
+      ]);
       setOrder(response.data);
+      setAvailableInventory(inventoryResponse.data || []);
     } catch (error) {
       toast.error(error.response?.data?.error || "Radni nalog nije moguće učitati.");
     } finally {
@@ -48,10 +56,33 @@ const WorkOrderDetails = () => {
 
   const submitMaterial = async (event) => {
     event.preventDefault();
-    await addWorkOrderMaterial(id, material);
-    setMaterial({ item_name: "", quantity: 1, unit: "kom" });
-    toast.success("Materijal je evidentiran.");
-    load();
+    try {
+      await addWorkOrderMaterial(id, material);
+      setMaterial({
+        inventory_item_id: "", warehouse_id: "", item_name: "", quantity: 1, unit: "kom",
+      });
+      toast.success("Materijal je evidentiran i zaliha ažurirana.");
+      load();
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Materijal nije moguće evidentirati.");
+    }
+  };
+
+  const selectInventoryItem = (value) => {
+    const selected = availableInventory.find((item) =>
+      `${item.id}:${item.warehouse_id}` === value
+    );
+    if (!selected) {
+      setMaterial({ ...material, inventory_item_id: "", warehouse_id: "", item_name: "" });
+      return;
+    }
+    setMaterial({
+      ...material,
+      inventory_item_id: selected.id,
+      warehouse_id: selected.warehouse_id,
+      item_name: selected.name,
+      unit: selected.unit,
+    });
   };
 
   const submitChecklist = async (event) => {
@@ -134,7 +165,19 @@ const WorkOrderDetails = () => {
           <Card title="Utrošeni materijal" icon={FaTools}>
             <div className="space-y-2">{order.materials.map((item) => <div key={item.id} className="rounded-xl bg-slate-50 p-3 text-sm"><b>{item.item_name}</b> · {item.quantity} {item.unit}</div>)}</div>
             <form onSubmit={submitMaterial} className="mt-3 grid grid-cols-4 gap-2">
-              <input required value={material.item_name} onChange={(e) => setMaterial({ ...material, item_name: e.target.value })} placeholder="Materijal" className="col-span-2 rounded-xl border p-3" />
+              <select
+                value={material.inventory_item_id ? `${material.inventory_item_id}:${material.warehouse_id}` : ""}
+                onChange={(event) => selectInventoryItem(event.target.value)}
+                className="col-span-4 rounded-xl border p-3"
+              >
+                <option value="">Ručni unos / artikl nije u skladištu</option>
+                {availableInventory.map((item) => (
+                  <option key={`${item.id}-${item.warehouse_id}`} value={`${item.id}:${item.warehouse_id}`}>
+                    {item.sku} · {item.name} · {item.quantity} {item.unit} · {item.warehouse_name}
+                  </option>
+                ))}
+              </select>
+              <input required value={material.item_name} readOnly={Boolean(material.inventory_item_id)} onChange={(e) => setMaterial({ ...material, item_name: e.target.value })} placeholder="Materijal" className="col-span-2 rounded-xl border p-3 read-only:bg-slate-100" />
               <input type="number" min="0.001" step="0.001" value={material.quantity} onChange={(e) => setMaterial({ ...material, quantity: e.target.value })} className="rounded-xl border p-3" />
               <button className="rounded-xl bg-indigo-600 text-white"><FaPlus /></button>
             </form>
