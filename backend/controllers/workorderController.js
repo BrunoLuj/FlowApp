@@ -147,8 +147,41 @@ export const completeWorkOrder = async (req, res) => {
         if (!order) return res.status(404).json({ error: "Work order not found" });
         res.json(order);
     } catch (error) {
+        if (error.code === "CHECKLIST_INCOMPLETE") {
+            return res.status(409).json({ error: "Complete all required checklist items first" });
+        }
         console.error(error);
         res.status(500).json({ error: "Error completing work order" });
+    }
+};
+
+export const updateFieldData = async (req, res) => {
+    const signature = req.body.customer_signature_data;
+    if (signature && !/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(signature)) {
+        return res.status(400).json({ error: "Invalid signature format" });
+    }
+    if (signature && signature.length > 1_500_000) {
+        return res.status(400).json({ error: "Signature is too large" });
+    }
+    if (
+        req.body.odometer_start !== "" &&
+        req.body.odometer_end !== "" &&
+        Number(req.body.odometer_end) < Number(req.body.odometer_start)
+    ) {
+        return res.status(400).json({ error: "Ending mileage cannot be lower than starting mileage" });
+    }
+    try {
+        const order = await workOrdersModel.updateWorkOrderFieldData(
+            req.params.id,
+            req.body,
+            req.user.userId,
+            req.user.clientId
+        );
+        if (!order) return res.status(404).json({ error: "Work order not found" });
+        res.json(order);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error updating field service report" });
     }
 };
 

@@ -11,6 +11,7 @@ import {
     addChecklist,
     updateChecklist,
     completeWorkOrder,
+    updateFieldData,
     updateSchedule,
     updateWorkOrder,
     deleteWorkOrder
@@ -26,6 +27,7 @@ router.post("/:id/activities", authMiddleware, checkPermission('update_work_orde
 router.post("/:id/materials", authMiddleware, checkPermission('update_work_orders'), addMaterial);
 router.post("/:id/checklist", authMiddleware, checkPermission('update_work_orders'), addChecklist);
 router.patch("/:id/checklist/:itemId", authMiddleware, checkPermission('update_work_orders'), updateChecklist);
+router.patch("/:id/field-data", authMiddleware, checkPermission('update_work_orders'), updateFieldData);
 router.post("/:id/complete", authMiddleware, checkPermission('update_work_orders'), completeWorkOrder);
 router.patch("/:id/schedule", authMiddleware, checkPermission('update_work_orders'), updateSchedule);
 router.put("/:id", authMiddleware, checkPermission('update_work_orders'), updateWorkOrder);

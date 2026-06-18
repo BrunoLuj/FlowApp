@@ -274,33 +274,158 @@ export const updateChecklistItem = async (workOrderId, itemId, data, userId) => 
     return result.rows[0];
 };
 
+export const updateWorkOrderFieldData = async (id, data, userId, clientId = null) => {
+    const values = [
+        data.arrival_at || null,
+        data.departure_at || null,
+        data.odometer_start === "" ? null : data.odometer_start,
+        data.odometer_end === "" ? null : data.odometer_end,
+        data.travel_distance_km === "" ? null : data.travel_distance_km,
+        data.travel_time_minutes === "" ? null : data.travel_time_minutes,
+        data.field_notes ?? null,
+        data.completion_notes ?? null,
+        data.customer_signature_name ?? null,
+        data.customer_signature_data ?? null,
+        Boolean(data.report_generated),
+        id,
+    ];
+    let clientCondition = "";
+    if (clientId) {
+        values.push(clientId);
+        clientCondition = `AND p.client_id = $${values.length}`;
+    }
+
+    const connection = await pool.connect();
+    try {
+        await connection.query("BEGIN");
+        const result = await connection.query(
+            `UPDATE work_orders wo SET
+                arrival_at = COALESCE($1, wo.arrival_at),
+                departure_at = COALESCE($2, wo.departure_at),
+                odometer_start = COALESCE($3, wo.odometer_start),
+                odometer_end = COALESCE($4, wo.odometer_end),
+                travel_distance_km = COALESCE(
+                    $5,
+                    CASE
+                        WHEN $4::numeric IS NOT NULL AND COALESCE($3::numeric, wo.odometer_start) IS NOT NULL
+                        THEN GREATEST($4::numeric - COALESCE($3::numeric, wo.odometer_start), 0)
+                        ELSE wo.travel_distance_km
+                    END
+                ),
+                travel_time_minutes = COALESCE($6, wo.travel_time_minutes),
+                field_notes = COALESCE($7, wo.field_notes),
+                completion_notes = COALESCE($8, wo.completion_notes),
+                customer_signature_name = COALESCE($9, wo.customer_signature_name),
+                customer_signature_data = COALESCE($10, wo.customer_signature_data),
+                customer_signed_at = CASE
+                    WHEN $10 IS NOT NULL AND $10 IS DISTINCT FROM wo.customer_signature_data
+                    THEN CASE WHEN $10 = '' THEN NULL ELSE NOW() END
+                    ELSE wo.customer_signed_at
+                END,
+                report_generated_at = CASE
+                    WHEN $11 THEN NOW()
+                    ELSE wo.report_generated_at
+                END,
+                updated_at = NOW()
+             FROM projects p
+             WHERE wo.id = $12
+               AND p.id = COALESCE(wo.station_id, wo.project_id)
+               ${clientCondition}
+             RETURNING wo.*`,
+            values
+        );
+        const order = result.rows[0];
+        if (order) {
+            await connection.query(
+                `INSERT INTO audit_logs
+                    (user_id, client_id, entity_type, entity_id, action, summary, changes)
+                 SELECT $1, p.client_id, 'work_order', $2, 'field_data_updated',
+                        'Ažuriran terenski servisni zapisnik', $3::jsonb
+                 FROM projects p
+                 WHERE p.id = COALESCE($4, $5)`,
+                [
+                    userId,
+                    String(id),
+                    JSON.stringify({
+                        arrival_at: data.arrival_at,
+                        departure_at: data.departure_at,
+                        odometer_start: data.odometer_start,
+                        odometer_end: data.odometer_end,
+                        travel_distance_km: data.travel_distance_km,
+                        travel_time_minutes: data.travel_time_minutes,
+                        report_generated: Boolean(data.report_generated),
+                        signature_updated: Boolean(data.customer_signature_data),
+                    }),
+                    order.station_id,
+                    order.project_id,
+                ]
+            );
+        }
+        await connection.query("COMMIT");
+        return order;
+    } catch (error) {
+        await connection.query("ROLLBACK");
+        throw error;
+    } finally {
+        connection.release();
+    }
+};
+
 export const completeWorkOrder = async (id, data, userId) => {
-    const result = await pool.query(
-        `UPDATE work_orders SET
-            status = 'Completed',
-            end_date = COALESCE(end_date, CURRENT_DATE),
-            completed_by = $1,
-            completion_notes = $2,
-            customer_signature_name = $3,
-            customer_signed_at = CASE WHEN $3 IS NOT NULL THEN NOW() ELSE customer_signed_at END,
-            updated_at = NOW()
-         WHERE id = $4 RETURNING *`,
-        [
-            userId,
-            data.completion_notes || null,
-            data.customer_signature_name || null,
-            id,
-        ]
-    );
-    if (result.rows[0]?.service_request_id) {
-        await pool.query(
+    const connection = await pool.connect();
+    try {
+        await connection.query("BEGIN");
+        const incompleteResult = await connection.query(
+            `SELECT COUNT(*)::integer AS count
+             FROM work_order_checklist_items
+             WHERE work_order_id = $1 AND required = TRUE AND completed = FALSE`,
+            [id]
+        );
+        if (incompleteResult.rows[0].count > 0) {
+            const error = new Error("Required checklist items are incomplete");
+            error.code = "CHECKLIST_INCOMPLETE";
+            throw error;
+        }
+
+        const result = await connection.query(
+            `UPDATE work_orders SET
+                status = 'Completed',
+                end_date = COALESCE(end_date, CURRENT_DATE),
+                departure_at = COALESCE(departure_at, NOW()),
+                completed_by = $1,
+                completion_notes = COALESCE($2, completion_notes),
+                customer_signature_name = COALESCE($3, customer_signature_name),
+                customer_signature_data = COALESCE($4, customer_signature_data),
+                customer_signed_at = CASE
+                    WHEN COALESCE($3, $4) IS NOT NULL THEN NOW()
+                    ELSE customer_signed_at
+                END,
+                updated_at = NOW()
+             WHERE id = $5 RETURNING *`,
+            [
+                userId,
+                data.completion_notes || null,
+                data.customer_signature_name || null,
+                data.customer_signature_data || null,
+                id,
+            ]
+        );
+        if (result.rows[0]?.service_request_id) {
+            await connection.query(
             `UPDATE service_requests
              SET status = 'resolved', resolved_at = NOW(), updated_at = NOW()
              WHERE id = $1`,
             [result.rows[0].service_request_id]
-        );
+            );
+        }
+        await connection.query("COMMIT");
+        return result.rows[0];
+    } catch (error) {
+        await connection.query("ROLLBACK");
+        throw error;
+    } finally {
+        connection.release();
     }
-    return result.rows[0];
 };
 
 export const updateWorkOrderSchedule = async (id, data, clientId = null) => {
