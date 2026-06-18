@@ -9,6 +9,8 @@ import translationRoutes from "./translationRoutes.js";
 import inspectionsRoutes from "./inspectionsRoutes.js";
 import equipmentRoutes from "./equipmentRoutes.js";
 import workorderRoutes from "./workorderRoutes.js";
+import serviceCenterRoutes from "./serviceCenterRoutes.js";
+import serviceRequestRoutes from "./serviceRequestRoutes.js";
 
 const router = express.Router();
 
@@ -22,5 +24,7 @@ router.use("/translations", translationRoutes);
 router.use("/inspections", inspectionsRoutes);
 router.use("/equipment", equipmentRoutes);
 router.use("/work-orders", workorderRoutes);
+router.use("/service-center", serviceCenterRoutes);
+router.use("/service-requests", serviceRequestRoutes);
 
 export default router;

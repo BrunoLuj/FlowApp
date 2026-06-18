@@ -8,7 +8,8 @@ import {
   FaClipboardCheck,
   FaExclamationTriangle,
   FaUserFriends,
-  FaCog
+  FaCog,
+  FaHeadset
 } from "react-icons/fa";
 
 export const menu = [
@@ -57,6 +58,12 @@ export const menu = [
   {
     title: "Servis",
     items: [
+      {
+        label: "Servisni centar",
+        link: "/service-center",
+        icon: <FaHeadset />,
+        permission: "view_service_center"
+      },
       {
         label: "Radni nalozi",
         link: "/work-order",
