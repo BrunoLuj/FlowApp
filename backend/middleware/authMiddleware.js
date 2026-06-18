@@ -15,9 +15,13 @@ const authMiddleware = async(req, res, next)=>{
     try {
         const userToken = JWT.verify(token, process.env.JWT_SECRET);
 
-        req.body.user = {
+        req.user = {
             userId: userToken.userId,
+            rolesId: userToken.roles_id,
+            clientId: userToken.client_id ?? null,
+            permissions: userToken.permissions ?? [],
         };
+        req.body.user = { userId: userToken.userId };
 
         next();
         

@@ -3,7 +3,7 @@ import { RiBlazeLine } from "react-icons/ri";
 import { Avatar } from "../assets";
 import { MdMenu, MdClose } from "react-icons/md";
 import { Link, useLocation } from "react-router-dom";
-import { FaTachometerAlt, FaClipboardList, FaUser, FaCog, FaSignOutAlt, FaUsers, FaTasks, FaUserFriends } from 'react-icons/fa';
+import { FaTachometerAlt, FaClipboardList, FaUser, FaCog, FaSignOutAlt, FaUsers, FaTasks, FaUserFriends, FaHeadset } from 'react-icons/fa';
 import useStore from "../store/index.js";
 import { useTranslation } from 'react-i18next';
 
@@ -22,6 +22,7 @@ const Navbar = () => {
 
   const links = [
     { label: t("dashboard"), link: "/overview", icon: <FaTachometerAlt className="text-blue-500" />, permission: 'view_dashboard' },
+    { label: "Servisni centar", link: "/service-center", icon: <FaHeadset className="text-rose-500" />, permission: 'view_service_center' },
     { label: t("clients"), link: "/clients", icon: <FaUsers className="text-teal-500" />, permission: 'view_clients' },
     { label: t("projects"), link: "/projects", icon: <FaClipboardList className="text-purple-500" />, permission: 'view_projects' },
     { label: t("work_order"), link: "/work-order", icon: <FaTasks className="text-orange-500" />, permission: 'view_projects' },

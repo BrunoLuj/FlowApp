@@ -2,7 +2,11 @@ import { pool } from "../libs/database.js";
 import { hashPassword} from "../libs/index.js";
 
 export const getAllUsers = async () => {
-  const result = await pool.query('SELECT * FROM users');
+  const result = await pool.query(`
+    SELECT id, email, firstname, lastname, address, country, currency,
+           contact, roles_id, status, client_id, createdat, updatedat
+    FROM users
+  `);
   return result.rows;
 };
 
@@ -13,7 +17,9 @@ export const getUsersRoles = async () => {
 
 export const getUserById = async (userId) => {
   const result = await pool.query({
-    text: `SELECT * FROM users WHERE id = $1`,
+    text: `SELECT id, email, firstname, lastname, address, country, currency,
+                  contact, roles_id, status, client_id, createdat, updatedat
+           FROM users WHERE id = $1`,
     values: [userId],
   });
   return result.rows[0];

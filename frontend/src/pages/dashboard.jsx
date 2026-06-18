@@ -1,173 +1,195 @@
-import React, { useEffect, useState } from 'react';
-import { Line, Bar, Pie } from 'react-chartjs-2';
-import { Chart, registerables } from 'chart.js';
-import { FaClipboardList, FaCheckCircle, FaExclamationTriangle, FaTasks, FaSearch } from 'react-icons/fa';
-import CountUp from 'react-countup';
-import { getActiveProjects } from '../services/projectsServices.js';
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  FaBuilding,
+  FaExclamationTriangle,
+  FaGasPump,
+  FaMapMarkerAlt,
+  FaTools,
+  FaWrench,
+} from "react-icons/fa";
+import { toast } from "sonner";
+import { getServiceCenterDashboard } from "../services/serviceCenterServices.js";
 
-Chart.register(...registerables);
+const formatDate = (value) =>
+  value ? new Intl.DateTimeFormat("hr-HR").format(new Date(value)) : "—";
+
+const statusLabel = {
+  new: "Novo",
+  triage: "U obradi",
+  scheduled: "Zakazano",
+  in_progress: "U tijeku",
+  waiting_client: "Čeka klijenta",
+  resolved: "Riješeno",
+  cancelled: "Otkazano",
+};
+
+const priorityClass = {
+  urgent: "bg-red-100 text-red-700",
+  high: "bg-orange-100 text-orange-700",
+  normal: "bg-blue-100 text-blue-700",
+  low: "bg-slate-100 text-slate-600",
+};
 
 const Dashboard = () => {
-  const [tasks, setTasks] = useState([]);
+  const navigate = useNavigate();
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('svi');
-  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        const response = await getActiveProjects();
-        setTasks(response.data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProjects();
+    getServiceCenterDashboard()
+      .then((response) => setData(response.data))
+      .catch(() => toast.error("Nije moguće učitati pregled servisnog centra."))
+      .finally(() => setLoading(false));
   }, []);
 
-  // Gradient kartice
-  const stats = [
-    { id: 1, label: 'Završena umjeravanja', value: 120, icon: <FaCheckCircle className="text-white" />, gradient: 'bg-gradient-to-r from-green-400 to-green-600' },
-    { id: 2, label: 'Aktivni projekti', value: 8, icon: <FaClipboardList className="text-white" />, gradient: 'bg-gradient-to-r from-blue-400 to-blue-600' },
-    { id: 3, label: 'Nezavršeni zadaci', value: 5, icon: <FaExclamationTriangle className="text-white" />, gradient: 'bg-gradient-to-r from-red-400 to-red-600' },
-    { id: 4, label: 'Ukupni zadaci', value: 15, icon: <FaTasks className="text-white" />, gradient: 'bg-gradient-to-r from-yellow-400 to-yellow-600' },
+  if (loading) {
+    return <div className="min-h-screen pt-28 text-center text-slate-500">Učitavanje pregleda…</div>;
+  }
+
+  const stats = data?.stats || {};
+  const cards = [
+    { label: "Klijenti", value: stats.clients || 0, icon: FaBuilding, color: "bg-indigo-600" },
+    { label: "Benzinske stanice", value: stats.stations || 0, icon: FaGasPump, color: "bg-cyan-600" },
+    { label: "Evidentirana oprema", value: stats.assets || 0, icon: FaTools, color: "bg-emerald-600" },
+    { label: "Otvoreni zahtjevi", value: stats.openRequests || 0, icon: FaWrench, color: "bg-amber-500" },
+    { label: "Aktivni radni nalozi", value: stats.activeWorkOrders || 0, icon: FaWrench, color: "bg-violet-600" },
+    { label: "Istekli rokovi", value: stats.overdueDeadlines || 0, icon: FaExclamationTriangle, color: "bg-red-600" },
   ];
 
-  const lineChartData = {
-    labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul'],
-    datasets: [{
-      label: 'Umjeravanja',
-      data: [30,45,25,60,80,50,90],
-      borderColor: '#6366F1',
-      backgroundColor: 'rgba(99,102,241,0.2)',
-      fill: true,
-      tension: 0.3,
-    }]
-  };
-
-  const barChartData = {
-    labels: ['Project 1','Project 2','Project 3','Project 4'],
-    datasets: [{
-      label: 'Napredak (%)',
-      data: [70,40,90,60],
-      backgroundColor: ['#6366F1','#3B82F6','#10B981','#F59E0B'],
-      borderRadius: 5,
-    }]
-  };
-
-  const pieChartData = {
-    labels: ['Završeni','U tijeku','Nezavršeno'],
-    datasets: [{
-      data: [10,3,2],
-      backgroundColor: ['#10B981','#3B82F6','#EF4444'],
-    }]
-  };
-
-  const filteredTasks = tasks.filter(task => {
-    const matchesStatus = filter === 'svi' || task.status === filter;
-    const matchesSearch = task.project_type?.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesStatus && matchesSearch;
-  });
-
-  const statusColors = {
-    'Završen': 'bg-green-500',
-    'U tijeku': 'bg-blue-500',
-    'Nezavršeno': 'bg-red-500',
-  };
-
   return (
-    <div className="bg-gray-100 min-h-screen p-6 sm:ml-16">
-      <h1 className="text-4xl font-extrabold mb-6 text-gray-800">Dashboard</h1>
-
-      {/* Gradient kartice */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        {stats.map(stat => (
-          <div key={stat.id} className={`p-6 rounded-3xl shadow-lg flex items-center gap-4 transform transition hover:scale-105 ${stat.gradient}`}>
-            <div className="text-4xl">{stat.icon}</div>
-            <div>
-              <h2 className="text-2xl font-bold text-white">
-                <CountUp end={stat.value} duration={1.5} />
-              </h2>
-              <p className="text-white/80">{stat.label}</p>
-            </div>
+    <div className="min-h-screen bg-slate-100 px-4 pb-10 pt-24 sm:ml-16 sm:px-7">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-7 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p className="mb-1 text-sm font-semibold uppercase tracking-widest text-indigo-600">
+              FlowApp servisni centar
+            </p>
+            <h1 className="text-3xl font-bold text-slate-900">Operativni pregled</h1>
+            <p className="mt-2 text-slate-500">
+              Stanice, oprema, servisni zahtjevi i mjeriteljski rokovi na jednom mjestu.
+            </p>
           </div>
-        ))}
-      </div>
+          <button
+            onClick={() => navigate("/service-center?newRequest=true")}
+            className="rounded-xl bg-indigo-600 px-5 py-3 font-semibold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-700"
+          >
+            + Novi servisni zahtjev
+          </button>
+        </div>
 
-      {/* Grafovi */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <div className="bg-white p-6 rounded-3xl shadow-xl backdrop-blur-sm">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800">Trend Umjeravanja</h2>
-          <Line data={lineChartData} options={{ responsive:true, maintainAspectRatio:true, plugins:{legend:{position:'bottom'}}}} height={200}/>
+        <div className="mb-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+          {cards.map(({ label, value, icon: Icon, color }) => (
+            <div key={label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-xl text-white ${color}`}>
+                <Icon />
+              </div>
+              <div className="text-3xl font-bold text-slate-900">{value}</div>
+              <div className="mt-1 text-sm text-slate-500">{label}</div>
+            </div>
+          ))}
         </div>
-        <div className="bg-white p-6 rounded-3xl shadow-xl backdrop-blur-sm">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800">Napredak Projekata</h2>
-          <Bar data={barChartData} options={{ responsive:true, maintainAspectRatio:true, plugins:{legend:{position:'bottom'}}}} height={200}/>
-        </div>
-        <div className="bg-white p-6 rounded-3xl shadow-xl backdrop-blur-sm">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800">Status Zadataka</h2>
-          <Pie data={pieChartData} options={{ responsive:true, maintainAspectRatio:true, plugins:{legend:{position:'bottom'}}}} height={200}/>
-        </div>
-      </div>
 
-      {/* Filter & Search */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-4">
-        <div className="relative flex-1">
-          <input
-            type="text"
-            placeholder="Pretraži zadatke..."
-            className="w-full p-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-400 pl-10"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-          />
-          <FaSearch className="absolute left-3 top-3 text-gray-400"/>
-        </div>
-        <select
-          className="p-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-          value={filter}
-          onChange={e => setFilter(e.target.value)}
-        >
-          <option value="svi">Svi</option>
-          <option value="Završen">Završeni</option>
-          <option value="U tijeku">U tijeku</option>
-          <option value="Nezavršeno">Nezavršeno</option>
-        </select>
-      </div>
+        <div className="grid gap-6 xl:grid-cols-3">
+          <section className="rounded-2xl border border-slate-200 bg-white shadow-sm xl:col-span-2">
+            <div className="flex items-center justify-between border-b border-slate-100 p-5">
+              <div>
+                <h2 className="font-bold text-slate-900">Rokovi i isteci</h2>
+                <p className="text-sm text-slate-500">Umjeravanja, ovjere i dokumenti</p>
+              </div>
+              <button onClick={() => navigate("/service-center")} className="text-sm font-semibold text-indigo-600">
+                Prikaži sve
+              </button>
+            </div>
+            <div className="divide-y divide-slate-100">
+              {data?.deadlines?.length ? data.deadlines.map((deadline) => (
+                <div key={deadline.id} className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div className="font-semibold text-slate-800">{deadline.title}</div>
+                    <div className="mt-1 text-sm text-slate-500">
+                      {deadline.client_name}{deadline.station_name ? ` · ${deadline.station_name}` : ""}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className={`rounded-full px-3 py-1 text-xs font-bold ${
+                      deadline.days_remaining < 0
+                        ? "bg-red-100 text-red-700"
+                        : deadline.days_remaining <= 15
+                          ? "bg-orange-100 text-orange-700"
+                          : "bg-amber-100 text-amber-700"
+                    }`}>
+                      {deadline.days_remaining < 0
+                        ? `Isteklo prije ${Math.abs(deadline.days_remaining)} dana`
+                        : `Još ${deadline.days_remaining} dana`}
+                    </span>
+                    <span className="text-sm font-medium text-slate-600">{formatDate(deadline.due_date)}</span>
+                  </div>
+                </div>
+              )) : (
+                <div className="p-10 text-center text-slate-400">Nema rokova u sljedećih 60 dana.</div>
+              )}
+            </div>
+          </section>
 
-      {/* Tabela zadataka */}
-      <div className="bg-white p-6 rounded-3xl shadow-xl backdrop-blur-sm overflow-x-auto">
-        {loading ? (
-          <div className="text-center py-10 text-gray-500">Loading tasks...</div>
-        ) : (
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-2 text-left text-gray-600">Naziv Zadatka</th>
-                <th className="px-4 py-2 text-left text-gray-600">Status</th>
-                <th className="px-4 py-2 text-left text-gray-600">Due Date</th>
-                <th className="px-4 py-2 text-left text-gray-600">Akcije</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {filteredTasks.map(task => (
-                <tr key={task.id} className="hover:bg-gray-50 transition duration-200">
-                  <td className="px-4 py-2">{task.project_type}</td>
-                  <td className="px-4 py-2 flex items-center gap-2">
-                    <span className={`w-4 h-4 rounded-full ${statusColors[task.status]}`}></span>
-                    {task.status}
-                  </td>
-                  <td className="px-4 py-2">{task.end_date}</td>
-                  <td className="px-4 py-2 flex gap-2 flex-wrap">
-                    <button className="bg-indigo-500 text-white px-3 py-1 rounded-xl hover:bg-indigo-600 transition">Uredi</button>
-                    <button className="bg-red-500 text-white px-3 py-1 rounded-xl hover:bg-red-600 transition">Obriši</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+          <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="border-b border-slate-100 p-5">
+              <h2 className="font-bold text-slate-900">Novi servisni zahtjevi</h2>
+              <p className="text-sm text-slate-500">Posljednje prijave klijenata</p>
+            </div>
+            <div className="divide-y divide-slate-100">
+              {data?.recentRequests?.length ? data.recentRequests.map((request) => (
+                <button
+                  key={request.id}
+                  onClick={() => navigate("/service-center")}
+                  className="block w-full p-4 text-left transition hover:bg-slate-50"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="font-semibold text-slate-800">{request.subject}</span>
+                    <span className={`rounded-full px-2 py-1 text-xs font-bold ${priorityClass[request.priority]}`}>
+                      {request.priority}
+                    </span>
+                  </div>
+                  <div className="mt-2 text-xs text-slate-500">
+                    {request.request_number} · {statusLabel[request.status] || request.status}
+                  </div>
+                </button>
+              )) : (
+                <div className="p-10 text-center text-slate-400">Nema novih zahtjeva.</div>
+              )}
+            </div>
+          </section>
+        </div>
+
+        <section className="mt-6 rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-100 p-5">
+            <h2 className="font-bold text-slate-900">Benzinske stanice</h2>
+            <p className="text-sm text-slate-500">Brzi pregled lokacija i evidentirane opreme</p>
+          </div>
+          <div className="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-4">
+            {data?.stations?.map((station) => (
+              <div key={station.id} className="rounded-xl border border-slate-200 p-4">
+                <div className="mb-3 flex items-start justify-between">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-100 text-cyan-700">
+                    <FaGasPump />
+                  </div>
+                  <span className={`rounded-full px-2 py-1 text-xs font-semibold ${
+                    station.active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"
+                  }`}>
+                    {station.active ? "Aktivna" : "Neaktivna"}
+                  </span>
+                </div>
+                <div className="font-bold text-slate-800">{station.name}</div>
+                <div className="mt-1 text-sm text-slate-500">{station.client_name}</div>
+                <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
+                  <FaMapMarkerAlt /> {station.city || station.address || "Lokacija nije unesena"}
+                </div>
+                <div className="mt-2 text-xs font-semibold text-slate-600">
+                  {station.registered_assets} uređaja u novom registru
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
     </div>
   );
