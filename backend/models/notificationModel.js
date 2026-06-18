@@ -42,6 +42,29 @@ export const getNotifications = async (user) => {
             UNION ALL
 
             SELECT
+                'sla:' || sr.id,
+                'sla',
+                CASE
+                    WHEN sr.resolution_due_at < NOW() THEN 'danger'
+                    ELSE 'warning'
+                END,
+                'SLA · ' || sr.subject,
+                CASE
+                    WHEN sr.resolution_due_at < NOW()
+                        THEN sr.request_number || ' je prekoračio rok rješavanja'
+                    ELSE sr.request_number || ' uskoro doseže SLA rok'
+                END,
+                sr.resolution_due_at,
+                '/service-center'
+            FROM service_requests sr
+            WHERE sr.status NOT IN ('resolved', 'cancelled')
+              AND sr.resolution_due_at IS NOT NULL
+              AND sr.resolution_due_at <= NOW() + INTERVAL '8 hours'
+              ${clientRequest}
+
+            UNION ALL
+
+            SELECT
                 'work-order:' || wo.id,
                 'work_order',
                 CASE
@@ -77,6 +100,43 @@ export const getNotifications = async (user) => {
             WHERE mp.active = TRUE
               AND mp.next_due_date <= CURRENT_DATE + mp.lead_days
               ${user.clientId ? "AND mp.client_id = $2" : ""}
+
+            UNION ALL
+
+            SELECT
+                'contract:' || sc.id,
+                'contract',
+                CASE WHEN sc.end_date < CURRENT_DATE THEN 'danger' ELSE 'warning' END,
+                sc.title,
+                CASE
+                    WHEN sc.end_date < CURRENT_DATE THEN 'Ugovor je istekao'
+                    ELSE 'Ugovor istječe za ' || (sc.end_date - CURRENT_DATE) || ' dana'
+                END,
+                sc.end_date::timestamptz,
+                '/commercial'
+            FROM service_contracts sc
+            WHERE sc.status = 'active'
+              AND sc.end_date IS NOT NULL
+              AND sc.end_date <= CURRENT_DATE + 60
+              ${user.clientId ? "AND sc.client_id = $2" : ""}
+
+            UNION ALL
+
+            SELECT
+                'quotation:' || q.id,
+                'quotation',
+                CASE
+                    WHEN q.valid_until IS NOT NULL AND q.valid_until < CURRENT_DATE
+                        THEN 'danger'
+                    ELSE 'info'
+                END,
+                q.title,
+                q.quotation_number || ' · čeka odgovor klijenta',
+                COALESCE(q.valid_until::timestamptz, q.created_at),
+                '/commercial'
+            FROM quotations q
+            WHERE q.status = 'sent'
+              ${user.clientId ? "AND q.client_id = $2" : ""}
         )
         SELECT n.*, (nr.id IS NOT NULL) AS is_read
         FROM notifications n

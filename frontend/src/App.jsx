@@ -29,6 +29,8 @@ import Management from "./pages/management";
 import Inventory from "./pages/inventory";
 import Maintenance from "./pages/maintenance";
 import PublicAsset from "./pages/publicAsset";
+import Commercial from "./pages/commercial";
+import PublicQuotation from "./pages/publicQuotation";
 
 const RootLayout = () => {
     const { user } = useStore((state) => state);
@@ -76,10 +78,12 @@ function App() {
                         <Route path="/management" element={<Management />} />
                         <Route path="/inventory" element={<Inventory />} />
                         <Route path="/maintenance" element={<Maintenance />} />
+                        <Route path="/commercial" element={<Commercial />} />
                     </Route>
                     <Route path="/sign-in" element={<SignIn />} />
                     <Route path="/sign-up" element={<SignUp />} />
                     <Route path="/asset/:token" element={<PublicAsset />} />
+                    <Route path="/quotation/:token" element={<PublicQuotation />} />
                 </Routes>
             </div>
             <Toaster richColors position="top-center" />

@@ -33,10 +33,35 @@ export const getServiceRequests = async ({ clientId, status, priority, stationId
 
 export const createServiceRequest = async (data, user) => {
     const clientId = user.clientId ?? data.client_id;
+    const contractResult = await pool.query(
+        `SELECT sc.* FROM service_contracts sc
+         LEFT JOIN contract_stations cs ON cs.contract_id = sc.id
+         WHERE sc.client_id = $1
+           AND sc.status = 'active'
+           AND sc.start_date <= CURRENT_DATE
+           AND (sc.end_date IS NULL OR sc.end_date >= CURRENT_DATE)
+           AND ($2::int IS NULL OR cs.station_id = $2 OR NOT EXISTS (
+                SELECT 1 FROM contract_stations covered
+                WHERE covered.contract_id = sc.id
+           ))
+         ORDER BY
+           CASE WHEN cs.station_id = $2 THEN 0 ELSE 1 END,
+           sc.start_date DESC
+         LIMIT 1`,
+        [clientId, data.station_id || null]
+    );
+    const contract = contractResult.rows[0];
+    const priority = data.priority || "normal";
+    const responseHours = contract?.[`response_hours_${priority}`] || null;
+    const resolutionHours = contract?.[`resolution_hours_${priority}`] || null;
     const result = await pool.query(
         `INSERT INTO service_requests
-            (client_id, station_id, asset_id, requested_by, category, priority, subject, description, desired_date)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            (client_id, station_id, asset_id, requested_by, category, priority,
+             subject, description, desired_date, service_contract_id,
+             response_due_at, resolution_due_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,
+                 CASE WHEN $11::int IS NULL THEN NULL ELSE NOW() + MAKE_INTERVAL(hours => $11::int) END,
+                 CASE WHEN $12::int IS NULL THEN NULL ELSE NOW() + MAKE_INTERVAL(hours => $12::int) END)
          RETURNING *`,
         [
             clientId,
@@ -44,10 +69,13 @@ export const createServiceRequest = async (data, user) => {
             data.asset_id || null,
             user.userId,
             data.category || "service",
-            data.priority || "normal",
+            priority,
             data.subject,
             data.description,
             data.desired_date || null,
+            contract?.id || null,
+            responseHours,
+            resolutionHours,
         ]
     );
 
@@ -163,6 +191,14 @@ export const addServiceRequestMessage = async (requestId, message, internalNote,
          RETURNING *`,
         [requestId, user.userId, message, user.clientId ? false : Boolean(internalNote)]
     );
+    if (!user.clientId) {
+        await pool.query(
+            `UPDATE service_requests
+             SET responded_at = COALESCE(responded_at, NOW()), updated_at = NOW()
+             WHERE id = $1`,
+            [requestId]
+        );
+    }
     return result.rows[0];
 };
 
