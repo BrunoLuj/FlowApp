@@ -1,5 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { jsPDF } from 'jspdf';
+import React, { useEffect, useState } from 'react';
 import 'jspdf-autotable';
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
@@ -21,7 +20,7 @@ const InspectionReport = ({  inspectionResults, projectId, projectData }) => {
             }
         };
         fetchClient();
-    }, []);
+    }, [projectData.client_id]);
 
     const generatePDF = () => {
         const documentDefinition = {

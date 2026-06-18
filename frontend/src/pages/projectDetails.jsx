@@ -44,17 +44,18 @@ const ProjectDetails = () => {
       active: project.active ?? true,
     });
   
-    useEffect(async () => {
+    useEffect(() => {
+      const loadClients = async () => {
         try {
           const res = await getClients();
-          console.log(res);
           setClients(res.data);
         } catch (err) {
           setError(err);
         } finally {
           setLoading(false);
         }
-    
+      };
+      loadClients();
     }, []);
 
   const statusBadge = (status) => {

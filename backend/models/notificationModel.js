@@ -58,6 +58,25 @@ export const getNotifications = async (user) => {
             WHERE wo.status NOT IN ('Completed', 'Cancelled')
               AND (wo.planned_date IS NULL OR wo.planned_date <= CURRENT_DATE + 7)
               ${clientOrder}
+
+            UNION ALL
+
+            SELECT
+                'maintenance-plan:' || mp.id,
+                'maintenance_plan',
+                CASE WHEN mp.next_due_date < CURRENT_DATE THEN 'danger' ELSE 'warning' END,
+                mp.name,
+                CASE
+                    WHEN mp.next_due_date < CURRENT_DATE
+                        THEN 'Preventivni plan kasni ' || (CURRENT_DATE - mp.next_due_date) || ' dana'
+                    ELSE 'Preventivni nalog dospijeva za ' || (mp.next_due_date - CURRENT_DATE) || ' dana'
+                END,
+                mp.next_due_date::timestamptz,
+                '/maintenance'
+            FROM maintenance_plans mp
+            WHERE mp.active = TRUE
+              AND mp.next_due_date <= CURRENT_DATE + mp.lead_days
+              ${user.clientId ? "AND mp.client_id = $2" : ""}
         )
         SELECT n.*, (nr.id IS NOT NULL) AS is_read
         FROM notifications n
