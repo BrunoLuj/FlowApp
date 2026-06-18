@@ -14,8 +14,13 @@ import { toast } from "sonner";
 import useStore from "../store";
 import {
   createAsset,
+  createDeadline,
+  createDocument,
   deleteAsset,
+  deleteDeadline,
+  deleteDocument,
   getStation,
+  updateDeadline,
   updateAsset,
 } from "../services/serviceCenterServices";
 
@@ -38,6 +43,28 @@ const emptyAsset = {
   notes: "",
 };
 
+const emptyDocument = {
+  document_type: "Servisni zapisnik",
+  title: "",
+  document_number: "",
+  file_name: "",
+  storage_key: "",
+  asset_id: "",
+  issued_at: "",
+  valid_until: "",
+  visible_to_client: true,
+};
+
+const emptyDeadline = {
+  deadline_type: "Umjeravanje",
+  title: "",
+  due_date: "",
+  warning_days: 30,
+  asset_id: "",
+  document_id: "",
+  notes: "",
+};
+
 const formatDate = (value) =>
   value ? new Intl.DateTimeFormat("hr-HR").format(new Date(value)) : "—";
 
@@ -53,8 +80,14 @@ const StationDetails = () => {
   const [saving, setSaving] = useState(false);
   const [assetForm, setAssetForm] = useState(emptyAsset);
   const [showAssetForm, setShowAssetForm] = useState(false);
+  const [documentForm, setDocumentForm] = useState(emptyDocument);
+  const [showDocumentForm, setShowDocumentForm] = useState(false);
+  const [deadlineForm, setDeadlineForm] = useState(emptyDeadline);
+  const [showDeadlineForm, setShowDeadlineForm] = useState(false);
 
   const canManageAssets = permissions.includes("update_clients");
+  const canManageDocuments = permissions.includes("manage_documents");
+  const canManageDeadlines = permissions.includes("manage_deadlines");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -112,6 +145,70 @@ const StationDetails = () => {
       await load();
     } catch (error) {
       toast.error(error.response?.data?.error || "Opremu nije moguće obrisati.");
+    }
+  };
+
+  const saveDocument = async (event) => {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      await createDocument(id, documentForm);
+      toast.success("Dokument je evidentiran.");
+      setDocumentForm(emptyDocument);
+      setShowDocumentForm(false);
+      await load();
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Dokument nije moguće spremiti.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const removeDocument = async (document) => {
+    if (!window.confirm(`Obrisati dokument "${document.title}"?`)) return;
+    try {
+      await deleteDocument(document.id);
+      toast.success("Dokument je obrisan.");
+      await load();
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Dokument nije moguće obrisati.");
+    }
+  };
+
+  const saveDeadline = async (event) => {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      await createDeadline(id, deadlineForm);
+      toast.success("Rok je dodan.");
+      setDeadlineForm(emptyDeadline);
+      setShowDeadlineForm(false);
+      await load();
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Rok nije moguće spremiti.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const completeDeadline = async (deadline) => {
+    try {
+      await updateDeadline(deadline.id, { status: "completed" });
+      toast.success("Rok je označen završenim.");
+      await load();
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Rok nije moguće ažurirati.");
+    }
+  };
+
+  const removeDeadline = async (deadline) => {
+    if (!window.confirm(`Obrisati rok "${deadline.title}"?`)) return;
+    try {
+      await deleteDeadline(deadline.id);
+      toast.success("Rok je obrisan.");
+      await load();
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Rok nije moguće obrisati.");
     }
   };
 
@@ -270,20 +367,66 @@ const StationDetails = () => {
             <div className="text-sm text-slate-500">{item.status} · planirano {formatDate(item.planned_date)}</div>
           </>
         )} />}
-        {tab === "documents" && <SimpleList items={data.documents} empty="Nema dokumenata." render={(item) => (
-          <>
-            <div><b>{item.title}</b></div>
-            <div className="text-sm text-slate-500">{item.document_type} · vrijedi do {formatDate(item.valid_until)}</div>
-          </>
-        )} />}
-        {tab === "deadlines" && <SimpleList items={data.deadlines} empty="Nema aktivnih rokova." render={(item) => (
-          <>
-            <div><b>{item.title}</b></div>
-            <div className={`text-sm ${item.days_remaining < 0 ? "text-red-600" : "text-slate-500"}`}>
-              {formatDate(item.due_date)} · {item.days_remaining < 0 ? `isteklo prije ${Math.abs(item.days_remaining)} dana` : `još ${item.days_remaining} dana`}
+        {tab === "documents" && (
+          <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <SectionHeader
+              title="Dokumentni centar"
+              subtitle="Certifikati, zapisnici, ugovori i ostala dokumentacija"
+              canAdd={canManageDocuments}
+              onAdd={() => setShowDocumentForm(true)}
+              addLabel="Dodaj dokument"
+            />
+            <div className="divide-y divide-slate-100">
+              {data.documents.map((item) => (
+                <div key={item.id} className="flex flex-col justify-between gap-3 p-5 sm:flex-row sm:items-center">
+                  <div>
+                    <div className="font-bold text-slate-800">{item.title}</div>
+                    <div className="mt-1 text-sm text-slate-500">
+                      {item.document_type} · {item.document_number || "bez broja"} · {item.file_name}
+                    </div>
+                    <div className="mt-1 text-xs text-slate-400">
+                      Vrijedi do {formatDate(item.valid_until)} · {item.visible_to_client ? "vidljivo klijentu" : "interno"}
+                    </div>
+                  </div>
+                  {canManageDocuments && (
+                    <button onClick={() => removeDocument(item)} className="self-start rounded-lg p-2 text-red-500 hover:bg-red-50"><FaTrash /></button>
+                  )}
+                </div>
+              ))}
+              {!data.documents.length && <EmptyState text="Nema dokumenata." />}
             </div>
-          </>
-        )} />}
+          </section>
+        )}
+        {tab === "deadlines" && (
+          <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <SectionHeader
+              title="Rokovi i usklađenost"
+              subtitle="Umjeravanja, ovjere, pregledi, servisi i ugovori"
+              canAdd={canManageDeadlines}
+              onAdd={() => setShowDeadlineForm(true)}
+              addLabel="Dodaj rok"
+            />
+            <div className="divide-y divide-slate-100">
+              {data.deadlines.map((item) => (
+                <div key={item.id} className="flex flex-col justify-between gap-3 p-5 sm:flex-row sm:items-center">
+                  <div>
+                    <div className="font-bold text-slate-800">{item.title}</div>
+                    <div className={`mt-1 text-sm ${item.days_remaining < 0 ? "font-semibold text-red-600" : "text-slate-500"}`}>
+                      {item.deadline_type} · {formatDate(item.due_date)} · {item.days_remaining < 0 ? `isteklo prije ${Math.abs(item.days_remaining)} dana` : `još ${item.days_remaining} dana`}
+                    </div>
+                  </div>
+                  {canManageDeadlines && (
+                    <div className="flex gap-2">
+                      <button onClick={() => completeDeadline(item)} className="rounded-lg bg-emerald-100 px-3 py-2 text-xs font-bold text-emerald-700">Završeno</button>
+                      <button onClick={() => removeDeadline(item)} className="rounded-lg p-2 text-red-500 hover:bg-red-50"><FaTrash /></button>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {!data.deadlines.length && <EmptyState text="Nema aktivnih rokova." />}
+            </div>
+          </section>
+        )}
       </div>
 
       {showAssetForm && (
@@ -317,6 +460,35 @@ const StationDetails = () => {
           </form>
         </div>
       )}
+
+      {showDocumentForm && (
+        <ModalForm title="Dodaj dokument" onClose={() => setShowDocumentForm(false)} onSubmit={saveDocument} saving={saving}>
+          <Field label="Vrsta dokumenta *"><input required value={documentForm.document_type} onChange={(e) => setDocumentForm({ ...documentForm, document_type: e.target.value })} /></Field>
+          <Field label="Naziv dokumenta *"><input required value={documentForm.title} onChange={(e) => setDocumentForm({ ...documentForm, title: e.target.value })} /></Field>
+          <Field label="Broj dokumenta"><input value={documentForm.document_number} onChange={(e) => setDocumentForm({ ...documentForm, document_number: e.target.value })} /></Field>
+          <Field label="Naziv datoteke *"><input required placeholder="zapisnik-2026-001.pdf" value={documentForm.file_name} onChange={(e) => setDocumentForm({ ...documentForm, file_name: e.target.value })} /></Field>
+          <Field label="Lokacija / storage ključ"><input placeholder="documents/..." value={documentForm.storage_key} onChange={(e) => setDocumentForm({ ...documentForm, storage_key: e.target.value })} /></Field>
+          <Field label="Povezana oprema"><select value={documentForm.asset_id} onChange={(e) => setDocumentForm({ ...documentForm, asset_id: e.target.value })}><option value="">Cijela stanica</option>{data.assets.map((asset) => <option key={asset.id} value={asset.id}>{asset.name}</option>)}</select></Field>
+          <Field label="Datum izdavanja"><input type="date" value={documentForm.issued_at} onChange={(e) => setDocumentForm({ ...documentForm, issued_at: e.target.value })} /></Field>
+          <Field label="Vrijedi do"><input type="date" value={documentForm.valid_until} onChange={(e) => setDocumentForm({ ...documentForm, valid_until: e.target.value })} /></Field>
+          <label className="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
+            <input type="checkbox" checked={documentForm.visible_to_client} onChange={(e) => setDocumentForm({ ...documentForm, visible_to_client: e.target.checked })} />
+            <span className="text-sm font-semibold text-slate-700">Dokument je vidljiv klijentu</span>
+          </label>
+        </ModalForm>
+      )}
+
+      {showDeadlineForm && (
+        <ModalForm title="Dodaj rok" onClose={() => setShowDeadlineForm(false)} onSubmit={saveDeadline} saving={saving}>
+          <Field label="Vrsta roka *"><select value={deadlineForm.deadline_type} onChange={(e) => setDeadlineForm({ ...deadlineForm, deadline_type: e.target.value })}><option>Umjeravanje</option><option>Ovjera</option><option>Redovni servis</option><option>Tehnički pregled</option><option>Dokument</option><option>Ugovor</option><option>Jamstvo</option></select></Field>
+          <Field label="Naziv roka *"><input required value={deadlineForm.title} onChange={(e) => setDeadlineForm({ ...deadlineForm, title: e.target.value })} /></Field>
+          <Field label="Datum isteka *"><input required type="date" value={deadlineForm.due_date} onChange={(e) => setDeadlineForm({ ...deadlineForm, due_date: e.target.value })} /></Field>
+          <Field label="Upozori dana prije"><input type="number" min="0" value={deadlineForm.warning_days} onChange={(e) => setDeadlineForm({ ...deadlineForm, warning_days: e.target.value })} /></Field>
+          <Field label="Povezana oprema"><select value={deadlineForm.asset_id} onChange={(e) => setDeadlineForm({ ...deadlineForm, asset_id: e.target.value })}><option value="">Cijela stanica</option>{data.assets.map((asset) => <option key={asset.id} value={asset.id}>{asset.name}</option>)}</select></Field>
+          <Field label="Povezani dokument"><select value={deadlineForm.document_id} onChange={(e) => setDeadlineForm({ ...deadlineForm, document_id: e.target.value })}><option value="">Bez dokumenta</option>{data.documents.map((document) => <option key={document.id} value={document.id}>{document.title}</option>)}</select></Field>
+          <label className="md:col-span-2"><span className="mb-2 block text-sm font-semibold text-slate-700">Napomena</span><textarea rows={3} value={deadlineForm.notes} onChange={(e) => setDeadlineForm({ ...deadlineForm, notes: e.target.value })} className="w-full rounded-xl border border-slate-300 p-3" /></label>
+        </ModalForm>
+      )}
     </div>
   );
 };
@@ -333,6 +505,28 @@ const Field = ({ label, children }) => (
 const SimpleList = ({ items, empty, render }) => (
   <div className="divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white shadow-sm">
     {items.length ? items.map((item) => <div key={item.id} className="p-5">{render(item)}</div>) : <div className="p-12 text-center text-slate-400">{empty}</div>}
+  </div>
+);
+
+const SectionHeader = ({ title, subtitle, canAdd, onAdd, addLabel }) => (
+  <div className="flex items-center justify-between border-b border-slate-100 p-5">
+    <div><h2 className="font-bold text-slate-900">{title}</h2><p className="text-sm text-slate-500">{subtitle}</p></div>
+    {canAdd && <button onClick={onAdd} className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 font-semibold text-white"><FaPlus /> {addLabel}</button>}
+  </div>
+);
+
+const EmptyState = ({ text }) => <div className="p-12 text-center text-slate-400">{text}</div>;
+
+const ModalForm = ({ title, onClose, onSubmit, saving, children }) => (
+  <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/60 p-4">
+    <form onSubmit={onSubmit} className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+      <div className="border-b border-slate-100 p-6"><h2 className="text-xl font-bold text-slate-900">{title}</h2></div>
+      <div className="grid gap-4 p-6 md:grid-cols-2">{children}</div>
+      <div className="flex justify-end gap-3 border-t border-slate-100 p-6">
+        <button type="button" onClick={onClose} className="rounded-xl px-5 py-3 font-semibold text-slate-600 hover:bg-slate-100">Odustani</button>
+        <button disabled={saving} className="rounded-xl bg-indigo-600 px-5 py-3 font-semibold text-white disabled:opacity-50">{saving ? "Spremanje…" : "Spremi"}</button>
+      </div>
+    </form>
   </div>
 );
 

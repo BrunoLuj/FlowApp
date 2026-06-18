@@ -177,6 +177,7 @@ export const getStationById = async (stationId, clientId = null) => {
                     issued_at, valid_until, visible_to_client, created_at
              FROM documents
              WHERE station_id = $1
+             ${clientId ? "AND visible_to_client = TRUE" : ""}
              ORDER BY created_at DESC
              LIMIT 20`,
             [stationId]
@@ -306,6 +307,148 @@ export const deleteAsset = async (assetId, clientId = null) => {
     }
     const result = await pool.query(
         `DELETE FROM equipment_assets WHERE id = $1 ${clientCondition} RETURNING id`,
+        values
+    );
+    return result.rows[0];
+};
+
+export const createDocument = async (stationId, data, user) => {
+    const values = [stationId];
+    let clientCondition = "";
+    if (user.clientId) {
+        values.push(user.clientId);
+        clientCondition = `AND client_id = $${values.length}`;
+    }
+    const stationResult = await pool.query(
+        `SELECT id, client_id FROM projects WHERE id = $1 ${clientCondition}`,
+        values
+    );
+    const station = stationResult.rows[0];
+    if (!station) return null;
+
+    const result = await pool.query(
+        `INSERT INTO documents (
+            client_id, station_id, asset_id, document_type, title,
+            document_number, file_name, storage_key, mime_type, file_size,
+            issued_at, valid_until, visible_to_client, uploaded_by
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+         RETURNING *`,
+        [
+            station.client_id,
+            stationId,
+            data.asset_id || null,
+            data.document_type,
+            data.title,
+            data.document_number || null,
+            data.file_name,
+            data.storage_key || data.file_name,
+            data.mime_type || null,
+            data.file_size || null,
+            data.issued_at || null,
+            data.valid_until || null,
+            data.visible_to_client !== false,
+            user.userId,
+        ]
+    );
+    return result.rows[0];
+};
+
+export const deleteDocument = async (documentId, clientId = null) => {
+    const values = [documentId];
+    let clientCondition = "";
+    if (clientId) {
+        values.push(clientId);
+        clientCondition = `AND client_id = $${values.length}`;
+    }
+    const result = await pool.query(
+        `DELETE FROM documents WHERE id = $1 ${clientCondition} RETURNING id`,
+        values
+    );
+    return result.rows[0];
+};
+
+export const createDeadline = async (stationId, data, user) => {
+    const values = [stationId];
+    let clientCondition = "";
+    if (user.clientId) {
+        values.push(user.clientId);
+        clientCondition = `AND client_id = $${values.length}`;
+    }
+    const stationResult = await pool.query(
+        `SELECT id, client_id FROM projects WHERE id = $1 ${clientCondition}`,
+        values
+    );
+    const station = stationResult.rows[0];
+    if (!station) return null;
+
+    const result = await pool.query(
+        `INSERT INTO compliance_deadlines (
+            client_id, station_id, asset_id, document_id, deadline_type,
+            title, due_date, warning_days, notes
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         RETURNING *`,
+        [
+            station.client_id,
+            stationId,
+            data.asset_id || null,
+            data.document_id || null,
+            data.deadline_type,
+            data.title,
+            data.due_date,
+            Number(data.warning_days) || 30,
+            data.notes || null,
+        ]
+    );
+    return result.rows[0];
+};
+
+export const updateDeadline = async (deadlineId, data, user) => {
+    const values = [
+        data.deadline_type,
+        data.title,
+        data.due_date,
+        data.warning_days == null ? null : Number(data.warning_days),
+        data.notes || null,
+        data.status,
+        data.status === "completed" ? new Date() : null,
+        deadlineId,
+    ];
+    let clientCondition = "";
+    if (user.clientId) {
+        values.push(user.clientId);
+        clientCondition = `AND client_id = $${values.length}`;
+    }
+
+    const result = await pool.query(
+        `UPDATE compliance_deadlines SET
+            deadline_type = COALESCE($1, deadline_type),
+            title = COALESCE($2, title),
+            due_date = COALESCE($3, due_date),
+            warning_days = COALESCE($4, warning_days),
+            notes = COALESCE($5, notes),
+            status = COALESCE($6, status),
+            completed_at = CASE
+                WHEN $6 = 'completed' THEN COALESCE(completed_at, $7)
+                WHEN $6 = 'active' THEN NULL
+                ELSE completed_at
+            END,
+            updated_at = NOW()
+         WHERE id = $8 ${clientCondition}
+         RETURNING *`,
+        values
+    );
+    return result.rows[0];
+};
+
+export const deleteDeadline = async (deadlineId, clientId = null) => {
+    const values = [deadlineId];
+    let clientCondition = "";
+    if (clientId) {
+        values.push(clientId);
+        clientCondition = `AND client_id = $${values.length}`;
+    }
+    const result = await pool.query(
+        `DELETE FROM compliance_deadlines WHERE id = $1 ${clientCondition} RETURNING id`,
         values
     );
     return result.rows[0];

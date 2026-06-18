@@ -2,14 +2,12 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getWorkOrders, deleteWorkOrder } from "../services/workorderServices";
 import { toast } from "sonner";
-import Modal from "../components/Modal";
-import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import { FaPlus } from "react-icons/fa";
 
 const WorkOrdersList = () => {
   const navigate = useNavigate();
   const [workOrders, setWorkOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedWO, setSelectedWO] = useState(null);
 
   const fetchWorkOrders = async () => {
     try {
@@ -96,7 +94,7 @@ const WorkOrdersList = () => {
                     <tr
                     key={wo.id}
                     className="border-t hover:bg-gray-50 cursor-pointer transition"
-                    onClick={() => setSelectedWO(wo)}
+                    onClick={() => navigate(`/work-orders/${wo.id}`)}
                     >
                     <td className="p-3">{wo.title}</td>
                     <td className="p-3">{wo.project_name}</td>
@@ -131,27 +129,6 @@ const WorkOrdersList = () => {
           </div>
         )}
 
-        {/* Modal za detalje */}
-        {selectedWO && (
-          <Modal onClose={() => setSelectedWO(null)}>
-            <h2 className="text-xl font-semibold mb-4">{selectedWO.title}</h2>
-            <div className="space-y-2 text-gray-700">
-              <p><strong>Project:</strong> {selectedWO.project_name}</p>
-              <p><strong>Client:</strong> {selectedWO.client_name}</p>
-              <p>
-                <strong>Status:</strong>{" "}
-                <span className={`px-2 py-1 rounded-full text-sm font-semibold ${statusBadge(selectedWO.status)}`}>
-                  {selectedWO.status}
-                </span>
-              </p>
-              <p><strong>Planned Date:</strong> {selectedWO.planned_date ? new Date(selectedWO.planned_date).toLocaleDateString() : "-"}</p>
-              <p><strong>Start Date:</strong> {selectedWO.start_date ? new Date(selectedWO.start_date).toLocaleDateString() : "-"}</p>
-              <p><strong>End Date:</strong> {selectedWO.end_date ? new Date(selectedWO.end_date).toLocaleDateString() : "-"}</p>
-              <p><strong>Description:</strong> {selectedWO.description || "-"}</p>
-              <p><strong>Assigned Users:</strong> {selectedWO.assigned_users?.map(u => `${u.firstname} ${u.lastname}`).join(", ") || "-"}</p>
-            </div>
-          </Modal>
-        )}
       </div>
     </div>
   );

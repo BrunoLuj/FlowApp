@@ -4,6 +4,13 @@ export const getWorkOrders = async () => {
     return await api.get("/work-orders/");
 };
 
+export const getWorkOrder = (id) => api.get(`/work-orders/${id}`);
+export const addWorkOrderActivity = (id, activity) => api.post(`/work-orders/${id}/activities`, activity);
+export const addWorkOrderMaterial = (id, material) => api.post(`/work-orders/${id}/materials`, material);
+export const addWorkOrderChecklist = (id, item) => api.post(`/work-orders/${id}/checklist`, item);
+export const updateWorkOrderChecklist = (id, itemId, changes) => api.patch(`/work-orders/${id}/checklist/${itemId}`, changes);
+export const completeWorkOrder = (id, data) => api.post(`/work-orders/${id}/complete`, data);
+
 export const saveWorkOrder = async (projectData) => {
     if (projectData.id) {
         return await api.put(`/work-orders/${projectData.id}`, projectData);

@@ -77,3 +77,88 @@ export const removeAsset = async (req, res) => {
         res.status(500).json({ error: "Error deleting asset" });
     }
 };
+
+export const addDocument = async (req, res) => {
+    const { document_type, title, file_name } = req.body;
+    if (!document_type?.trim() || !title?.trim() || !file_name?.trim()) {
+        return res.status(400).json({
+            error: "Document type, title and file name are required",
+        });
+    }
+    try {
+        const document = await serviceCenterModel.createDocument(
+            req.params.id,
+            req.body,
+            req.user
+        );
+        if (!document) return res.status(404).json({ error: "Station not found" });
+        res.status(201).json(document);
+    } catch (error) {
+        console.error("Error creating document:", error);
+        res.status(500).json({ error: "Error creating document" });
+    }
+};
+
+export const removeDocument = async (req, res) => {
+    try {
+        const document = await serviceCenterModel.deleteDocument(
+            req.params.documentId,
+            req.user.clientId
+        );
+        if (!document) return res.status(404).json({ error: "Document not found" });
+        res.json({ message: "Document deleted" });
+    } catch (error) {
+        console.error("Error deleting document:", error);
+        res.status(500).json({ error: "Error deleting document" });
+    }
+};
+
+export const addDeadline = async (req, res) => {
+    const { deadline_type, title, due_date } = req.body;
+    if (!deadline_type?.trim() || !title?.trim() || !due_date) {
+        return res.status(400).json({
+            error: "Deadline type, title and due date are required",
+        });
+    }
+    try {
+        const deadline = await serviceCenterModel.createDeadline(
+            req.params.id,
+            req.body,
+            req.user
+        );
+        if (!deadline) return res.status(404).json({ error: "Station not found" });
+        res.status(201).json(deadline);
+    } catch (error) {
+        console.error("Error creating deadline:", error);
+        res.status(500).json({ error: "Error creating deadline" });
+    }
+};
+
+export const editDeadline = async (req, res) => {
+    try {
+        const deadline = await serviceCenterModel.updateDeadline(
+            req.params.deadlineId,
+            req.body,
+            req.user
+        );
+        if (!deadline) return res.status(404).json({ error: "Deadline not found" });
+        res.json(deadline);
+    } catch (error) {
+        console.error("Error updating deadline:", error);
+        res.status(500).json({ error: "Error updating deadline" });
+    }
+};
+
+export const removeDeadline = async (req, res) => {
+    try {
+        const deadline = await serviceCenterModel.deleteDeadline(
+            req.params.deadlineId,
+            req.user.clientId
+        );
+        if (!deadline) return res.status(404).json({ error: "Deadline not found" });
+        res.json({ message: "Deadline deleted" });
+    } catch (error) {
+        console.error("Error deleting deadline:", error);
+        res.status(500).json({ error: "Error deleting deadline" });
+    }
+};

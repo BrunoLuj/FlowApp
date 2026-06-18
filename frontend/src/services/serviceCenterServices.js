@@ -13,6 +13,21 @@ export const updateAsset = (assetId, asset) =>
 export const deleteAsset = (assetId) =>
     api.delete(`/service-center/assets/${assetId}`);
 
+export const createDocument = (stationId, document) =>
+    api.post(`/service-center/stations/${stationId}/documents`, document);
+
+export const deleteDocument = (documentId) =>
+    api.delete(`/service-center/documents/${documentId}`);
+
+export const createDeadline = (stationId, deadline) =>
+    api.post(`/service-center/stations/${stationId}/deadlines`, deadline);
+
+export const updateDeadline = (deadlineId, changes) =>
+    api.patch(`/service-center/deadlines/${deadlineId}`, changes);
+
+export const deleteDeadline = (deadlineId) =>
+    api.delete(`/service-center/deadlines/${deadlineId}`);
+
 export const getServiceRequests = (params = {}) =>
     api.get("/service-requests", { params });
 
