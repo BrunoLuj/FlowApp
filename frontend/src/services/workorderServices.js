@@ -9,6 +9,7 @@ export const addWorkOrderActivity = (id, activity) => api.post(`/work-orders/${i
 export const addWorkOrderMaterial = (id, material) => api.post(`/work-orders/${id}/materials`, material);
 export const addWorkOrderChecklist = (id, item) => api.post(`/work-orders/${id}/checklist`, item);
 export const updateWorkOrderChecklist = (id, itemId, changes) => api.patch(`/work-orders/${id}/checklist/${itemId}`, changes);
+export const updateWorkOrderFieldData = (id, changes) => api.patch(`/work-orders/${id}/field-data`, changes);
 export const completeWorkOrder = (id, data) => api.post(`/work-orders/${id}/complete`, data);
 
 export const saveWorkOrder = async (projectData) => {

@@ -757,6 +757,18 @@ AND NOT EXISTS (
       AND current_permission.permission_id = permission.id
 );
 
+-- Digitalni terenski servisni zapisnik (migracija 007)
+ALTER TABLE work_orders
+    ADD COLUMN IF NOT EXISTS arrival_at TIMESTAMPTZ,
+    ADD COLUMN IF NOT EXISTS departure_at TIMESTAMPTZ,
+    ADD COLUMN IF NOT EXISTS odometer_start NUMERIC(12, 1),
+    ADD COLUMN IF NOT EXISTS odometer_end NUMERIC(12, 1),
+    ADD COLUMN IF NOT EXISTS travel_distance_km NUMERIC(12, 1),
+    ADD COLUMN IF NOT EXISTS travel_time_minutes INTEGER,
+    ADD COLUMN IF NOT EXISTS field_notes TEXT,
+    ADD COLUMN IF NOT EXISTS customer_signature_data TEXT,
+    ADD COLUMN IF NOT EXISTS report_generated_at TIMESTAMPTZ;
+
 INSERT INTO schema_migrations(name)
 VALUES ('FLOWAPP_FULL_DATABASE_UPGRADE')
 ON CONFLICT (name) DO NOTHING;
