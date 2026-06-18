@@ -238,3 +238,32 @@ export const completeWorkOrder = async (id, data, userId) => {
     }
     return result.rows[0];
 };
+
+export const updateWorkOrderSchedule = async (id, data, clientId = null) => {
+    const values = [
+        data.planned_date || null,
+        data.status || null,
+        JSON.stringify(Array.isArray(data.assigned_to) ? data.assigned_to : []),
+        id,
+    ];
+    let clientCondition = "";
+    if (clientId) {
+        values.push(clientId);
+        clientCondition = `AND p.client_id = $${values.length}`;
+    }
+
+    const result = await pool.query(
+        `UPDATE work_orders wo SET
+            planned_date = COALESCE($1, wo.planned_date),
+            status = COALESCE($2, wo.status),
+            assigned_to = $3::jsonb,
+            updated_at = NOW()
+         FROM projects p
+         WHERE wo.id = $4
+           AND p.id = COALESCE(wo.station_id, wo.project_id)
+           ${clientCondition}
+         RETURNING wo.*`,
+        values
+    );
+    return result.rows[0];
+};

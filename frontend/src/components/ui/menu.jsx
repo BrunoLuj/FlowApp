@@ -10,7 +10,8 @@ import {
   FaUserFriends,
   FaCog,
   FaHeadset,
-  FaBell
+  FaBell,
+  FaChartLine
 } from "react-icons/fa";
 
 export const menu = [
@@ -112,6 +113,18 @@ export const menu = [
         link: "/calibrations/expired",
         icon: <FaExclamationTriangle />,
         permission: "view_calibrations"
+      }
+    ]
+  },
+
+  {
+    title: "Rukovodstvo",
+    items: [
+      {
+        label: "Upravljački centar",
+        link: "/management",
+        icon: <FaChartLine />,
+        permission: "view_dashboard"
       }
     ]
   },

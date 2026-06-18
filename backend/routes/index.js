@@ -13,6 +13,7 @@ import serviceCenterRoutes from "./serviceCenterRoutes.js";
 import serviceRequestRoutes from "./serviceRequestRoutes.js";
 import attachmentRoutes from "./attachmentRoutes.js";
 import notificationRoutes from "./notificationRoutes.js";
+import managementRoutes from "./managementRoutes.js";
 
 const router = express.Router();
 
@@ -30,5 +31,6 @@ router.use("/service-center", serviceCenterRoutes);
 router.use("/service-requests", serviceRequestRoutes);
 router.use("/attachments", attachmentRoutes);
 router.use("/notifications", notificationRoutes);
+router.use("/management", managementRoutes);
 
 export default router;

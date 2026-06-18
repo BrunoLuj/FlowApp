@@ -142,3 +142,18 @@ export const completeWorkOrder = async (req, res) => {
         res.status(500).json({ error: "Error completing work order" });
     }
 };
+
+export const updateSchedule = async (req, res) => {
+    try {
+        const order = await workOrdersModel.updateWorkOrderSchedule(
+            req.params.id,
+            req.body,
+            req.user.clientId
+        );
+        if (!order) return res.status(404).json({ error: "Work order not found" });
+        res.json(order);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error updating work order schedule" });
+    }
+};

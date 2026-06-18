@@ -11,6 +11,7 @@ import {
     addChecklist,
     updateChecklist,
     completeWorkOrder,
+    updateSchedule,
     updateWorkOrder,
     deleteWorkOrder
 } from "../controllers/workorderController.js";
@@ -26,6 +27,7 @@ router.post("/:id/materials", authMiddleware, checkPermission('update_work_order
 router.post("/:id/checklist", authMiddleware, checkPermission('update_work_orders'), addChecklist);
 router.patch("/:id/checklist/:itemId", authMiddleware, checkPermission('update_work_orders'), updateChecklist);
 router.post("/:id/complete", authMiddleware, checkPermission('update_work_orders'), completeWorkOrder);
+router.patch("/:id/schedule", authMiddleware, checkPermission('update_work_orders'), updateSchedule);
 router.put("/:id", authMiddleware, checkPermission('update_work_orders'), updateWorkOrder);
 router.delete("/:id", authMiddleware, checkPermission('delete_work_orders'), deleteWorkOrder);
 
