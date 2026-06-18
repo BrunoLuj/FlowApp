@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { FaGasPump, FaHeadset, FaMapMarkerAlt, FaPlus, FaTimes } from "react-icons/fa";
 import { toast } from "sonner";
@@ -42,7 +42,7 @@ const ServiceCenter = () => {
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(searchParams.get("newRequest") === "true");
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const [requestsResponse, stationsResponse] = await Promise.all([
@@ -61,11 +61,11 @@ const ServiceCenter = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.client_id]);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   const availableStations = useMemo(() => {
     if (user?.client_id) return stations;
