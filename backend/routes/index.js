@@ -16,6 +16,7 @@ import notificationRoutes from "./notificationRoutes.js";
 import managementRoutes from "./managementRoutes.js";
 import inventoryRoutes from "./inventoryRoutes.js";
 import maintenanceRoutes from "./maintenanceRoutes.js";
+import commercialRoutes from "./commercialRoutes.js";
 
 const router = express.Router();
 
@@ -36,5 +37,6 @@ router.use("/notifications", notificationRoutes);
 router.use("/management", managementRoutes);
 router.use("/inventory", inventoryRoutes);
 router.use("/maintenance", maintenanceRoutes);
+router.use("/commercial", commercialRoutes);
 
 export default router;

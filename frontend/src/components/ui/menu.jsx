@@ -13,7 +13,8 @@ import {
   FaBell,
   FaChartLine,
   FaBoxes,
-  FaCalendarCheck
+  FaCalendarCheck,
+  FaFileInvoiceDollar
 } from "react-icons/fa";
 
 export const menu = [
@@ -139,6 +140,12 @@ export const menu = [
         link: "/inventory",
         icon: <FaBoxes />,
         permission: "view_inventory"
+      },
+      {
+        label: "Ugovori i ponude",
+        link: "/commercial",
+        icon: <FaFileInvoiceDollar />,
+        permission: "view_commercial"
       }
     ]
   },
