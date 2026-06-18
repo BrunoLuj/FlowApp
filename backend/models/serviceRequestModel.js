@@ -90,3 +90,161 @@ export const updateServiceRequest = async (id, data, clientId = null) => {
     );
     return result.rows[0];
 };
+
+export const getServiceRequestById = async (id, clientId = null) => {
+    const values = [id];
+    let clientCondition = "";
+    if (clientId) {
+        values.push(clientId);
+        clientCondition = `AND sr.client_id = $${values.length}`;
+    }
+
+    const requestResult = await pool.query(
+        `SELECT sr.*, c.company_name AS client_name, p.name AS station_name,
+                ea.name AS asset_name, ea.asset_code,
+                CONCAT(assignee.firstname, ' ', assignee.lastname) AS assigned_to_name,
+                CONCAT(requester.firstname, ' ', requester.lastname) AS requested_by_name
+         FROM service_requests sr
+         JOIN clients c ON c.id = sr.client_id
+         LEFT JOIN projects p ON p.id = sr.station_id
+         LEFT JOIN equipment_assets ea ON ea.id = sr.asset_id
+         LEFT JOIN users assignee ON assignee.id = sr.assigned_to
+         LEFT JOIN users requester ON requester.id = sr.requested_by
+         WHERE sr.id = $1 ${clientCondition}`,
+        values
+    );
+    if (!requestResult.rows[0]) return null;
+
+    const messages = await pool.query(
+        `SELECT m.*, CONCAT(u.firstname, ' ', u.lastname) AS author_name
+         FROM service_request_messages m
+         LEFT JOIN users u ON u.id = m.author_id
+         WHERE m.service_request_id = $1
+           ${clientId ? "AND m.internal_note = FALSE" : ""}
+         ORDER BY m.created_at ASC`,
+        [id]
+    );
+
+    return { ...requestResult.rows[0], messages: messages.rows };
+};
+
+export const addServiceRequestMessage = async (requestId, message, internalNote, user) => {
+    const values = [requestId];
+    let clientCondition = "";
+    if (user.clientId) {
+        values.push(user.clientId);
+        clientCondition = `AND client_id = $${values.length}`;
+    }
+    const request = await pool.query(
+        `SELECT id FROM service_requests WHERE id = $1 ${clientCondition}`,
+        values
+    );
+    if (!request.rows[0]) return null;
+
+    const result = await pool.query(
+        `INSERT INTO service_request_messages
+            (service_request_id, author_id, message, internal_note)
+         VALUES ($1, $2, $3, $4)
+         RETURNING *`,
+        [requestId, user.userId, message, user.clientId ? false : Boolean(internalNote)]
+    );
+    return result.rows[0];
+};
+
+export const convertServiceRequestToWorkOrder = async (requestId, data, user) => {
+    const connection = await pool.connect();
+    try {
+        await connection.query("BEGIN");
+
+        const requestValues = [requestId];
+        let clientCondition = "";
+        if (user.clientId) {
+            requestValues.push(user.clientId);
+            clientCondition = `AND client_id = $${requestValues.length}`;
+        }
+
+        const requestResult = await connection.query(
+            `SELECT * FROM service_requests
+             WHERE id = $1 ${clientCondition}
+             FOR UPDATE`,
+            requestValues
+        );
+        const request = requestResult.rows[0];
+        if (!request) {
+            await connection.query("ROLLBACK");
+            return null;
+        }
+        if (request.converted_work_order_id) {
+            await connection.query("ROLLBACK");
+            return { alreadyConverted: true, workOrderId: request.converted_work_order_id };
+        }
+        if (!request.station_id) {
+            const error = new Error("A station is required before creating a work order");
+            error.code = "STATION_REQUIRED";
+            throw error;
+        }
+
+        const assignedTo = Array.isArray(data.assigned_to)
+            ? data.assigned_to
+            : data.assigned_to ? [data.assigned_to] : [];
+
+        const workOrderResult = await connection.query(
+            `INSERT INTO work_orders (
+                project_id, station_id, service_request_id, asset_id, type, title,
+                description, assigned_to, planned_date, start_date, end_date, status
+             ) VALUES ($1, $1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11)
+             RETURNING *`,
+            [
+                request.station_id,
+                request.id,
+                request.asset_id,
+                data.type || request.category || "Service",
+                data.title || request.subject,
+                data.description || request.description,
+                JSON.stringify(assignedTo),
+                data.planned_date || request.desired_date || null,
+                data.start_date || null,
+                data.end_date || null,
+                data.status || "Open",
+            ]
+        );
+        const workOrder = workOrderResult.rows[0];
+
+        await connection.query(
+            `UPDATE service_requests
+             SET status = 'scheduled',
+                 assigned_to = COALESCE($1, assigned_to),
+                 scheduled_at = COALESCE($2, scheduled_at),
+                 converted_work_order_id = $3,
+                 updated_at = NOW()
+             WHERE id = $4`,
+            [
+                assignedTo[0] || null,
+                data.planned_date || request.desired_date || null,
+                workOrder.id,
+                request.id,
+            ]
+        );
+
+        await connection.query(
+            `INSERT INTO audit_logs
+                (user_id, client_id, entity_type, entity_id, action, summary, changes)
+             VALUES ($1, $2, 'service_request', $3, 'converted_to_work_order', $4, $5)`,
+            [
+                user.userId,
+                request.client_id,
+                String(request.id),
+                `${request.request_number} converted to ${workOrder.work_order_number || `work order ${workOrder.id}`}`,
+                JSON.stringify({ work_order_id: workOrder.id }),
+            ]
+        );
+
+        await connection.query("COMMIT");
+        return { workOrder };
+    } catch (error) {
+        await connection.query("ROLLBACK");
+        throw error;
+    } finally {
+        connection.release();
+    }
+};

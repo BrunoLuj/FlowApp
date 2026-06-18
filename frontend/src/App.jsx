@@ -22,6 +22,7 @@ import ProjectDetails from "./pages/projectDetails";
 import WorkOrdersList from "./pages/workorder";
 import CreateWorkOrder from "./pages/createworkorder";
 import ServiceCenter from "./pages/serviceCenter";
+import StationDetails from "./pages/stationDetails";
 
 const RootLayout = () => {
     const { user } = useStore((state) => state);
@@ -63,6 +64,7 @@ function App() {
                         <Route path="/work-order" element={<WorkOrdersList/>} />
                         <Route path="/work-orders/create" element={<CreateWorkOrder/>} />
                         <Route path="/service-center" element={<ServiceCenter />} />
+                        <Route path="/service-center/stations/:id" element={<StationDetails />} />
                     </Route>
                     <Route path="/sign-in" element={<SignIn />} />
                     <Route path="/sign-up" element={<SignUp />} />

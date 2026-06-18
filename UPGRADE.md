@@ -26,7 +26,7 @@ Backend koristi varijable iz `backend/.env`:
 ```env
 DATABASE_URI=postgresql://...
 JWT_SECRET=...
-PORT=8000
+PORT=5000
 CORS_ORIGIN=http://localhost:3000
 ```
 
@@ -38,10 +38,18 @@ npm run migrate
 npm start
 ```
 
+Ako se baza nadograđuje ručno kroz pgAdmin ili drugi PostgreSQL alat, izvršiti cijelu
+skriptu:
+
+`backend/database/FLOWAPP_FULL_DATABASE_UPGRADE.sql`
+
+Ta skripta sadrži objedinjene naredbe iz svih dosadašnjih iteracija i namijenjena je
+bazi na kojoj prethodne migracije još nisu pokrenute.
+
 Frontend po potrebi može koristiti:
 
 ```env
-REACT_APP_API_URL=http://localhost:8000/api-v1
+REACT_APP_API_URL=http://localhost:5000/api-v1
 ```
 
 Zatim:

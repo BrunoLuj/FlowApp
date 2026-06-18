@@ -8,7 +8,7 @@ export const getAllWorkOrders = async () => {
                    p.name AS project_name, 
                    c.company_name AS client_name
             FROM work_orders wo
-            JOIN projects p ON wo.project_id = p.id
+            JOIN projects p ON COALESCE(wo.station_id, wo.project_id) = p.id
             JOIN clients c ON p.client_id = c.id
             ORDER BY wo.created_at DESC
         `);
@@ -41,9 +41,9 @@ export const getAllWorkOrders = async () => {
 // Dohvati samo active work ordere (status != Completed)
 export const getActiveWorkOrders = async () => {
     const result = await pool.query(`
-        SELECT wo.*, p.name AS project_name, c.name AS client_name
+        SELECT wo.*, p.name AS project_name, c.company_name AS client_name
         FROM work_orders wo
-        JOIN projects p ON wo.project_id = p.id
+        JOIN projects p ON COALESCE(wo.station_id, wo.project_id) = p.id
         JOIN clients c ON p.client_id = c.id
         WHERE wo.status != 'Completed'
         ORDER BY wo.planned_date ASC
