@@ -9,7 +9,8 @@ import {
   FaExclamationTriangle,
   FaUserFriends,
   FaCog,
-  FaHeadset
+  FaHeadset,
+  FaBell
 } from "react-icons/fa";
 
 export const menu = [
@@ -20,6 +21,12 @@ export const menu = [
         label: "Pregled",
         link: "/overview",
         icon: <FaTachometerAlt />,
+        permission: "view_dashboard"
+      },
+      {
+        label: "Obavijesti",
+        link: "/notifications",
+        icon: <FaBell />,
         permission: "view_dashboard"
       }
     ]

@@ -16,6 +16,17 @@ export const deleteAsset = (assetId) =>
 export const createDocument = (stationId, document) =>
     api.post(`/service-center/stations/${stationId}/documents`, document);
 
+export const uploadDocument = (stationId, document) => {
+    const formData = new FormData();
+    Object.entries(document).forEach(([key, value]) => {
+        if (value !== "" && value != null) formData.append(key, value);
+    });
+    return api.post(`/service-center/stations/${stationId}/documents/upload`, formData);
+};
+
+export const downloadDocument = (documentId) =>
+    api.get(`/service-center/documents/${documentId}/download`, { responseType: "blob" });
+
 export const deleteDocument = (documentId) =>
     api.delete(`/service-center/documents/${documentId}`);
 
@@ -45,3 +56,14 @@ export const addServiceRequestMessage = (id, message) =>
 
 export const convertServiceRequestToWorkOrder = (id, workOrder) =>
     api.post(`/service-requests/${id}/convert-to-work-order`, workOrder);
+
+export const uploadAttachment = (type, parentId, attachment) => {
+    const formData = new FormData();
+    Object.entries(attachment).forEach(([key, value]) => {
+        if (value !== "" && value != null) formData.append(key, value);
+    });
+    return api.post(`/attachments/${type}/${parentId}`, formData);
+};
+
+export const downloadAttachment = (attachmentId) =>
+    api.get(`/attachments/${attachmentId}/download`, { responseType: "blob" });

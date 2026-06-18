@@ -115,7 +115,8 @@ export const getServiceRequestById = async (id, clientId = null) => {
     );
     if (!requestResult.rows[0]) return null;
 
-    const messages = await pool.query(
+    const [messages, attachments] = await Promise.all([
+        pool.query(
         `SELECT m.*, CONCAT(u.firstname, ' ', u.lastname) AS author_name
          FROM service_request_messages m
          LEFT JOIN users u ON u.id = m.author_id
@@ -123,9 +124,23 @@ export const getServiceRequestById = async (id, clientId = null) => {
            ${clientId ? "AND m.internal_note = FALSE" : ""}
          ORDER BY m.created_at ASC`,
         [id]
-    );
+        ),
+        pool.query(
+            `SELECT id, title, file_name, mime_type, file_size,
+                    visible_to_client, created_at
+             FROM entity_attachments
+             WHERE service_request_id = $1
+             ${clientId ? "AND visible_to_client = TRUE" : ""}
+             ORDER BY created_at DESC`,
+            [id]
+        ),
+    ]);
 
-    return { ...requestResult.rows[0], messages: messages.rows };
+    return {
+        ...requestResult.rows[0],
+        messages: messages.rows,
+        attachments: attachments.rows,
+    };
 };
 
 export const addServiceRequestMessage = async (requestId, message, internalNote, user) => {

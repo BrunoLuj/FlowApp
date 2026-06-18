@@ -1,4 +1,8 @@
 import * as serviceCenterModel from "../models/serviceCenterModel.js";
+import {
+    removeUploadedFile,
+    resolveUploadedFile,
+} from "../middleware/uploadMiddleware.js";
 
 export const getDashboard = async (req, res) => {
     try {
@@ -99,6 +103,62 @@ export const addDocument = async (req, res) => {
     }
 };
 
+export const uploadDocument = async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: "A file is required" });
+    }
+
+    const documentData = {
+        ...req.body,
+        file_name: req.file.originalname,
+        storage_key: req.file.filename,
+        mime_type: req.file.mimetype,
+        file_size: req.file.size,
+        visible_to_client: req.body.visible_to_client !== "false",
+    };
+
+    if (!documentData.document_type?.trim() || !documentData.title?.trim()) {
+        await removeUploadedFile(req.file.filename);
+        return res.status(400).json({ error: "Document type and title are required" });
+    }
+
+    try {
+        const document = await serviceCenterModel.createDocument(
+            req.params.id,
+            documentData,
+            req.user
+        );
+        if (!document) {
+            await removeUploadedFile(req.file.filename);
+            return res.status(404).json({ error: "Station not found" });
+        }
+        res.status(201).json(document);
+    } catch (error) {
+        await removeUploadedFile(req.file.filename);
+        console.error("Error uploading document:", error);
+        res.status(500).json({ error: "Error uploading document" });
+    }
+};
+
+export const downloadDocument = async (req, res) => {
+    try {
+        const document = await serviceCenterModel.getDocumentById(
+            req.params.documentId,
+            req.user.clientId
+        );
+        if (!document) return res.status(404).json({ error: "Document not found" });
+
+        const filePath = resolveUploadedFile(document.storage_key);
+        res.download(filePath, document.file_name);
+    } catch (error) {
+        if (error.code === "ENOENT") {
+            return res.status(404).json({ error: "Document file not found" });
+        }
+        console.error("Error downloading document:", error);
+        res.status(500).json({ error: "Error downloading document" });
+    }
+};
+
 export const removeDocument = async (req, res) => {
     try {
         const document = await serviceCenterModel.deleteDocument(
@@ -106,6 +166,7 @@ export const removeDocument = async (req, res) => {
             req.user.clientId
         );
         if (!document) return res.status(404).json({ error: "Document not found" });
+        await removeUploadedFile(document.storage_key);
         res.json({ message: "Document deleted" });
     } catch (error) {
         console.error("Error deleting document:", error);

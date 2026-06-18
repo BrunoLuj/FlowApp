@@ -361,7 +361,22 @@ export const deleteDocument = async (documentId, clientId = null) => {
         clientCondition = `AND client_id = $${values.length}`;
     }
     const result = await pool.query(
-        `DELETE FROM documents WHERE id = $1 ${clientCondition} RETURNING id`,
+        `DELETE FROM documents WHERE id = $1 ${clientCondition}
+         RETURNING id, storage_key`,
+        values
+    );
+    return result.rows[0];
+};
+
+export const getDocumentById = async (documentId, clientId = null) => {
+    const values = [documentId];
+    let clientCondition = "";
+    if (clientId) {
+        values.push(clientId);
+        clientCondition = `AND client_id = $${values.length} AND visible_to_client = TRUE`;
+    }
+    const result = await pool.query(
+        `SELECT * FROM documents WHERE id = $1 ${clientCondition}`,
         values
     );
     return result.rows[0];

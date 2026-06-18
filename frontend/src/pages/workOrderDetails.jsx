@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { FaArrowLeft, FaCheck, FaClipboardCheck, FaPlus, FaTools } from "react-icons/fa";
+import { FaArrowLeft, FaCheck, FaClipboardCheck, FaDownload, FaPaperclip, FaPlus, FaTools } from "react-icons/fa";
 import { toast } from "sonner";
 import {
   addWorkOrderActivity,
@@ -10,6 +10,8 @@ import {
   getWorkOrder,
   updateWorkOrderChecklist,
 } from "../services/workorderServices";
+import { downloadAttachment, uploadAttachment } from "../services/serviceCenterServices.js";
+import { downloadBlob } from "../libs/downloadBlob.js";
 
 const WorkOrderDetails = () => {
   const { id } = useParams();
@@ -20,6 +22,7 @@ const WorkOrderDetails = () => {
   const [material, setMaterial] = useState({ item_name: "", quantity: 1, unit: "kom" });
   const [checklistLabel, setChecklistLabel] = useState("");
   const [completion, setCompletion] = useState({ completion_notes: "", customer_signature_name: "" });
+  const [attachmentFile, setAttachmentFile] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -68,6 +71,30 @@ const WorkOrderDetails = () => {
     await completeWorkOrder(id, completion);
     toast.success("Radni nalog je završen.");
     load();
+  };
+
+  const addAttachment = async () => {
+    if (!attachmentFile) return;
+    try {
+      await uploadAttachment("work-order", id, {
+        file: attachmentFile,
+        visible_to_client: true,
+      });
+      setAttachmentFile(null);
+      toast.success("Prilog je učitan.");
+      load();
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Prilog nije moguće učitati.");
+    }
+  };
+
+  const getAttachment = async (attachment) => {
+    try {
+      const response = await downloadAttachment(attachment.id);
+      downloadBlob(response.data, attachment.file_name);
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Prilog nije moguće preuzeti.");
+    }
   };
 
   if (loading) return <div className="min-h-screen bg-slate-100 pt-28 text-center text-slate-500">Učitavanje naloga…</div>;
@@ -125,6 +152,20 @@ const WorkOrderDetails = () => {
             <textarea rows={4} value={completion.completion_notes} onChange={(e) => setCompletion({ ...completion, completion_notes: e.target.value })} placeholder="Završna napomena…" className="w-full rounded-xl border p-3" />
             <input value={completion.customer_signature_name} onChange={(e) => setCompletion({ ...completion, customer_signature_name: e.target.value })} placeholder="Ime osobe koja potvrđuje rad" className="mt-2 w-full rounded-xl border p-3" />
             <button disabled={order.status === "Completed"} onClick={finish} className="mt-3 w-full rounded-xl bg-emerald-600 py-3 font-bold text-white disabled:bg-slate-300">{order.status === "Completed" ? "Nalog je završen" : "Završi radni nalog"}</button>
+          </Card>
+
+          <Card title="Fotografije i prilozi" icon={FaPaperclip}>
+            <div className="space-y-2">
+              {order.attachments?.map((item) => (
+                <button key={item.id} onClick={() => getAttachment(item)} className="flex w-full items-center justify-between rounded-xl border border-slate-200 p-3 text-left hover:bg-slate-50">
+                  <span className="min-w-0 truncate text-sm font-semibold text-slate-700">{item.title || item.file_name}</span>
+                  <FaDownload className="shrink-0 text-indigo-600" />
+                </button>
+              ))}
+              {!order.attachments?.length && <div className="text-sm text-slate-400">Nema učitanih priloga.</div>}
+            </div>
+            <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx" onChange={(event) => setAttachmentFile(event.target.files?.[0] || null)} className="mt-3 w-full rounded-xl border border-slate-300 p-2 text-sm" />
+            <button type="button" disabled={!attachmentFile} onClick={addAttachment} className="mt-2 w-full rounded-xl bg-indigo-600 py-3 font-semibold text-white disabled:opacity-40">Učitaj prilog</button>
           </Card>
         </div>
       </div>

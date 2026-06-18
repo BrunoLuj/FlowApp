@@ -11,6 +11,8 @@ import equipmentRoutes from "./equipmentRoutes.js";
 import workorderRoutes from "./workorderRoutes.js";
 import serviceCenterRoutes from "./serviceCenterRoutes.js";
 import serviceRequestRoutes from "./serviceRequestRoutes.js";
+import attachmentRoutes from "./attachmentRoutes.js";
+import notificationRoutes from "./notificationRoutes.js";
 
 const router = express.Router();
 
@@ -26,5 +28,7 @@ router.use("/equipment", equipmentRoutes);
 router.use("/work-orders", workorderRoutes);
 router.use("/service-center", serviceCenterRoutes);
 router.use("/service-requests", serviceRequestRoutes);
+router.use("/attachments", attachmentRoutes);
+router.use("/notifications", notificationRoutes);
 
 export default router;

@@ -22,6 +22,7 @@ import ProjectDetails from "./pages/projectDetails";
 import WorkOrdersList from "./pages/workorder";
 import CreateWorkOrder from "./pages/createworkorder";
 import WorkOrderDetails from "./pages/workOrderDetails";
+import Notifications from "./pages/notifications";
 import ServiceCenter from "./pages/serviceCenter";
 import StationDetails from "./pages/stationDetails";
 
@@ -65,6 +66,7 @@ function App() {
                         <Route path="/work-order" element={<WorkOrdersList/>} />
                         <Route path="/work-orders/create" element={<CreateWorkOrder/>} />
                         <Route path="/work-orders/:id" element={<WorkOrderDetails />} />
+                        <Route path="/notifications" element={<Notifications />} />
                         <Route path="/service-center" element={<ServiceCenter />} />
                         <Route path="/service-center/stations/:id" element={<StationDetails />} />
                     </Route>

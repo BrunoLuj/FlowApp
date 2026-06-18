@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { FaGasPump, FaHeadset, FaMapMarkerAlt, FaPlus, FaTimes } from "react-icons/fa";
+import { FaDownload, FaGasPump, FaHeadset, FaMapMarkerAlt, FaPaperclip, FaPlus, FaTimes } from "react-icons/fa";
 import { toast } from "sonner";
 import useStore from "../store/index.js";
 import { getClients } from "../services/clientsServices.js";
@@ -11,8 +11,11 @@ import {
   getServiceRequest,
   getServiceRequests,
   getStations,
+  downloadAttachment,
+  uploadAttachment,
 } from "../services/serviceCenterServices.js";
 import { getUsers } from "../services/usersServices.js";
+import { downloadBlob } from "../libs/downloadBlob.js";
 
 const initialForm = {
   client_id: "",
@@ -50,6 +53,7 @@ const ServiceCenter = () => {
   const [requestLoading, setRequestLoading] = useState(false);
   const [users, setUsers] = useState([]);
   const [message, setMessage] = useState("");
+  const [attachmentFile, setAttachmentFile] = useState(null);
   const [workOrderForm, setWorkOrderForm] = useState({
     assigned_to: [],
     planned_date: "",
@@ -161,6 +165,30 @@ const ServiceCenter = () => {
       await load();
     } catch (error) {
       toast.error(error.response?.data?.error || "Radni nalog nije moguće kreirati.");
+    }
+  };
+
+  const addAttachment = async () => {
+    if (!attachmentFile || !selectedRequest) return;
+    try {
+      await uploadAttachment("service-request", selectedRequest.id, {
+        file: attachmentFile,
+        visible_to_client: true,
+      });
+      setAttachmentFile(null);
+      toast.success("Prilog je učitan.");
+      await openRequest(selectedRequest.id);
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Prilog nije moguće učitati.");
+    }
+  };
+
+  const getAttachment = async (attachment) => {
+    try {
+      const response = await downloadAttachment(attachment.id);
+      downloadBlob(response.data, attachment.file_name);
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Prilog nije moguće preuzeti.");
     }
   };
 
@@ -432,6 +460,22 @@ const ServiceCenter = () => {
                         />
                         <button className="rounded-xl bg-slate-900 px-5 font-semibold text-white">Pošalji</button>
                       </form>
+                    </section>
+                    <section>
+                      <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-500">Prilozi</h3>
+                      <div className="space-y-2">
+                        {selectedRequest.attachments?.map((item) => (
+                          <button key={item.id} onClick={() => getAttachment(item)} className="flex w-full items-center justify-between rounded-xl border border-slate-200 p-3 text-left hover:bg-slate-50">
+                            <span className="flex items-center gap-2 text-sm font-semibold text-slate-700"><FaPaperclip /> {item.title || item.file_name}</span>
+                            <FaDownload className="text-indigo-600" />
+                          </button>
+                        ))}
+                        {!selectedRequest.attachments?.length && <div className="text-sm text-slate-400">Nema priloga.</div>}
+                      </div>
+                      <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                        <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx" onChange={(event) => setAttachmentFile(event.target.files?.[0] || null)} className="min-w-0 flex-1 rounded-xl border border-slate-300 p-2 text-sm" />
+                        <button type="button" disabled={!attachmentFile} onClick={addAttachment} className="rounded-xl bg-indigo-600 px-4 py-2 font-semibold text-white disabled:opacity-40">Učitaj</button>
+                      </div>
                     </section>
                   </div>
 

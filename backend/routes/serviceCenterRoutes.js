@@ -8,12 +8,15 @@ import {
     editDeadline,
     editAsset,
     getDashboard,
+    downloadDocument,
     getStation,
     getStations,
     removeDeadline,
     removeDocument,
     removeAsset,
+    uploadDocument,
 } from "../controllers/serviceCenterController.js";
+import { uploadSingleFile } from "../middleware/uploadMiddleware.js";
 
 const router = express.Router();
 
@@ -24,6 +27,14 @@ router.post("/stations/:id/assets", authMiddleware, checkPermission("update_clie
 router.put("/assets/:assetId", authMiddleware, checkPermission("update_clients"), editAsset);
 router.delete("/assets/:assetId", authMiddleware, checkPermission("update_clients"), removeAsset);
 router.post("/stations/:id/documents", authMiddleware, checkPermission("manage_documents"), addDocument);
+router.post(
+    "/stations/:id/documents/upload",
+    authMiddleware,
+    checkPermission("manage_documents"),
+    uploadSingleFile,
+    uploadDocument
+);
+router.get("/documents/:documentId/download", authMiddleware, checkPermission("view_documents"), downloadDocument);
 router.delete("/documents/:documentId", authMiddleware, checkPermission("manage_documents"), removeDocument);
 router.post("/stations/:id/deadlines", authMiddleware, checkPermission("manage_deadlines"), addDeadline);
 router.patch("/deadlines/:deadlineId", authMiddleware, checkPermission("manage_deadlines"), editDeadline);

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   FaArrowLeft,
   FaClipboardList,
+  FaDownload,
   FaFileAlt,
   FaGasPump,
   FaPlus,
@@ -15,14 +16,16 @@ import useStore from "../store";
 import {
   createAsset,
   createDeadline,
-  createDocument,
   deleteAsset,
   deleteDeadline,
   deleteDocument,
   getStation,
+  downloadDocument,
+  uploadDocument,
   updateDeadline,
   updateAsset,
 } from "../services/serviceCenterServices";
+import { downloadBlob } from "../libs/downloadBlob.js";
 
 const emptyAsset = {
   id: null,
@@ -47,8 +50,7 @@ const emptyDocument = {
   document_type: "Servisni zapisnik",
   title: "",
   document_number: "",
-  file_name: "",
-  storage_key: "",
+  file: null,
   asset_id: "",
   issued_at: "",
   valid_until: "",
@@ -152,8 +154,8 @@ const StationDetails = () => {
     event.preventDefault();
     setSaving(true);
     try {
-      await createDocument(id, documentForm);
-      toast.success("Dokument je evidentiran.");
+      await uploadDocument(id, documentForm);
+      toast.success("Dokument je učitan.");
       setDocumentForm(emptyDocument);
       setShowDocumentForm(false);
       await load();
@@ -161,6 +163,15 @@ const StationDetails = () => {
       toast.error(error.response?.data?.error || "Dokument nije moguće spremiti.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const downloadStoredDocument = async (document) => {
+    try {
+      const response = await downloadDocument(document.id);
+      downloadBlob(response.data, document.file_name);
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Dokument nije moguće preuzeti.");
     }
   };
 
@@ -389,7 +400,13 @@ const StationDetails = () => {
                     </div>
                   </div>
                   {canManageDocuments && (
-                    <button onClick={() => removeDocument(item)} className="self-start rounded-lg p-2 text-red-500 hover:bg-red-50"><FaTrash /></button>
+                    <div className="flex gap-2">
+                      <button onClick={() => downloadStoredDocument(item)} className="rounded-lg p-2 text-indigo-600 hover:bg-indigo-50" title="Preuzmi"><FaDownload /></button>
+                      <button onClick={() => removeDocument(item)} className="rounded-lg p-2 text-red-500 hover:bg-red-50" title="Obriši"><FaTrash /></button>
+                    </div>
+                  )}
+                  {!canManageDocuments && (
+                    <button onClick={() => downloadStoredDocument(item)} className="self-start rounded-lg p-2 text-indigo-600 hover:bg-indigo-50" title="Preuzmi"><FaDownload /></button>
                   )}
                 </div>
               ))}
@@ -466,8 +483,7 @@ const StationDetails = () => {
           <Field label="Vrsta dokumenta *"><input required value={documentForm.document_type} onChange={(e) => setDocumentForm({ ...documentForm, document_type: e.target.value })} /></Field>
           <Field label="Naziv dokumenta *"><input required value={documentForm.title} onChange={(e) => setDocumentForm({ ...documentForm, title: e.target.value })} /></Field>
           <Field label="Broj dokumenta"><input value={documentForm.document_number} onChange={(e) => setDocumentForm({ ...documentForm, document_number: e.target.value })} /></Field>
-          <Field label="Naziv datoteke *"><input required placeholder="zapisnik-2026-001.pdf" value={documentForm.file_name} onChange={(e) => setDocumentForm({ ...documentForm, file_name: e.target.value })} /></Field>
-          <Field label="Lokacija / storage ključ"><input placeholder="documents/..." value={documentForm.storage_key} onChange={(e) => setDocumentForm({ ...documentForm, storage_key: e.target.value })} /></Field>
+          <Field label="Datoteka *"><input required type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx" onChange={(e) => setDocumentForm({ ...documentForm, file: e.target.files?.[0] || null })} /></Field>
           <Field label="Povezana oprema"><select value={documentForm.asset_id} onChange={(e) => setDocumentForm({ ...documentForm, asset_id: e.target.value })}><option value="">Cijela stanica</option>{data.assets.map((asset) => <option key={asset.id} value={asset.id}>{asset.name}</option>)}</select></Field>
           <Field label="Datum izdavanja"><input type="date" value={documentForm.issued_at} onChange={(e) => setDocumentForm({ ...documentForm, issued_at: e.target.value })} /></Field>
           <Field label="Vrijedi do"><input type="date" value={documentForm.valid_until} onChange={(e) => setDocumentForm({ ...documentForm, valid_until: e.target.value })} /></Field>

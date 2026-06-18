@@ -106,7 +106,7 @@ export const getWorkOrderById = async (id, clientId = null) => {
     );
     if (!orderResult.rows[0]) return null;
 
-    const [activities, materials, checklist, users] = await Promise.all([
+    const [activities, materials, checklist, users, attachments] = await Promise.all([
         pool.query(
             `SELECT a.*, CONCAT(u.firstname, ' ', u.lastname) AS user_name
              FROM work_order_activities a
@@ -125,6 +125,15 @@ export const getWorkOrderById = async (id, clientId = null) => {
             [id]
         ),
         pool.query("SELECT id, firstname, lastname FROM users"),
+        pool.query(
+            `SELECT id, title, file_name, mime_type, file_size,
+                    visible_to_client, created_at
+             FROM entity_attachments
+             WHERE work_order_id = $1
+             ${clientId ? "AND visible_to_client = TRUE" : ""}
+             ORDER BY created_at DESC`,
+            [id]
+        ),
     ]);
 
     const order = orderResult.rows[0];
@@ -135,6 +144,7 @@ export const getWorkOrderById = async (id, clientId = null) => {
         activities: activities.rows,
         materials: materials.rows,
         checklist: checklist.rows,
+        attachments: attachments.rows,
     };
 };
 
