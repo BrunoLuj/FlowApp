@@ -11,7 +11,7 @@ import { signIn } from "../../services/authServices.js";
 import { useTranslation } from "react-i18next";
 
 const SignIn = () => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { user, setCredentials } = useStore();
   const navigate = useNavigate();
 

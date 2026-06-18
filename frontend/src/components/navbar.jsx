@@ -83,7 +83,7 @@ const Navbar = () => {
 
           <div className="relative" ref={userMenuRef}>
             <button onClick={() => setUserMenuOpen(!isUserMenuOpen)}>
-              <img src={Avatar} className="w-10 h-10 rounded-full" />
+              <img src={Avatar} alt={`${user.firstname || ""} ${user.lastname || ""}`.trim() || "Korisnik"} className="w-10 h-10 rounded-full" />
             </button>
 
             {isUserMenuOpen && (

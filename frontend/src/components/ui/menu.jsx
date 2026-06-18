@@ -12,7 +12,8 @@ import {
   FaHeadset,
   FaBell,
   FaChartLine,
-  FaBoxes
+  FaBoxes,
+  FaCalendarCheck
 } from "react-icons/fa";
 
 export const menu = [
@@ -78,6 +79,12 @@ export const menu = [
         link: "/work-order",
         icon: <FaTasks />,
         permission: "view_work_orders"
+      },
+      {
+        label: "Preventivno održavanje",
+        link: "/maintenance",
+        icon: <FaCalendarCheck />,
+        permission: "view_maintenance_plans"
       },
       {
         label: "Aktivni nalozi",

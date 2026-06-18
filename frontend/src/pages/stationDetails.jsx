@@ -7,6 +7,7 @@ import {
   FaFileAlt,
   FaGasPump,
   FaPlus,
+  FaQrcode,
   FaTools,
   FaTrash,
   FaWrench,
@@ -26,6 +27,8 @@ import {
   updateAsset,
 } from "../services/serviceCenterServices";
 import { downloadBlob } from "../libs/downloadBlob.js";
+import QRCode from "qrcode";
+import { ensureAssetToken } from "../services/maintenanceServices.js";
 
 const emptyAsset = {
   id: null,
@@ -86,6 +89,8 @@ const StationDetails = () => {
   const [showDocumentForm, setShowDocumentForm] = useState(false);
   const [deadlineForm, setDeadlineForm] = useState(emptyDeadline);
   const [showDeadlineForm, setShowDeadlineForm] = useState(false);
+  const [qrAsset, setQrAsset] = useState(null);
+  const [qrImage, setQrImage] = useState("");
 
   const canManageAssets = permissions.includes("update_clients");
   const canManageDocuments = permissions.includes("manage_documents");
@@ -148,6 +153,43 @@ const StationDetails = () => {
     } catch (error) {
       toast.error(error.response?.data?.error || "Opremu nije moguće obrisati.");
     }
+  };
+
+  const showQr = async (asset) => {
+    try {
+      let token = asset.public_token;
+      if (!token) {
+        const response = await ensureAssetToken(asset.id);
+        token = response.data.public_token;
+      }
+      const url = `${window.location.origin}/asset/${token}`;
+      const image = await QRCode.toDataURL(url, {
+        width: 320,
+        margin: 2,
+        color: { dark: "#0f172a", light: "#ffffff" },
+      });
+      setQrAsset({ ...asset, public_token: token, url });
+      setQrImage(image);
+    } catch {
+      toast.error("QR oznaku nije moguće generirati.");
+    }
+  };
+
+  const printQr = () => {
+    const printWindow = window.open("", "_blank", "width=640,height=760");
+    if (!printWindow || !qrAsset) return;
+    printWindow.document.write(`
+      <html><head><title>QR - ${qrAsset.name}</title>
+      <style>body{font-family:Arial;text-align:center;padding:32px;color:#0f172a}
+      img{width:320px;height:320px}.card{border:2px solid #0f172a;border-radius:18px;padding:28px}
+      h1{margin:10px 0 4px}.muted{color:#64748b}</style></head>
+      <body><div class="card"><div class="muted">FlowApp servisna kartica</div>
+      <h1>${qrAsset.name}</h1><div>${qrAsset.asset_code || qrAsset.serial_number || ""}</div>
+      <img src="${qrImage}" alt="QR kod"/><div class="muted">${qrAsset.url}</div></div></body></html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => printWindow.print(), 250);
   };
 
   const saveDocument = async (event) => {
@@ -353,7 +395,8 @@ const StationDetails = () => {
                         }`}>{asset.status}</span>
                       </td>
                       {canManageAssets && (
-                        <td className="px-5 py-4">
+                        <td className="flex gap-1 px-5 py-4">
+                          <button onClick={() => showQr(asset)} className="rounded-lg p-2 text-indigo-600 hover:bg-indigo-50" title="QR oznaka"><FaQrcode /></button>
                           <button onClick={() => removeAsset(asset)} className="rounded-lg p-2 text-red-500 hover:bg-red-50"><FaTrash /></button>
                         </td>
                       )}
@@ -504,6 +547,22 @@ const StationDetails = () => {
           <Field label="Povezani dokument"><select value={deadlineForm.document_id} onChange={(e) => setDeadlineForm({ ...deadlineForm, document_id: e.target.value })}><option value="">Bez dokumenta</option>{data.documents.map((document) => <option key={document.id} value={document.id}>{document.title}</option>)}</select></Field>
           <label className="md:col-span-2"><span className="mb-2 block text-sm font-semibold text-slate-700">Napomena</span><textarea rows={3} value={deadlineForm.notes} onChange={(e) => setDeadlineForm({ ...deadlineForm, notes: e.target.value })} className="w-full rounded-xl border border-slate-300 p-3" /></label>
         </ModalForm>
+      )}
+
+      {qrAsset && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/60 p-4">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 text-center shadow-2xl">
+            <div className="text-sm font-semibold uppercase tracking-widest text-indigo-600">QR servisna kartica</div>
+            <h2 className="mt-2 text-2xl font-bold text-slate-900">{qrAsset.name}</h2>
+            <p className="mt-1 text-sm text-slate-500">{qrAsset.asset_code || qrAsset.serial_number || "Bez interne oznake"}</p>
+            <img src={qrImage} alt={`QR kod za ${qrAsset.name}`} className="mx-auto my-5 h-72 w-72" />
+            <p className="break-all rounded-xl bg-slate-50 p-3 text-xs text-slate-500">{qrAsset.url}</p>
+            <div className="mt-5 flex gap-2">
+              <button onClick={() => setQrAsset(null)} className="flex-1 rounded-xl border px-4 py-3 font-semibold text-slate-600">Zatvori</button>
+              <button onClick={printQr} className="flex-1 rounded-xl bg-indigo-600 px-4 py-3 font-semibold text-white">Ispiši naljepnicu</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
