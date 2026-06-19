@@ -6,11 +6,18 @@ const addWorkOrderAudit = async (database, workOrderId, userId, action, summary,
     await database.query(
         `INSERT INTO audit_logs
             (user_id, client_id, entity_type, entity_id, action, summary, changes)
-         SELECT $1, p.client_id, 'work_order', $2, $3, $4, $5::jsonb
+         SELECT $1::integer, p.client_id, 'work_order', $2::text, $3::text, $4::text, $5::jsonb
          FROM work_orders wo
          JOIN projects p ON p.id = COALESCE(wo.station_id, wo.project_id)
-         WHERE wo.id = $2::integer`,
-        [userId || null, String(workOrderId), action, summary, JSON.stringify(changes)]
+         WHERE wo.id = $6::integer`,
+        [
+            userId ? Number(userId) : null,
+            String(workOrderId),
+            action,
+            summary,
+            JSON.stringify(changes),
+            Number(workOrderId)
+        ]
     );
 };
 
@@ -608,12 +615,19 @@ export const addChecklistItem = async (workOrderId, data) => {
 export const updateChecklistItem = async (workOrderId, itemId, data, userId) => {
     const result = await pool.query(
         `UPDATE work_order_checklist_items SET
-            completed = $1,
-            completed_by = CASE WHEN $1 THEN $2 ELSE NULL END,
-            completed_at = CASE WHEN $1 THEN NOW() ELSE NULL END,
+            completed = $1::boolean,
+            completed_by = CASE WHEN $1::boolean THEN $2::integer ELSE NULL END,
+            completed_at = CASE WHEN $1::boolean THEN NOW() ELSE NULL END,
             notes = COALESCE($3, notes)
-         WHERE id = $4 AND work_order_id = $5 RETURNING *`,
-        [Boolean(data.completed), userId, data.notes || null, itemId, workOrderId]
+         WHERE id = $4::integer AND work_order_id = $5::integer
+         RETURNING *`,
+        [
+            Boolean(data.completed),
+            Number(userId),
+            data.notes || null,
+            Number(itemId),
+            Number(workOrderId)
+        ]
     );
     return result.rows[0];
 };
@@ -683,12 +697,12 @@ export const updateWorkOrderFieldData = async (id, data, userId, clientId = null
             await connection.query(
                 `INSERT INTO audit_logs
                     (user_id, client_id, entity_type, entity_id, action, summary, changes)
-                 SELECT $1, p.client_id, 'work_order', $2, 'field_data_updated',
+                SELECT $1::integer, p.client_id, 'work_order', $2::text, 'field_data_updated',
                         'Ažuriran terenski servisni zapisnik', $3::jsonb
-                 FROM projects p
-                 WHERE p.id = COALESCE($4, $5)`,
+                FROM projects p
+                WHERE p.id = COALESCE($4::integer, $5::integer)`,
                 [
-                    userId,
+                    Number(userId),
                     String(id),
                     JSON.stringify({
                         arrival_at: data.arrival_at,
@@ -700,8 +714,8 @@ export const updateWorkOrderFieldData = async (id, data, userId, clientId = null
                         report_generated: Boolean(data.report_generated),
                         signature_updated: Boolean(data.customer_signature_data),
                     }),
-                    order.station_id,
-                    order.project_id,
+                    order.station_id ? Number(order.station_id) : null,
+                    order.project_id ? Number(order.project_id) : null,
                 ]
             );
         }
