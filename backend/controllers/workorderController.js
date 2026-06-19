@@ -186,6 +186,13 @@ export const updateFieldData = async (req, res) => {
 };
 
 export const updateSchedule = async (req, res) => {
+    if (
+        req.body.scheduled_start_at &&
+        req.body.scheduled_end_at &&
+        new Date(req.body.scheduled_end_at) <= new Date(req.body.scheduled_start_at)
+    ) {
+        return res.status(400).json({ error: "Schedule end must be after start" });
+    }
     try {
         const order = await workOrdersModel.updateWorkOrderSchedule(
             req.params.id,
@@ -195,6 +202,18 @@ export const updateSchedule = async (req, res) => {
         if (!order) return res.status(404).json({ error: "Work order not found" });
         res.json(order);
     } catch (error) {
+        if (error.code === "SCHEDULE_CONFLICT") {
+            return res.status(409).json({
+                error: `Serviser već ima nalog "${error.conflict.title}" u tom terminu.`,
+                conflict: error.conflict,
+            });
+        }
+        if (error.code === "TECHNICIAN_UNAVAILABLE") {
+            return res.status(409).json({
+                error: `${error.conflict.technician_name} nije raspoloživ u odabranom terminu.`,
+                conflict: error.conflict,
+            });
+        }
         console.error(error);
         res.status(500).json({ error: "Error updating work order schedule" });
     }

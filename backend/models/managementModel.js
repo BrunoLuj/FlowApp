@@ -129,25 +129,79 @@ export const getPlanner = async ({ from, to, clientId = null }) => {
         clientCondition = `AND p.client_id = $${values.length}`;
     }
 
-    const [orders, users] = await Promise.all([
+    const [orders, users, availability] = await Promise.all([
         pool.query(
             `SELECT wo.id, wo.work_order_number, wo.title, wo.type, wo.status,
                     wo.planned_date, wo.start_date, wo.end_date, wo.assigned_to,
-                    p.name AS station_name, p.city, c.company_name AS client_name
+                    wo.scheduled_start_at, wo.scheduled_end_at,
+                    wo.estimated_duration_minutes, wo.dispatch_status, wo.dispatch_notes,
+                    p.name AS station_name, p.city, p.address,
+                    c.company_name AS client_name
              FROM work_orders wo
              JOIN projects p ON p.id = COALESCE(wo.station_id, wo.project_id)
              JOIN clients c ON c.id = p.client_id
-             WHERE wo.planned_date BETWEEN $1 AND $2 ${clientCondition}
-             ORDER BY wo.planned_date, wo.title`,
+             WHERE (
+                    wo.scheduled_start_at::date BETWEEN $1 AND $2
+                    OR (wo.scheduled_start_at IS NULL AND wo.planned_date BETWEEN $1 AND $2)
+                    OR (wo.scheduled_start_at IS NULL AND wo.planned_date IS NULL
+                        AND wo.status NOT IN ('Completed', 'Cancelled'))
+                   )
+                   ${clientCondition}
+             ORDER BY COALESCE(wo.scheduled_start_at, wo.planned_date::timestamp), wo.title`,
             values
         ),
         pool.query(
-            `SELECT id, firstname, lastname
-             FROM users
-             WHERE COALESCE(status, TRUE) = TRUE
+            `SELECT u.id, u.firstname, u.lastname, r.name AS role_name
+             FROM users u
+             LEFT JOIN roles r ON r.id = u.roles_id
+             WHERE COALESCE(u.status, TRUE) = TRUE
+               AND u.client_id IS NULL
+               AND (r.name IN ('technician', 'service_manager', 'project_manager', 'admin')
+                    OR r.name IS NULL)
              ORDER BY firstname, lastname`
+        ),
+        pool.query(
+            `SELECT ta.*, CONCAT(u.firstname, ' ', u.lastname) AS technician_name
+             FROM technician_availability ta
+             JOIN users u ON u.id = ta.user_id
+             WHERE ta.availability_date BETWEEN $1 AND $2
+             ORDER BY ta.availability_date, u.firstname`,
+            [from, to]
         ),
     ]);
 
-    return { orders: orders.rows, technicians: users.rows };
+    return { orders: orders.rows, technicians: users.rows, availability: availability.rows };
+};
+
+export const setTechnicianAvailability = async (data, userId) => {
+    const result = await pool.query(
+        `INSERT INTO technician_availability (
+            user_id, availability_date, start_time, end_time, status, note, created_by
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7)
+         ON CONFLICT (user_id, availability_date, start_time)
+         DO UPDATE SET
+            end_time = EXCLUDED.end_time,
+            status = EXCLUDED.status,
+            note = EXCLUDED.note,
+            updated_at = NOW()
+         RETURNING *`,
+        [
+            data.user_id,
+            data.availability_date,
+            data.start_time || "00:00",
+            data.end_time || "23:59",
+            data.status || "unavailable",
+            data.note || null,
+            userId,
+        ]
+    );
+    return result.rows[0];
+};
+
+export const deleteTechnicianAvailability = async (id) => {
+    const result = await pool.query(
+        "DELETE FROM technician_availability WHERE id = $1 RETURNING id",
+        [id]
+    );
+    return result.rows[0];
 };

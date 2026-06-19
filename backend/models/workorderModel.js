@@ -429,10 +429,20 @@ export const completeWorkOrder = async (id, data, userId) => {
 };
 
 export const updateWorkOrderSchedule = async (id, data, clientId = null) => {
+    const assignedTo = Array.isArray(data.assigned_to) ? data.assigned_to.map(Number).filter(Number.isInteger) : [];
+    const scheduledStart = data.scheduled_start_at || null;
+    const duration = Math.max(Number(data.estimated_duration_minutes) || 120, 15);
+    const scheduledEnd = data.scheduled_end_at
+        || (scheduledStart ? new Date(new Date(scheduledStart).getTime() + duration * 60000).toISOString() : null);
     const values = [
         data.planned_date || null,
         data.status || null,
-        JSON.stringify(Array.isArray(data.assigned_to) ? data.assigned_to : []),
+        JSON.stringify(assignedTo),
+        scheduledStart,
+        scheduledEnd,
+        duration,
+        data.dispatch_status || null,
+        data.dispatch_notes ?? null,
         id,
     ];
     let clientCondition = "";
@@ -441,18 +451,77 @@ export const updateWorkOrderSchedule = async (id, data, clientId = null) => {
         clientCondition = `AND p.client_id = $${values.length}`;
     }
 
-    const result = await pool.query(
-        `UPDATE work_orders wo SET
-            planned_date = COALESCE($1, wo.planned_date),
-            status = COALESCE($2, wo.status),
-            assigned_to = $3::jsonb,
-            updated_at = NOW()
-         FROM projects p
-         WHERE wo.id = $4
-           AND p.id = COALESCE(wo.station_id, wo.project_id)
-           ${clientCondition}
-         RETURNING wo.*`,
-        values
-    );
-    return result.rows[0];
+    const connection = await pool.connect();
+    try {
+        await connection.query("BEGIN");
+        if (scheduledStart && scheduledEnd && assignedTo.length) {
+            const conflictResult = await connection.query(
+                `SELECT wo.id, wo.work_order_number, wo.title,
+                        wo.scheduled_start_at, wo.scheduled_end_at,
+                        CONCAT(u.firstname, ' ', u.lastname) AS technician_name
+                 FROM work_orders wo
+                 CROSS JOIN LATERAL jsonb_array_elements_text(COALESCE(wo.assigned_to, '[]'::jsonb)) assigned(user_id)
+                 JOIN users u ON u.id = assigned.user_id::integer
+                 WHERE wo.id <> $1
+                   AND wo.status NOT IN ('Completed', 'Cancelled')
+                   AND assigned.user_id::integer = ANY($2::int[])
+                   AND wo.scheduled_start_at < $4::timestamptz
+                   AND wo.scheduled_end_at > $3::timestamptz
+                 LIMIT 1`,
+                [id, assignedTo, scheduledStart, scheduledEnd]
+            );
+            if (conflictResult.rows[0]) {
+                const error = new Error("Technician schedule conflict");
+                error.code = "SCHEDULE_CONFLICT";
+                error.conflict = conflictResult.rows[0];
+                throw error;
+            }
+
+            const availabilityResult = await connection.query(
+                `SELECT ta.id, ta.status, ta.note,
+                        CONCAT(u.firstname, ' ', u.lastname) AS technician_name
+                 FROM technician_availability ta
+                 JOIN users u ON u.id = ta.user_id
+                 WHERE ta.user_id = ANY($1::int[])
+                   AND ta.availability_date = $2::timestamptz::date
+                   AND ta.status <> 'available'
+                   AND ta.start_time < $3::timestamptz::time
+                   AND ta.end_time > $2::timestamptz::time
+                 LIMIT 1`,
+                [assignedTo, scheduledStart, scheduledEnd]
+            );
+            if (availabilityResult.rows[0]) {
+                const error = new Error("Technician is unavailable");
+                error.code = "TECHNICIAN_UNAVAILABLE";
+                error.conflict = availabilityResult.rows[0];
+                throw error;
+            }
+        }
+
+        const result = await connection.query(
+            `UPDATE work_orders wo SET
+                planned_date = COALESCE($1, wo.planned_date),
+                status = COALESCE($2, wo.status),
+                assigned_to = $3::jsonb,
+                scheduled_start_at = COALESCE($4, wo.scheduled_start_at),
+                scheduled_end_at = COALESCE($5, wo.scheduled_end_at),
+                estimated_duration_minutes = COALESCE($6, wo.estimated_duration_minutes),
+                dispatch_status = COALESCE($7, wo.dispatch_status),
+                dispatch_notes = COALESCE($8, wo.dispatch_notes),
+                updated_at = NOW()
+             FROM projects p
+             WHERE wo.id = $9
+               AND p.id = COALESCE(wo.station_id, wo.project_id)
+               ${clientCondition}
+             RETURNING wo.*`,
+            values
+        );
+        await connection.query("COMMIT");
+        return result.rows[0];
+    } catch (error) {
+        await connection.query("ROLLBACK");
+        throw error;
+    } finally {
+        connection.release();
+    }
 };
