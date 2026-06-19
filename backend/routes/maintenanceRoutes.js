@@ -8,19 +8,23 @@ import {
     generateDue,
     generatePlan,
     getAssets,
+    getOverview,
     getPlans,
     getPublicAsset,
+    recordMeter,
 } from "../controllers/maintenanceController.js";
 
 const router = express.Router();
 
 router.get("/public/assets/:token", getPublicAsset);
 router.get("/plans", authMiddleware, checkPermission("view_maintenance_plans"), getPlans);
+router.get("/overview", authMiddleware, checkPermission("view_maintenance_plans"), getOverview);
 router.get("/assets", authMiddleware, checkPermission("view_maintenance_plans"), getAssets);
 router.post("/plans", authMiddleware, checkPermission("manage_maintenance_plans"), addPlan);
 router.put("/plans/:id", authMiddleware, checkPermission("manage_maintenance_plans"), editPlan);
 router.post("/plans/:id/generate", authMiddleware, checkPermission("manage_maintenance_plans"), generatePlan);
 router.post("/generate-due", authMiddleware, checkPermission("manage_maintenance_plans"), generateDue);
+router.post("/assets/:assetId/readings", authMiddleware, checkPermission("record_asset_meter"), recordMeter);
 router.post("/assets/:assetId/token", authMiddleware, checkPermission("manage_asset_qr"), ensureAssetToken);
 
 export default router;

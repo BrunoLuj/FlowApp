@@ -6,6 +6,7 @@ import {
     generateScheduledEmails,
     processEmailQueue,
 } from "./models/emailNotificationModel.js";
+import { generateDuePlans } from "./models/maintenanceModel.js";
 
 dotenv.config();
 
@@ -62,5 +63,16 @@ const runEmailWorker = async () => {
 const emailWorker = setInterval(runEmailWorker, 5 * 60 * 1000);
 emailWorker.unref();
 setTimeout(runEmailWorker, 15 * 1000).unref();
+
+const runMaintenanceWorker = async () => {
+    try {
+        await generateDuePlans({ userId: null, clientId: null });
+    } catch (error) {
+        console.error("Preventive maintenance worker failed:", error);
+    }
+};
+const maintenanceWorker = setInterval(runMaintenanceWorker, 60 * 60 * 1000);
+maintenanceWorker.unref();
+setTimeout(runMaintenanceWorker, 30 * 1000).unref();
 
 

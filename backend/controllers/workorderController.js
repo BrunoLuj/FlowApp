@@ -261,6 +261,12 @@ export const completeWorkOrder = async (req, res) => {
         if (error.code === "CHECKLIST_INCOMPLETE") {
             return res.status(409).json({ error: "Complete all required checklist items first" });
         }
+        if (error.code === "METER_DECREASE") {
+            return res.status(409).json({ error: "Očitanje opreme ne može biti manje od prethodnog." });
+        }
+        if (error.code === "INVALID_READING") {
+            return res.status(400).json({ error: "Očitanje opreme mora biti pozitivan broj." });
+        }
         console.error(error);
         res.status(500).json({ error: "Error completing work order" });
     }

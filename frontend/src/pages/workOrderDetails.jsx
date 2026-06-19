@@ -61,6 +61,7 @@ const WorkOrderDetails = () => {
   const [checklistLabel, setChecklistLabel] = useState("");
   const [completion, setCompletion] = useState({
     completion_notes: "", customer_signature_name: "", customer_signature_data: "",
+    asset_meter_value: "",
   });
   const [fieldData, setFieldData] = useState(emptyFieldData);
   const [attachmentFile, setAttachmentFile] = useState(null);
@@ -91,6 +92,7 @@ const WorkOrderDetails = () => {
         completion_notes: loaded.completion_notes || "",
         customer_signature_name: loaded.customer_signature_name || "",
         customer_signature_data: loaded.customer_signature_data || "",
+        asset_meter_value: loaded.asset_meter_value ?? "",
       });
     } catch (error) {
       toast.error(error.response?.data?.error || "Radni nalog nije moguće učitati.");
@@ -292,6 +294,20 @@ const WorkOrderDetails = () => {
 
           <Card title="Potvrda klijenta" icon={FaPen}>
             <textarea disabled={!canEditFieldReport} rows={4} value={completion.completion_notes} onChange={(e) => setCompletion({ ...completion, completion_notes: e.target.value })} placeholder="Završna napomena…" className="w-full rounded-xl border p-3 disabled:bg-slate-100" />
+            {order.maintenance_plan_id && (
+              <Field label={`Završno očitanje opreme${order.asset_meter_unit ? ` (${order.asset_meter_unit})` : ""}`}>
+                <input
+                  disabled={!canEditFieldReport || order.status === "Completed"}
+                  type="number"
+                  min={order.asset_meter_value ?? 0}
+                  step="0.01"
+                  value={completion.asset_meter_value}
+                  onChange={(e) => setCompletion({ ...completion, asset_meter_value: e.target.value })}
+                  placeholder={order.asset_meter_value == null ? "Upišite očitanje" : `Trenutno: ${order.asset_meter_value}`}
+                  className="mb-2 w-full rounded-xl border p-3 disabled:bg-slate-100"
+                />
+              </Field>
+            )}
             <input disabled={!canEditFieldReport} value={completion.customer_signature_name} onChange={(e) => setCompletion({ ...completion, customer_signature_name: e.target.value })} placeholder="Ime osobe koja potvrđuje rad" className="mt-2 w-full rounded-xl border p-3 disabled:bg-slate-100" />
             <SignaturePad disabled={!canEditFieldReport} value={completion.customer_signature_data} onChange={(value) => setCompletion({ ...completion, customer_signature_data: value })} />
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
