@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { FaDownload, FaGasPump, FaHeadset, FaMapMarkerAlt, FaPaperclip, FaPlus, FaTimes } from "react-icons/fa";
+import { FaClock, FaDownload, FaExclamationTriangle, FaGasPump, FaHeadset, FaMapMarkerAlt, FaPaperclip, FaPlus, FaTimes } from "react-icons/fa";
 import { toast } from "sonner";
 import useStore from "../store/index.js";
 import { getClients } from "../services/clientsServices.js";
@@ -11,6 +11,7 @@ import {
   getServiceRequest,
   getServiceRequests,
   getStations,
+  updateServiceRequest,
   downloadAttachment,
   uploadAttachment,
 } from "../services/serviceCenterServices.js";
@@ -37,6 +38,24 @@ const statusLabel = {
   cancelled: "Otkazano",
 };
 
+const slaLabel = {
+  paused: "SLA pauziran",
+  response_breached: "Prekoračen odziv",
+  resolution_breached: "Prekoračeno rješenje",
+  at_risk: "Uskoro ističe",
+  on_track: "U roku",
+  not_defined: "SLA nije definiran",
+};
+
+const slaColor = {
+  paused: "bg-slate-100 text-slate-700",
+  response_breached: "bg-red-100 text-red-700",
+  resolution_breached: "bg-red-100 text-red-700",
+  at_risk: "bg-amber-100 text-amber-700",
+  on_track: "bg-emerald-100 text-emerald-700",
+  not_defined: "bg-slate-100 text-slate-500",
+};
+
 const ServiceCenter = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -58,6 +77,9 @@ const ServiceCenter = () => {
     assigned_to: [],
     planned_date: "",
     status: "Open",
+  });
+  const [requestManagement, setRequestManagement] = useState({
+    status: "new", priority: "normal", assigned_to: "",
   });
 
   const load = useCallback(async () => {
@@ -138,10 +160,30 @@ const ServiceCenter = () => {
         planned_date: response.data.desired_date ? String(response.data.desired_date).slice(0, 10) : "",
         status: "Open",
       });
+      setRequestManagement({
+        status: response.data.status,
+        priority: response.data.priority,
+        assigned_to: response.data.assigned_to || "",
+      });
     } catch (error) {
       toast.error(error.response?.data?.error || "Zahtjev nije moguće otvoriti.");
     } finally {
       setRequestLoading(false);
+    }
+  };
+
+  const saveRequestManagement = async () => {
+    try {
+      await updateServiceRequest(selectedRequest.id, {
+        ...requestManagement,
+        assigned_to: requestManagement.assigned_to ? Number(requestManagement.assigned_to) : null,
+      });
+      toast.success(requestManagement.status === "waiting_client"
+        ? "Zahtjev je spremljen, a SLA sat pauziran."
+        : "Servisni zahtjev je ažuriran.");
+      await Promise.all([openRequest(selectedRequest.id), load()]);
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Zahtjev nije moguće ažurirati.");
     }
   };
 
@@ -237,6 +279,7 @@ const ServiceCenter = () => {
                     <th className="px-5 py-4">Klijent / stanica</th>
                     <th className="px-5 py-4">Prioritet</th>
                     <th className="px-5 py-4">Status</th>
+                    <th className="px-5 py-4">SLA</th>
                     <th className="px-5 py-4">Otvoreno</th>
                   </tr>
                 </thead>
@@ -251,6 +294,11 @@ const ServiceCenter = () => {
                       <td className="px-5 py-4">
                         <div className="font-semibold text-slate-800">{request.subject}</div>
                         <div className="mt-1 max-w-md truncate text-sm text-slate-500">{request.description}</div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold ${slaColor[request.sla_status]}`}>
+                          {slaLabel[request.sla_status] || request.sla_status}
+                        </span>
                       </td>
                       <td className="px-5 py-4 text-sm text-slate-600">
                         <div>{request.client_name}</div>
@@ -480,6 +528,44 @@ const ServiceCenter = () => {
                   </div>
 
                   <aside className="space-y-4">
+                    <div className={`rounded-xl p-4 ${selectedRequest.escalation_level > 0 ? "border border-red-200 bg-red-50" : "border border-slate-200"}`}>
+                      <div className="flex items-center gap-2 font-bold text-slate-800">
+                        {selectedRequest.escalation_level > 0 ? <FaExclamationTriangle className="text-red-600" /> : <FaClock className="text-indigo-600" />}
+                        SLA kontrola
+                      </div>
+                      <div className="mt-3">
+                        <span className={`rounded-full px-3 py-1 text-xs font-bold ${slaColor[selectedRequest.sla_status]}`}>
+                          {slaLabel[selectedRequest.sla_status] || selectedRequest.sla_status}
+                        </span>
+                      </div>
+                      <div className="mt-3 space-y-1 text-xs text-slate-600">
+                        <div>Prvi odziv: <b>{formatDeadline(selectedRequest.response_due_at)}</b></div>
+                        <div>Rješenje: <b>{formatDeadline(selectedRequest.resolution_due_at)}</b></div>
+                        {selectedRequest.escalation_level > 0 && <div className="font-bold text-red-700">Razina eskalacije: {selectedRequest.escalation_level}</div>}
+                      </div>
+                    </div>
+
+                    {permissions.includes("manage_service_request_sla") && (
+                      <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4">
+                        <div className="font-bold text-indigo-900">Upravljanje zahtjevom</div>
+                        <label className="mt-3 block text-xs font-bold text-slate-600">Status</label>
+                        <select value={requestManagement.status} onChange={(event) => setRequestManagement({ ...requestManagement, status: event.target.value })} className="mt-1 w-full rounded-lg border border-indigo-200 bg-white p-2">
+                          {Object.entries(statusLabel).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                        </select>
+                        <label className="mt-3 block text-xs font-bold text-slate-600">Prioritet</label>
+                        <select value={requestManagement.priority} onChange={(event) => setRequestManagement({ ...requestManagement, priority: event.target.value })} className="mt-1 w-full rounded-lg border border-indigo-200 bg-white p-2">
+                          <option value="low">Nizak</option><option value="normal">Normalan</option><option value="high">Visok</option><option value="urgent">Hitno</option>
+                        </select>
+                        <label className="mt-3 block text-xs font-bold text-slate-600">Odgovorna osoba</label>
+                        <select value={requestManagement.assigned_to} onChange={(event) => setRequestManagement({ ...requestManagement, assigned_to: event.target.value })} className="mt-1 w-full rounded-lg border border-indigo-200 bg-white p-2">
+                          <option value="">Nije dodijeljeno</option>
+                          {users.map((item) => <option key={item.id} value={item.id}>{item.firstname} {item.lastname}</option>)}
+                        </select>
+                        <p className="mt-2 text-xs text-indigo-700">Status „Čeka klijenta” automatski pauzira SLA sat.</p>
+                        <button type="button" onClick={saveRequestManagement} className="mt-3 w-full rounded-lg bg-indigo-600 py-2.5 font-bold text-white">Spremi promjene</button>
+                      </div>
+                    )}
+
                     <div className="rounded-xl border border-slate-200 p-4 text-sm">
                       <div className="mb-3 font-bold text-slate-800">Podaci zahtjeva</div>
                       <div className="space-y-2 text-slate-600">
@@ -537,3 +623,7 @@ const ServiceCenter = () => {
 };
 
 export default ServiceCenter;
+
+const formatDeadline = (value) => value
+  ? new Intl.DateTimeFormat("hr-HR", { dateStyle: "short", timeStyle: "short" }).format(new Date(value))
+  : "Nije definiran";

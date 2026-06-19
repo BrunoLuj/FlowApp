@@ -1,6 +1,8 @@
 import { pool } from "../libs/database.js";
+import { refreshSlaEscalations } from "./serviceRequestModel.js";
 
 export const getNotifications = async (user) => {
+    await refreshSlaEscalations(user.clientId);
     const clientValues = user.clientId ? [user.userId, user.clientId] : [user.userId];
     const clientDeadline = user.clientId ? "AND d.client_id = $2" : "";
     const clientRequest = user.clientId ? "AND sr.client_id = $2" : "";
@@ -56,10 +58,10 @@ export const getNotifications = async (user) => {
             UNION ALL
 
             SELECT
-                'sla:' || sr.id,
+                'sla:' || sr.id || ':' || GREATEST(sr.escalation_level, 0),
                 'sla',
                 CASE
-                    WHEN sr.resolution_due_at < NOW() THEN 'danger'
+                    WHEN sr.escalation_level >= 1 THEN 'danger'
                     ELSE 'warning'
                 END,
                 'SLA · ' || sr.subject,
@@ -68,12 +70,15 @@ export const getNotifications = async (user) => {
                         THEN sr.request_number || ' je prekoračio rok rješavanja'
                     ELSE sr.request_number || ' uskoro doseže SLA rok'
                 END,
-                sr.resolution_due_at,
+                COALESCE(sr.resolution_due_at, sr.response_due_at, sr.created_at),
                 '/service-center'
             FROM service_requests sr
             WHERE sr.status NOT IN ('resolved', 'cancelled')
-              AND sr.resolution_due_at IS NOT NULL
-              AND sr.resolution_due_at <= NOW() + INTERVAL '8 hours'
+              AND (
+                    sr.status = 'waiting_client'
+                    OR (sr.responded_at IS NULL AND sr.response_due_at <= NOW() + INTERVAL '8 hours')
+                    OR sr.resolution_due_at <= NOW() + INTERVAL '8 hours'
+              )
               ${clientRequest}
 
             UNION ALL

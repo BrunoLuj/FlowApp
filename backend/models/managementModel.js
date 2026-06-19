@@ -1,9 +1,11 @@
 import { pool } from "../libs/database.js";
+import { refreshSlaEscalations } from "./serviceRequestModel.js";
 
 const clientFilter = (clientId, alias, startIndex = 1) =>
     clientId ? { sql: `AND ${alias}.client_id = $${startIndex}`, values: [clientId] } : { sql: "", values: [] };
 
 export const getManagementOverview = async (clientId = null) => {
+    await refreshSlaEscalations(clientId);
     const requestScope = clientFilter(clientId, "sr");
     const stationScope = clientFilter(clientId, "p");
 
@@ -11,6 +13,7 @@ export const getManagementOverview = async (clientId = null) => {
         kpis,
         requestTrend,
         orderStatuses,
+        slaRequests,
         technicianWorkload,
         topClients,
         overdueOrders,
@@ -36,7 +39,38 @@ export const getManagementOverview = async (clientId = null) => {
                  WHERE wo.status = 'Completed'
                    AND wo.end_date >= DATE_TRUNC('month', CURRENT_DATE) ${stationScope.sql}) AS completed_this_month`,
             requestScope.values
-        ),
+        ).then(async (result) => {
+            const slaResult = await pool.query(
+                `SELECT
+                    COALESCE(ROUND(
+                        100.0 * COUNT(*) FILTER (
+                            WHERE responded_at IS NOT NULL
+                              AND (response_due_at IS NULL OR responded_at <= response_due_at)
+                        ) / NULLIF(COUNT(*) FILTER (WHERE responded_at IS NOT NULL), 0)
+                    , 1), 100) AS response_sla_percent,
+                    COALESCE(ROUND(
+                        100.0 * COUNT(*) FILTER (
+                            WHERE resolved_at IS NOT NULL
+                              AND (resolution_due_at IS NULL OR resolved_at <= resolution_due_at)
+                        ) / NULLIF(COUNT(*) FILTER (WHERE resolved_at IS NOT NULL), 0)
+                    , 1), 100) AS resolution_sla_percent,
+                    COUNT(*) FILTER (
+                        WHERE status NOT IN ('resolved','cancelled')
+                          AND (
+                              (responded_at IS NULL AND response_due_at < COALESCE(sla_paused_at, NOW()))
+                              OR resolution_due_at < COALESCE(sla_paused_at, NOW())
+                          )
+                    )::int AS active_sla_breaches,
+                    COUNT(*) FILTER (
+                        WHERE status NOT IN ('resolved','cancelled','waiting_client')
+                          AND resolution_due_at BETWEEN NOW() AND NOW() + INTERVAL '8 hours'
+                    )::int AS sla_at_risk
+                 FROM service_requests sr
+                 WHERE 1=1 ${requestScope.sql}`,
+                requestScope.values
+            );
+            return { ...result, rows: [{ ...result.rows[0], ...slaResult.rows[0] }] };
+        }),
         pool.query(
             `WITH months AS (
                 SELECT generate_series(
@@ -62,6 +96,33 @@ export const getManagementOverview = async (clientId = null) => {
              WHERE 1=1 ${stationScope.sql}
              GROUP BY wo.status ORDER BY count DESC`,
             stationScope.values
+        ),
+        pool.query(
+            `SELECT sr.id, sr.request_number, sr.subject, sr.priority, sr.status,
+                    sr.response_due_at, sr.resolution_due_at, sr.escalation_level,
+                    c.company_name AS client_name, p.name AS station_name,
+                    CONCAT(u.firstname, ' ', u.lastname) AS assigned_to_name,
+                    CASE
+                        WHEN sr.status = 'waiting_client' THEN 'paused'
+                        WHEN sr.responded_at IS NULL AND sr.response_due_at < NOW() THEN 'response_breached'
+                        WHEN sr.resolution_due_at < NOW() THEN 'resolution_breached'
+                        WHEN sr.resolution_due_at <= NOW() + INTERVAL '8 hours' THEN 'at_risk'
+                        ELSE 'on_track'
+                    END AS sla_status
+             FROM service_requests sr
+             JOIN clients c ON c.id = sr.client_id
+             LEFT JOIN projects p ON p.id = sr.station_id
+             LEFT JOIN users u ON u.id = sr.assigned_to
+             WHERE sr.status NOT IN ('resolved', 'cancelled')
+               AND (
+                    sr.escalation_level > 0
+                    OR sr.status = 'waiting_client'
+                    OR sr.resolution_due_at <= NOW() + INTERVAL '8 hours'
+               )
+               ${requestScope.sql}
+             ORDER BY sr.escalation_level DESC, sr.resolution_due_at
+             LIMIT 20`,
+            requestScope.values
         ),
         pool.query(
             `WITH assignments AS (
@@ -118,6 +179,7 @@ export const getManagementOverview = async (clientId = null) => {
         technicianWorkload: technicianWorkload.rows,
         topClients: topClients.rows,
         overdueOrders: overdueOrders.rows,
+        slaRequests: slaRequests.rows,
     };
 };
 

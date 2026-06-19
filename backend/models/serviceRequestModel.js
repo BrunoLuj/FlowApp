@@ -1,6 +1,67 @@
 import { pool } from "../libs/database.js";
 
+export const refreshSlaEscalations = async (clientId = null) => {
+    const values = clientId ? [clientId] : [];
+    const scope = clientId ? "AND client_id = $1" : "";
+    await pool.query(
+        `UPDATE service_requests
+         SET response_breached_at = CASE
+                 WHEN responded_at IS NULL
+                  AND response_due_at < COALESCE(sla_paused_at, NOW())
+                 THEN COALESCE(response_breached_at, response_due_at)
+                 ELSE response_breached_at
+             END,
+             resolution_breached_at = CASE
+                 WHEN resolution_due_at < COALESCE(sla_paused_at, NOW())
+                 THEN COALESCE(resolution_breached_at, resolution_due_at)
+                 ELSE resolution_breached_at
+             END,
+             escalation_level = GREATEST(
+                 escalation_level,
+                 CASE
+                     WHEN resolution_due_at < COALESCE(sla_paused_at, NOW()) - INTERVAL '4 hours'
+                       OR (
+                           priority = 'urgent'
+                           AND (
+                               (responded_at IS NULL AND response_due_at < COALESCE(sla_paused_at, NOW()))
+                               OR resolution_due_at < COALESCE(sla_paused_at, NOW())
+                           )
+                       ) THEN 2
+                     WHEN (responded_at IS NULL AND response_due_at < COALESCE(sla_paused_at, NOW()))
+                       OR resolution_due_at < COALESCE(sla_paused_at, NOW()) THEN 1
+                     ELSE 0
+                 END
+             ),
+             escalated_at = CASE
+                 WHEN escalated_at IS NULL
+                  AND (
+                      (responded_at IS NULL AND response_due_at < COALESCE(sla_paused_at, NOW()))
+                      OR resolution_due_at < COALESCE(sla_paused_at, NOW())
+                  )
+                 THEN NOW()
+                 ELSE escalated_at
+             END
+         WHERE status NOT IN ('resolved', 'cancelled')
+           ${scope}`,
+        values
+    );
+};
+
+const slaColumns = `
+    CASE
+        WHEN sr.status = 'waiting_client' THEN 'paused'
+        WHEN sr.responded_at IS NULL AND sr.response_due_at < NOW() THEN 'response_breached'
+        WHEN sr.resolution_due_at < NOW() THEN 'resolution_breached'
+        WHEN sr.resolution_due_at <= NOW() + INTERVAL '8 hours' THEN 'at_risk'
+        WHEN sr.resolution_due_at IS NOT NULL THEN 'on_track'
+        ELSE 'not_defined'
+    END AS sla_status,
+    CASE WHEN sr.status = 'waiting_client' THEN sr.sla_paused_at ELSE NULL END AS sla_clock_stopped_at,
+    EXTRACT(EPOCH FROM (sr.response_due_at - COALESCE(sr.sla_paused_at, NOW())))::bigint AS response_seconds_remaining,
+    EXTRACT(EPOCH FROM (sr.resolution_due_at - COALESCE(sr.sla_paused_at, NOW())))::bigint AS resolution_seconds_remaining`;
+
 export const getServiceRequests = async ({ clientId, status, priority, stationId }) => {
+    await refreshSlaEscalations(clientId);
     const conditions = [];
     const values = [];
 
@@ -16,7 +77,7 @@ export const getServiceRequests = async ({ clientId, status, priority, stationId
 
     const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
     const result = await pool.query(
-        `SELECT sr.*, c.company_name AS client_name, p.name AS station_name,
+        `SELECT sr.*, ${slaColumns}, c.company_name AS client_name, p.name AS station_name,
                 CONCAT(u.firstname, ' ', u.lastname) AS assigned_to_name
          FROM service_requests sr
          JOIN clients c ON c.id = sr.client_id
@@ -88,38 +149,133 @@ export const createServiceRequest = async (data, user) => {
     return request;
 };
 
-export const updateServiceRequest = async (id, data, clientId = null) => {
-    const values = [
-        data.status,
-        data.priority,
-        data.assigned_to || null,
-        data.scheduled_at || null,
-        data.status === "resolved" ? new Date() : null,
-        id,
-    ];
-    let clientCondition = "";
+export const updateServiceRequest = async (id, data, user) => {
+    const connection = await pool.connect();
+    try {
+        await connection.query("BEGIN");
+        const currentValues = [id];
+        let scope = "";
+        if (user.clientId) {
+            currentValues.push(user.clientId);
+            scope = `AND sr.client_id = $${currentValues.length}`;
+        }
+        const currentResult = await connection.query(
+            `SELECT sr.*, sc.response_hours_normal, sc.response_hours_high,
+                    sc.response_hours_urgent, sc.resolution_hours_normal,
+                    sc.resolution_hours_high, sc.resolution_hours_urgent
+             FROM service_requests sr
+             LEFT JOIN service_contracts sc ON sc.id = sr.service_contract_id
+             WHERE sr.id = $1 ${scope}
+             FOR UPDATE OF sr`,
+            currentValues
+        );
+        const current = currentResult.rows[0];
+        if (!current) {
+            await connection.query("ROLLBACK");
+            return null;
+        }
 
-    if (clientId) {
-        values.push(clientId);
-        clientCondition = `AND client_id = $${values.length}`;
+        const nextStatus = data.status || current.status;
+        const nextPriority = data.priority || current.priority;
+        const leavingPause = current.status === "waiting_client" && nextStatus !== "waiting_client";
+        const enteringPause = current.status !== "waiting_client" && nextStatus === "waiting_client";
+        const responseHours = current[`response_hours_${nextPriority}`]
+            ?? current.response_hours_normal;
+        const resolutionHours = current[`resolution_hours_${nextPriority}`]
+            ?? current.resolution_hours_normal;
+
+        const result = await connection.query(
+            `UPDATE service_requests SET
+                status = $1::varchar,
+                priority = $2::varchar,
+                assigned_to = CASE WHEN $3::boolean THEN $4::integer ELSE assigned_to END,
+                scheduled_at = CASE WHEN $5::boolean THEN $6::timestamptz ELSE scheduled_at END,
+                resolved_at = CASE
+                    WHEN $1::varchar = 'resolved' THEN COALESCE(resolved_at, NOW())
+                    WHEN $1::varchar <> 'resolved' THEN NULL
+                    ELSE resolved_at
+                END,
+                sla_paused_seconds = sla_paused_seconds + CASE
+                    WHEN $7::boolean AND sla_paused_at IS NOT NULL
+                    THEN EXTRACT(EPOCH FROM (NOW() - sla_paused_at))::bigint
+                    ELSE 0
+                END,
+                response_due_at = CASE
+                    WHEN $8::boolean AND $9::int IS NOT NULL
+                    THEN created_at + MAKE_INTERVAL(hours => $9::int)
+                         + MAKE_INTERVAL(secs => sla_paused_seconds::double precision)
+                         + CASE WHEN $7::boolean AND sla_paused_at IS NOT NULL
+                             THEN NOW() - sla_paused_at ELSE INTERVAL '0 seconds' END
+                    WHEN $7::boolean AND sla_paused_at IS NOT NULL AND response_due_at IS NOT NULL
+                    THEN response_due_at + (NOW() - sla_paused_at)
+                    ELSE response_due_at
+                END,
+                resolution_due_at = CASE
+                    WHEN $8::boolean AND $10::int IS NOT NULL
+                    THEN created_at + MAKE_INTERVAL(hours => $10::int)
+                         + MAKE_INTERVAL(secs => sla_paused_seconds::double precision)
+                         + CASE WHEN $7::boolean AND sla_paused_at IS NOT NULL
+                             THEN NOW() - sla_paused_at ELSE INTERVAL '0 seconds' END
+                    WHEN $7::boolean AND sla_paused_at IS NOT NULL AND resolution_due_at IS NOT NULL
+                    THEN resolution_due_at + (NOW() - sla_paused_at)
+                    ELSE resolution_due_at
+                END,
+                sla_paused_at = CASE
+                    WHEN $11::boolean THEN NOW()
+                    WHEN $7::boolean THEN NULL
+                    ELSE sla_paused_at
+                END,
+                updated_at = NOW()
+             WHERE id = $12
+             RETURNING *`,
+            [
+                nextStatus,
+                nextPriority,
+                Object.prototype.hasOwnProperty.call(data, "assigned_to"),
+                data.assigned_to || null,
+                Object.prototype.hasOwnProperty.call(data, "scheduled_at"),
+                data.scheduled_at || null,
+                leavingPause,
+                nextPriority !== current.priority,
+                responseHours,
+                resolutionHours,
+                enteringPause,
+                id,
+            ]
+        );
+        const request = result.rows[0];
+        await connection.query(
+            `INSERT INTO audit_logs
+                (user_id, client_id, entity_type, entity_id, action, summary, changes)
+             VALUES ($1,$2,'service_request',$3,'sla_updated',$4,$5::jsonb)`,
+            [
+                user.userId,
+                current.client_id,
+                String(id),
+                enteringPause
+                    ? "SLA sat je pauziran dok se čeka klijenta"
+                    : leavingPause
+                        ? "SLA sat je nastavljen"
+                        : "Ažuriran servisni zahtjev",
+                JSON.stringify({
+                    status: { from: current.status, to: nextStatus },
+                    priority: { from: current.priority, to: nextPriority },
+                    assigned_to: request.assigned_to,
+                }),
+            ]
+        );
+        await connection.query("COMMIT");
+        return request;
+    } catch (error) {
+        await connection.query("ROLLBACK");
+        throw error;
+    } finally {
+        connection.release();
     }
-
-    const result = await pool.query(
-        `UPDATE service_requests
-         SET status = COALESCE($1, status),
-             priority = COALESCE($2, priority),
-             assigned_to = COALESCE($3, assigned_to),
-             scheduled_at = COALESCE($4, scheduled_at),
-             resolved_at = COALESCE($5, resolved_at),
-             updated_at = NOW()
-         WHERE id = $6 ${clientCondition}
-         RETURNING *`,
-        values
-    );
-    return result.rows[0];
 };
 
 export const getServiceRequestById = async (id, clientId = null) => {
+    await refreshSlaEscalations(clientId);
     const values = [id];
     let clientCondition = "";
     if (clientId) {
@@ -128,7 +284,7 @@ export const getServiceRequestById = async (id, clientId = null) => {
     }
 
     const requestResult = await pool.query(
-        `SELECT sr.*, c.company_name AS client_name, p.name AS station_name,
+        `SELECT sr.*, ${slaColumns}, c.company_name AS client_name, p.name AS station_name,
                 ea.name AS asset_name, ea.asset_code,
                 CONCAT(assignee.firstname, ' ', assignee.lastname) AS assigned_to_name,
                 CONCAT(requester.firstname, ' ', requester.lastname) AS requested_by_name
