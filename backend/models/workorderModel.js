@@ -65,6 +65,186 @@ export const getActiveWorkOrders = async (clientId = null) => {
     return result.rows;
 };
 
+export const getMyMobileWorkOrders = async (userId) => {
+    const result = await pool.query(
+        `SELECT wo.id, wo.work_order_number, wo.title, wo.type, wo.status,
+                TO_CHAR(wo.planned_date, 'YYYY-MM-DD') AS planned_date,
+                wo.scheduled_start_at, wo.scheduled_end_at,
+                wo.arrival_at, wo.departure_at, wo.field_notes,
+                p.name AS station_name, p.address, p.city,
+                c.company_name AS client_name, ea.name AS asset_name,
+                (
+                    SELECT event.event_type
+                    FROM work_order_mobile_events event
+                    WHERE event.work_order_id = wo.id AND event.user_id = $1
+                    ORDER BY event.event_at DESC, event.id DESC
+                    LIMIT 1
+                ) AS last_mobile_event
+         FROM work_orders wo
+         JOIN projects p ON p.id = COALESCE(wo.station_id, wo.project_id)
+         JOIN clients c ON c.id = p.client_id
+         LEFT JOIN equipment_assets ea ON ea.id = wo.asset_id
+         WHERE wo.assigned_to @> TO_JSONB(ARRAY[$1::integer])
+           AND wo.status NOT IN ('Completed', 'Cancelled')
+         ORDER BY
+            CASE
+                WHEN COALESCE(wo.scheduled_start_at::date, wo.planned_date) = CURRENT_DATE THEN 0
+                WHEN COALESCE(wo.scheduled_start_at::date, wo.planned_date) < CURRENT_DATE THEN 1
+                ELSE 2
+            END,
+            COALESCE(wo.scheduled_start_at, wo.planned_date::timestamp, wo.created_at)`,
+        [userId]
+    );
+    return result.rows;
+};
+
+export const applyMobileWorkOrderEvent = async (workOrderId, data, userId) => {
+    const connection = await pool.connect();
+    try {
+        await connection.query("BEGIN");
+        const orderResult = await connection.query(
+            `SELECT wo.*, p.client_id
+             FROM work_orders wo
+             JOIN projects p ON p.id = COALESCE(wo.station_id, wo.project_id)
+             WHERE wo.id = $1
+               AND wo.assigned_to @> TO_JSONB(ARRAY[$2::integer])
+             FOR UPDATE OF wo`,
+            [workOrderId, userId]
+        );
+        const order = orderResult.rows[0];
+        if (!order) {
+            await connection.query("ROLLBACK");
+            return null;
+        }
+
+        const eventAt = data.event_at ? new Date(data.event_at) : new Date();
+        if (Number.isNaN(eventAt.getTime())) {
+            const error = new Error("Invalid event time");
+            error.code = "INVALID_EVENT_TIME";
+            throw error;
+        }
+        const eventResult = await connection.query(
+            `INSERT INTO work_order_mobile_events
+                (event_key, work_order_id, user_id, event_type, event_at, payload)
+             VALUES ($1,$2,$3,$4,$5,$6::jsonb)
+             ON CONFLICT (event_key) DO NOTHING
+             RETURNING *`,
+            [
+                data.event_key,
+                workOrderId,
+                userId,
+                data.event_type,
+                eventAt.toISOString(),
+                JSON.stringify(data.payload || {}),
+            ]
+        );
+        if (!eventResult.rows[0]) {
+            const existing = await connection.query(
+                `SELECT * FROM work_order_mobile_events
+                 WHERE event_key = $1 AND work_order_id = $2 AND user_id = $3`,
+                [data.event_key, workOrderId, userId]
+            );
+            if (!existing.rows[0]) {
+                const error = new Error("Event key already belongs to another event");
+                error.code = "EVENT_KEY_CONFLICT";
+                throw error;
+            }
+            await connection.query("COMMIT");
+            return { order, event: existing.rows[0], duplicate: true };
+        }
+
+        let summary = "Mobilni događaj je evidentiran";
+        if (data.event_type === "arrive") {
+            await connection.query(
+                `UPDATE work_orders SET arrival_at = COALESCE(arrival_at, $1), updated_at = NOW()
+                 WHERE id = $2`,
+                [eventAt.toISOString(), workOrderId]
+            );
+            summary = "Serviser je evidentirao dolazak";
+        } else if (data.event_type === "start") {
+            await connection.query(
+                `UPDATE work_orders SET
+                    arrival_at = COALESCE(arrival_at, $1),
+                    start_date = COALESCE(start_date, $1::timestamptz::date),
+                    status = CASE WHEN status IN ('New', 'Open', 'On Hold') THEN 'In Progress' ELSE status END,
+                    updated_at = NOW()
+                 WHERE id = $2`,
+                [eventAt.toISOString(), workOrderId]
+            );
+            summary = "Serviser je pokrenuo rad";
+        } else if (data.event_type === "stop") {
+            const startResult = await connection.query(
+                `SELECT event_at FROM work_order_mobile_events
+                 WHERE work_order_id = $1 AND user_id = $2 AND event_type = 'start'
+                   AND event_at <= $3
+                 ORDER BY event_at DESC LIMIT 1`,
+                [workOrderId, userId, eventAt.toISOString()]
+            );
+            const startedAt = startResult.rows[0]?.event_at;
+            const duration = startedAt
+                ? Math.max(Math.round((eventAt.getTime() - new Date(startedAt).getTime()) / 60000), 0)
+                : null;
+            await connection.query(
+                `UPDATE work_orders SET departure_at = $1, updated_at = NOW()
+                 WHERE id = $2`,
+                [eventAt.toISOString(), workOrderId]
+            );
+            if (duration !== null) {
+                await connection.query(
+                    `INSERT INTO work_order_activities
+                        (work_order_id, user_id, activity_type, description, started_at, ended_at, duration_minutes)
+                     VALUES ($1,$2,'work','Rad evidentiran mobilnom aplikacijom',$3,$4,$5)`,
+                    [workOrderId, userId, startedAt, eventAt.toISOString(), duration]
+                );
+            }
+            summary = "Serviser je zaustavio rad";
+        } else if (data.event_type === "field_update") {
+            await connection.query(
+                `UPDATE work_orders SET
+                    field_notes = COALESCE($1, field_notes),
+                    odometer_start = COALESCE($2, odometer_start),
+                    odometer_end = COALESCE($3, odometer_end),
+                    travel_distance_km = COALESCE($4, travel_distance_km),
+                    updated_at = NOW()
+                 WHERE id = $5`,
+                [
+                    data.payload?.field_notes ?? null,
+                    data.payload?.odometer_start || null,
+                    data.payload?.odometer_end || null,
+                    data.payload?.travel_distance_km || null,
+                    workOrderId,
+                ]
+            );
+            summary = "Serviser je spremio terenske podatke s mobilnog uređaja";
+        }
+
+        await connection.query(
+            `INSERT INTO audit_logs
+                (user_id, client_id, entity_type, entity_id, action, summary, changes)
+             VALUES ($1,$2,'work_order',$3,'mobile_' || $4,$5,$6::jsonb)`,
+            [
+                userId,
+                order.client_id,
+                String(workOrderId),
+                data.event_type,
+                summary,
+                JSON.stringify({ event_key: data.event_key, event_at: eventAt.toISOString() }),
+            ]
+        );
+        const updatedOrder = await connection.query(
+            "SELECT * FROM work_orders WHERE id = $1",
+            [workOrderId]
+        );
+        await connection.query("COMMIT");
+        return { order: updatedOrder.rows[0], event: eventResult.rows[0], duplicate: false };
+    } catch (error) {
+        await connection.query("ROLLBACK");
+        throw error;
+    } finally {
+        connection.release();
+    }
+};
+
 // Kreiranje novog work ordera
 export const createWorkOrder = async (project_id, type, title, description, assigned_to, planned_date, start_date, end_date, status) => {
     const result = await pool.query(

@@ -6,6 +6,8 @@ import {
     getWorkOrder,
     getWorkOrderHistory,
     getActiveWorkOrders,
+    getMyMobileWorkOrders,
+    addMobileEvent,
     addWorkOrder,
     addActivity,
     addMaterial,
@@ -22,6 +24,8 @@ const router = express.Router();
 
 router.get("/", authMiddleware, checkPermission('view_work_orders'), getWorkOrders);
 router.get("/active", authMiddleware, checkPermission('view_work_orders'), getActiveWorkOrders);
+router.get("/mobile/mine", authMiddleware, checkPermission('use_mobile_work_orders'), getMyMobileWorkOrders);
+router.post("/:id/mobile-events", authMiddleware, checkPermission('use_mobile_work_orders'), addMobileEvent);
 router.get("/:id/history", authMiddleware, checkPermission('view_work_order_history'), getWorkOrderHistory);
 router.get("/:id", authMiddleware, checkPermission('view_work_orders'), getWorkOrder);
 router.post("/", authMiddleware, checkPermission('create_work_orders'), addWorkOrder);

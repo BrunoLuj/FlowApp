@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "FlowApp",
+  "name": "FlowApp mobilni servis",
   "icons": [
     {
       "src": "favicon.ico",
@@ -18,8 +18,11 @@
       "sizes": "512x512"
     }
   ],
-  "start_url": ".",
+  "start_url": "/mobile-work-orders",
+  "scope": "/",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "orientation": "portrait-primary",
+  "theme_color": "#0f172a",
+  "background_color": "#f1f5f9",
+  "description": "Mobilni serviserski portal za radne naloge, terenske zapise i offline sinkronizaciju"
 }

@@ -36,6 +36,7 @@ import RequirePermission from "./components/RequirePermission";
 import { getSession } from "./services/authServices";
 import DocumentCenter from "./pages/documentCenter";
 import Dispatch from "./pages/dispatch";
+import MobileWorkOrders from "./pages/mobileWorkOrders";
 
 const secured = (permission, element) => (
     <RequirePermission permission={permission}>{element}</RequirePermission>
@@ -96,6 +97,7 @@ function App() {
                         <Route path="/equipment" element={secured("manage_assets", <EquipmentForm />)} />
                         <Route path="/equipmentmanagement" element={secured("view_stations", <EquipmentManagement/>)} />
                         <Route path="/work-order" element={secured("view_work_orders", <WorkOrdersList/>)} />
+                        <Route path="/mobile-work-orders" element={secured("use_mobile_work_orders", <MobileWorkOrders />)} />
                         <Route path="/work-orders/create" element={secured("create_work_orders", <CreateWorkOrder/>)} />
                         <Route path="/work-orders/:id" element={secured("view_work_orders", <WorkOrderDetails />)} />
                         <Route path="/notifications" element={secured("view_dashboard", <Notifications />)} />

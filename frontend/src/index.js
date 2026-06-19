@@ -46,3 +46,11 @@ initI18n().finally(() => {
     </React.StrictMode>
   );
 });
+
+if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/service-worker.js").catch((error) => {
+      console.warn("PWA service worker nije moguće registrirati.", error);
+    });
+  });
+}
