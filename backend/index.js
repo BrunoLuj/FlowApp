@@ -7,6 +7,7 @@ import {
     processEmailQueue,
 } from "./models/emailNotificationModel.js";
 import { generateDuePlans } from "./models/maintenanceModel.js";
+import { generateDueMetrologyOrders } from "./models/metrologyModel.js";
 
 dotenv.config();
 
@@ -67,6 +68,7 @@ setTimeout(runEmailWorker, 15 * 1000).unref();
 const runMaintenanceWorker = async () => {
     try {
         await generateDuePlans({ userId: null, clientId: null });
+        await generateDueMetrologyOrders({ userId: null, clientId: null });
     } catch (error) {
         console.error("Preventive maintenance worker failed:", error);
     }

@@ -19,6 +19,7 @@ const moduleLabels = {
   inspections: "Inspekcije",
   inventory: "Skladište",
   maintenance: "Preventivno održavanje",
+  metrology: "Mjeriteljstvo",
   management: "Rukovodstvo",
   service_requests: "Servisni zahtjevi",
   stations: "Benzinske stanice",
