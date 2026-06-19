@@ -14,6 +14,7 @@ const knownErrors = {
     CASE_LOCKED: [409, "Odobreni predmet nije moguće mijenjati."],
     CASE_ITEMS_REQUIRED: [409, "Predmet mora sadržavati najmanje jedno mjerilo."],
     CASE_MEASUREMENTS_REQUIRED: [409, "Svako mjerilo mora sadržavati najmanje jedno mjerenje."],
+    AMN_THREE_MEASUREMENTS_REQUIRED: [409, "Svaka AMN sonda mora imati točno tri mjerenja."],
 };
 const fail = (res, error, fallback) => {
     const known = knownErrors[error.code];

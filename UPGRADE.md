@@ -50,6 +50,11 @@ pripadajućim AMN sondama; mjeriteljski predmet može odabrati isključivo oprem
 odabrane stanice. Svaki volumetar, AMN sonda, rezervoar i mjerna letva imaju
 zaseban status uključen/isključen, interval ovjere i datum naredne kalibracije.
 
+Mjeriteljski izvještaji koriste posebne službene obrasce ZA-19.01, ZA-19.02,
+ZA-19.03 i ZA-19.04. Unos prati izvorne tablice: Qmin/Qsr/Qmax za volumetre,
+tri usporedna mjerenja za AMN sondu, točke A/B/E i linearnost mjerne letve te
+provjeru pokretnog volumetra i volumetrijsku tablicu punjenja rezervoara.
+
 ## Pokretanje
 
 Backend koristi `backend/.env`:

@@ -5,13 +5,15 @@ export const SERVICE_RULES = {
         label: "Volumetri",
         intervalMonths: 12,
         method: "RU-19.01",
-        standard: "OIML R117",
+        documentCode: "ZA-19.01",
+        standard: "OIML R117-1&2:2019; Službeni glasnik BiH 26/18",
         requiredItem: "volumeter",
     },
     dipstick: {
         label: "Mjerna letva",
         intervalMonths: 24,
         method: "RU-19.02",
+        documentCode: "ZA-19.02",
         standard: "OIML R35-1, OIML R35-2, OIML R35-3",
         requiredItem: "dipstick",
     },
@@ -19,6 +21,7 @@ export const SERVICE_RULES = {
         label: "Rezervoar",
         intervalMonths: 72,
         method: "RU-19.03",
+        documentCode: "ZA-19.03",
         standard: "OIML R71",
         requiredItem: "tank",
     },
@@ -26,7 +29,8 @@ export const SERVICE_RULES = {
         label: "AMN",
         intervalMonths: 24,
         method: "RU-19.04",
-        standard: "OIML R85-1",
+        documentCode: "ZA-19.04",
+        standard: "OIML R85-1; Službeni glasnik BiH 71/23",
         requiredItem: "amn_probe",
     },
 };
@@ -126,6 +130,36 @@ export const createCase = async (data, user) => {
     return result.rows[0];
 };
 
+const normalizeLegacyMeasurement = (serviceType, measurement) => {
+    const values = { ...(measurement.values || {}) };
+    if (serviceType === "volumeter" && values.error_percent !== undefined && values.error_qmid_percent === undefined) {
+        Object.assign(values, {
+            qmid_l_min: values.flow,
+            set_volume_l: values.set_volume,
+            reference_qmid_l: values.reference_volume,
+            error_qmid_percent: values.error_percent,
+        });
+    }
+    if (serviceType === "dipstick" && values.nominal_mm !== undefined && values.standard_reading_mm === undefined) {
+        Object.assign(values, {
+            position: values.position || `T${measurement.sequence_no}`,
+            standard_reading_mm: values.nominal_mm,
+            equipment_reading_mm: values.measured_mm,
+            mpe_mm: values.tolerance_mm,
+        });
+        measurement.measurement_group = "scale_point";
+    }
+    if (serviceType === "tank" && values.cumulative_volume !== undefined && values.cumulative_standard_volume === undefined) {
+        Object.assign(values, {
+            nominal_fill_mass: values.filling_mass,
+            cumulative_standard_volume: values.cumulative_volume,
+            tank_fluid_temperature: values.tank_temperature,
+        });
+        measurement.measurement_group = "volumetric_fill";
+    }
+    return { ...measurement, values };
+};
+
 export const getCase = async (id, clientId = null) => {
     const values = [id];
     let tenant = "";
@@ -177,7 +211,9 @@ export const getCase = async (id, clientId = null) => {
     ]);
     record.items = items.rows.map((item) => ({
         ...item,
-        measurements: measurements.rows.filter((measurement) => Number(measurement.case_item_id) === Number(item.id)),
+        measurements: measurements.rows
+            .filter((measurement) => Number(measurement.case_item_id) === Number(item.id))
+            .map((measurement) => normalizeLegacyMeasurement(record.service_type, measurement)),
         checks: checks.rows.filter((check) => Number(check.case_item_id) === Number(item.id)),
     }));
     record.standards = standards.rows;
@@ -200,31 +236,53 @@ const validateItem = (serviceType, item) => {
     }
 };
 
+const numeric = (value) =>
+    value === null || value === undefined || value === "" ? Number.NaN : Number(value);
+
 const measurementPass = (serviceType, measurement, amnSpreadPassed = true) => {
     const values = measurement.values || {};
+    if (["environment","tank_setup"].includes(measurement.measurement_group)) return true;
     if (serviceType === "amn") {
-        const reference = Number(values.reference_mm);
-        const measured = Number(values.amn_mm);
-        const error = Number.isFinite(Number(values.error_mm))
-            ? Number(values.error_mm)
+        const reference = numeric(values.reference_mm);
+        const measured = numeric(values.amn_mm);
+        const error = Number.isFinite(numeric(values.error_mm))
+            ? numeric(values.error_mm)
             : measured - reference;
-        const gdg = Number(values.gdg_mm || 4);
+        const gdg = numeric(values.gdg_mm || 4);
         values.error_mm = error;
         return amnSpreadPassed && [reference,measured,error,gdg].every(Number.isFinite) && Math.abs(error) <= Math.abs(gdg);
     }
     if (serviceType === "volumeter") {
-        const error = Number(values.error_percent);
-        return Number.isFinite(error) && Math.abs(error) <= 0.5;
+        const errors = ["error_qmin_percent","error_qmid_percent","error_qmax_percent"]
+            .map((key) => numeric(values[key]))
+            .filter(Number.isFinite);
+        if (!errors.length && Number.isFinite(numeric(values.error_percent))) {
+            errors.push(numeric(values.error_percent));
+        }
+        return errors.length > 0 && errors.every((error) => Math.abs(error) <= 0.5);
     }
     if (serviceType === "dipstick") {
-        const nominal = Number(values.nominal_mm);
-        const measured = Number(values.measured_mm);
-        const error = Number.isFinite(Number(values.error_mm))
-            ? Number(values.error_mm)
+        if (measurement.measurement_group !== "scale_point") return measurement.passed !== false;
+        const nominal = numeric(values.standard_reading_mm ?? values.nominal_mm);
+        const measured = numeric(values.equipment_reading_mm ?? values.measured_mm);
+        const error = Number.isFinite(numeric(values.error_mm))
+            ? numeric(values.error_mm)
             : measured - nominal;
-        const tolerance = Number(values.tolerance_mm);
+        const tolerance = numeric(values.mpe_mm ?? values.tolerance_mm);
         values.error_mm = error;
         return [nominal,measured,error,tolerance].every(Number.isFinite) && Math.abs(error) <= Math.abs(tolerance);
+    }
+    if (serviceType === "tank" && measurement.measurement_group === "mobile_meter_check") {
+        return [
+            values.before_standard_l,values.before_meter_l,values.before_difference_l,
+            values.after_standard_l,values.after_meter_l,values.after_difference_l,
+        ].map(numeric).every(Number.isFinite) && measurement.passed !== false;
+    }
+    if (serviceType === "tank" && measurement.measurement_group === "volumetric_fill") {
+        return [
+            values.cumulative_standard_volume,values.height_mm,
+            values.standard_fluid_temperature,values.tank_fluid_temperature,values.flow_l_min,
+        ].map(numeric).every(Number.isFinite) && measurement.passed !== false;
     }
     return measurement.passed !== false;
 };
@@ -255,8 +313,13 @@ export const saveCase = async (id, data, user) => {
         const items = data.items || [];
         items.forEach((item) => validateItem(current.service_type, item));
         for (const item of items) {
+            if (current.service_type === "amn" && (item.measurements || []).length !== 3) {
+                const error = new Error("AMN requires exactly three measurements");
+                error.code = "AMN_THREE_MEASUREMENTS_REQUIRED";
+                throw error;
+            }
             const references = current.service_type === "amn"
-                ? (item.measurements || []).map((measurement) => Number(measurement.values?.reference_mm)).filter(Number.isFinite)
+                ? (item.measurements || []).map((measurement) => numeric(measurement.values?.reference_mm)).filter(Number.isFinite)
                 : [];
             const spreadPassed = references.length < 2 || Math.max(...references) - Math.min(...references) <= 1;
             for (const measurement of item.measurements || []) {
