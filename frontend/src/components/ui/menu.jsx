@@ -7,6 +7,7 @@ import {
   FaFileInvoiceDollar,
   FaFolderOpen,
   FaRoute,
+  FaMobileAlt,
   FaHeadset,
   FaProjectDiagram,
   FaShieldAlt,
@@ -36,6 +37,7 @@ export const menu = [
     items: [
       { label: "Servisni centar", link: "/service-center", icon: <FaHeadset />, permission: "view_service_center" },
       { label: "Radni nalozi", link: "/work-order", icon: <FaTasks />, permission: "view_work_orders" },
+      { label: "Moji nalozi", link: "/mobile-work-orders", icon: <FaMobileAlt />, permission: "use_mobile_work_orders" },
       { label: "Dokumentni centar", link: "/documents", icon: <FaFolderOpen />, permission: "view_document_center" },
       { label: "Dispatch servisera", link: "/dispatch", icon: <FaRoute />, permission: "view_dispatch" },
       { label: "Preventivno održavanje", link: "/maintenance", icon: <FaCalendarCheck />, permission: "view_maintenance_plans" },

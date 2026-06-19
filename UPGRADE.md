@@ -18,6 +18,10 @@ SLA servisnih zahtjeva računa ugovorne rokove prvog odziva i rješavanja, autom
 eskalira prekoračenja te zaustavlja SLA sat dok je zahtjev u statusu „Čeka klijenta”.
 Voditelji imaju pregled SLA rezultata, rizika i odgovorne osobe u upravljačkom centru.
 
+Mobilni serviserski portal prikazuje dodijeljene naloge, navigaciju, dolazak, početak
+i završetak rada te terenske bilješke. PWA može se instalirati na mobitel, a događaji
+se offline spremaju na uređaj i idempotentno sinkroniziraju nakon povratka veze.
+
 ## Pokretanje
 
 Backend koristi `backend/.env`:

@@ -402,7 +402,8 @@ const WorkOrderDetails = () => {
               ))}
               {!order.attachments?.length && <div className="text-sm text-slate-400">Nema učitanih priloga.</div>}
             </div>
-            {canEditFieldReport && <><input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx" onChange={(event) => setAttachmentFile(event.target.files?.[0] || null)} className="mt-3 w-full rounded-xl border border-slate-300 p-2 text-sm" />
+            {canEditFieldReport && <><label className="mt-3 block rounded-xl bg-indigo-50 p-3 text-center text-sm font-bold text-indigo-700">Fotografiraj kvar ili opremu<input type="file" accept="image/*" capture="environment" onChange={(event) => setAttachmentFile(event.target.files?.[0] || null)} className="hidden" /></label>
+            <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx" onChange={(event) => setAttachmentFile(event.target.files?.[0] || null)} className="mt-2 w-full rounded-xl border border-slate-300 p-2 text-sm" />
             <button type="button" disabled={!attachmentFile} onClick={addAttachment} className="mt-2 w-full rounded-xl bg-indigo-600 py-3 font-semibold text-white disabled:opacity-40">Učitaj prilog</button></>}
           </Card>
 

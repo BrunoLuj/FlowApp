@@ -22,6 +22,39 @@ export const getActiveWorkOrders = async (req, res) => {
     }
 };
 
+export const getMyMobileWorkOrders = async (req, res) => {
+    try {
+        res.json(await workOrdersModel.getMyMobileWorkOrders(req.user.userId));
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error fetching mobile work orders" });
+    }
+};
+
+export const addMobileEvent = async (req, res) => {
+    if (!req.body.event_key || !["arrive", "start", "stop", "field_update"].includes(req.body.event_type)) {
+        return res.status(400).json({ error: "Event key and valid event type are required" });
+    }
+    try {
+        const result = await workOrdersModel.applyMobileWorkOrderEvent(
+            req.params.id,
+            req.body,
+            req.user.userId
+        );
+        if (!result) return res.status(404).json({ error: "Assigned work order not found" });
+        res.status(result.duplicate ? 200 : 201).json(result);
+    } catch (error) {
+        if (error.code === "INVALID_EVENT_TIME" || error.code === "22P02") {
+            return res.status(400).json({ error: "Invalid mobile event data" });
+        }
+        if (error.code === "EVENT_KEY_CONFLICT") {
+            return res.status(409).json({ error: "Mobile event key is already in use" });
+        }
+        console.error(error);
+        res.status(500).json({ error: "Error saving mobile work event" });
+    }
+};
+
 // POST /work-orders
 export const addWorkOrder = async (req, res) => {
     const { project_id, type, title, description, assigned_to, planned_date, start_date, end_date, status } = req.body;
