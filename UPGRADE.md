@@ -3,6 +3,10 @@
 FlowApp objedinjuje servisni centar, benzinske stanice, opremu, radne naloge,
 dokumentaciju, rokove, skladište, preventivno održavanje, komercijalu i klijentski portal.
 
+Centralni dokumentni centar omogućuje pretragu po klijentu, stanici, vrsti i statusu
+valjanosti, čuva povijest verzija te automatski povezuje dokumente s rokovima.
+Obavijesti za aktivne rokove pojavljuju se na pragovima 60, 30, 15 i 7 dana prije isteka.
+
 ## Pokretanje
 
 Backend koristi `backend/.env`:

@@ -176,7 +176,7 @@ export const getStationById = async (stationId, clientId = null) => {
             `SELECT id, title, document_type, document_number, file_name,
                     issued_at, valid_until, visible_to_client, created_at
              FROM documents
-             WHERE station_id = $1
+             WHERE station_id = $1 AND is_current = TRUE
              ${clientId ? "AND visible_to_client = TRUE" : ""}
              ORDER BY created_at DESC
              LIMIT 20`,
@@ -313,25 +313,31 @@ export const deleteAsset = async (assetId, clientId = null) => {
 };
 
 export const createDocument = async (stationId, data, user) => {
+    const connection = await pool.connect();
+    try {
+    await connection.query("BEGIN");
     const values = [stationId];
     let clientCondition = "";
     if (user.clientId) {
         values.push(user.clientId);
         clientCondition = `AND client_id = $${values.length}`;
     }
-    const stationResult = await pool.query(
+    const stationResult = await connection.query(
         `SELECT id, client_id FROM projects WHERE id = $1 ${clientCondition}`,
         values
     );
     const station = stationResult.rows[0];
-    if (!station) return null;
+    if (!station) {
+        await connection.query("ROLLBACK");
+        return null;
+    }
 
-    const result = await pool.query(
+    const result = await connection.query(
         `INSERT INTO documents (
             client_id, station_id, asset_id, document_type, title,
             document_number, file_name, storage_key, mime_type, file_size,
-            issued_at, valid_until, visible_to_client, uploaded_by
-         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+            issued_at, valid_until, visible_to_client, uploaded_by, tags
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
          RETURNING *`,
         [
             station.client_id,
@@ -348,9 +354,37 @@ export const createDocument = async (stationId, data, user) => {
             data.valid_until || null,
             data.visible_to_client !== false,
             user.userId,
+            Array.isArray(data.tags)
+                ? data.tags
+                : String(data.tags || "").split(",").map((tag) => tag.trim()).filter(Boolean),
         ]
     );
-    return result.rows[0];
+    const document = result.rows[0];
+    if (document.valid_until) {
+        await connection.query(
+            `INSERT INTO compliance_deadlines (
+                client_id, station_id, asset_id, document_id, deadline_type,
+                title, due_date, warning_days, reminder_days, notes
+             ) VALUES ($1,$2,$3,$4,'document_expiry',$5,$6,60,ARRAY[60,30,15,7],$7)`,
+            [
+                document.client_id,
+                document.station_id,
+                document.asset_id,
+                document.id,
+                `Istek dokumenta: ${document.title}`,
+                document.valid_until,
+                document.document_number ? `Dokument ${document.document_number}` : null,
+            ]
+        );
+    }
+    await connection.query("COMMIT");
+    return document;
+    } catch (error) {
+        await connection.query("ROLLBACK");
+        throw error;
+    } finally {
+        connection.release();
+    }
 };
 
 export const deleteDocument = async (documentId, clientId = null) => {

@@ -9,7 +9,14 @@ export const getNotifications = async (user) => {
     const result = await pool.query(
         `WITH notifications AS (
             SELECT
-                'deadline:' || d.id AS notification_key,
+                'deadline:' || d.id || ':' ||
+                    CASE
+                        WHEN d.due_date < CURRENT_DATE THEN 'expired'
+                        WHEN d.due_date - CURRENT_DATE <= 7 THEN '7'
+                        WHEN d.due_date - CURRENT_DATE <= 15 THEN '15'
+                        WHEN d.due_date - CURRENT_DATE <= 30 THEN '30'
+                        ELSE '60'
+                    END AS notification_key,
                 'deadline' AS type,
                 CASE WHEN d.due_date < CURRENT_DATE THEN 'danger' ELSE 'warning' END AS severity,
                 d.title,
@@ -22,7 +29,14 @@ export const getNotifications = async (user) => {
                 '/service-center/stations/' || d.station_id AS target_url
             FROM compliance_deadlines d
             WHERE d.status = 'active'
-              AND d.due_date <= CURRENT_DATE + GREATEST(d.warning_days, 30)
+              AND d.due_date <= CURRENT_DATE + 60
+              AND (
+                    d.due_date < CURRENT_DATE
+                    OR (d.due_date - CURRENT_DATE <= 7 AND 7 = ANY(d.reminder_days))
+                    OR (d.due_date - CURRENT_DATE BETWEEN 8 AND 15 AND 15 = ANY(d.reminder_days))
+                    OR (d.due_date - CURRENT_DATE BETWEEN 16 AND 30 AND 30 = ANY(d.reminder_days))
+                    OR (d.due_date - CURRENT_DATE BETWEEN 31 AND 60 AND 60 = ANY(d.reminder_days))
+              )
               ${clientDeadline}
 
             UNION ALL

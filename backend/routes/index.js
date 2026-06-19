@@ -16,6 +16,7 @@ import inventoryRoutes from "./inventoryRoutes.js";
 import maintenanceRoutes from "./maintenanceRoutes.js";
 import commercialRoutes from "./commercialRoutes.js";
 import roleRoutes from "./roleRoutes.js";
+import documentCenterRoutes from "./documentCenterRoutes.js";
 
 const router = express.Router();
 
@@ -36,5 +37,6 @@ router.use("/inventory", inventoryRoutes);
 router.use("/maintenance", maintenanceRoutes);
 router.use("/commercial", commercialRoutes);
 router.use("/roles", roleRoutes);
+router.use("/document-center", documentCenterRoutes);
 
 export default router;
