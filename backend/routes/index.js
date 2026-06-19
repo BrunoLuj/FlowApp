@@ -19,6 +19,7 @@ import roleRoutes from "./roleRoutes.js";
 import documentCenterRoutes from "./documentCenterRoutes.js";
 import emailNotificationRoutes from "./emailNotificationRoutes.js";
 import metrologyRoutes from "./metrologyRoutes.js";
+import metrologyCaseRoutes from "./metrologyCaseRoutes.js";
 
 const router = express.Router();
 
@@ -42,5 +43,6 @@ router.use("/roles", roleRoutes);
 router.use("/document-center", documentCenterRoutes);
 router.use("/email-center", emailNotificationRoutes);
 router.use("/metrology", metrologyRoutes);
+router.use("/metrology-cases", metrologyCaseRoutes);
 
 export default router;
