@@ -56,24 +56,34 @@ export const listCases = async (clientId = null) => {
 export const getOptions = async (clientId = null) => {
     const values = clientId ? [clientId] : [];
     const where = clientId ? "WHERE c.id=$1" : "";
-    const [clients, stations, users, probes, volumeters, tanks, dipsticks] = await Promise.all([
+    const [clients, stations, users, equipment] = await Promise.all([
         pool.query(`SELECT c.id,c.company_name,c.address,c.phone,c.contact_person,c.idbroj,c.pdvbroj FROM clients c ${where} ORDER BY c.company_name`, values),
         pool.query(`SELECT p.id,p.client_id,p.name,p.address,p.city FROM projects p ${clientId ? "WHERE p.client_id=$1" : ""} ORDER BY p.name`, values),
         pool.query("SELECT id,firstname,lastname FROM users ORDER BY firstname,lastname"),
-        pool.query(`SELECT s.* FROM sonda s ${clientId ? "WHERE s.client_id=$1" : ""} ORDER BY s.serial_number`, values),
-        pool.query(`SELECT v.* FROM volumeters v ${clientId ? "WHERE v.client_id=$1" : ""} ORDER BY v.serial_number_device,v.serial_number`, values),
-        pool.query(`SELECT r.* FROM rezervoar r ${clientId ? "WHERE r.client_id=$1" : ""} ORDER BY r.serial_number`, values),
-        pool.query(`SELECT m.* FROM mjerna_letva m ${clientId ? "WHERE m.client_id=$1" : ""} ORDER BY m.serial_number`, values),
+        pool.query(
+            `SELECT ea.*,p.name station_name,parent.name parent_name,
+                    parent.serial_number parent_serial_number,
+                    parent.metrology_type parent_metrology_type
+             FROM equipment_assets ea
+             LEFT JOIN projects p ON p.id=ea.station_id
+             LEFT JOIN equipment_assets parent ON parent.id=ea.parent_asset_id
+             WHERE ea.metrology_type IS NOT NULL AND ea.metrology_enabled=TRUE
+             ${clientId ? "AND ea.client_id=$1" : ""}
+             ORDER BY p.name,ea.metrology_type,ea.name`,
+            values
+        ),
     ]);
     return {
         rules: SERVICE_RULES,
         clients: clients.rows,
         stations: stations.rows,
         users: users.rows,
-        probes: probes.rows,
-        volumeters: volumeters.rows,
-        tanks: tanks.rows,
-        dipsticks: dipsticks.rows,
+        equipment: equipment.rows,
+        probes: equipment.rows.filter((item) => item.metrology_type === "amn_probe"),
+        volumeters: equipment.rows.filter((item) => item.metrology_type === "volumeter"),
+        tanks: equipment.rows.filter((item) => item.metrology_type === "tank"),
+        dipsticks: equipment.rows.filter((item) => item.metrology_type === "dipstick"),
+        dispensers: equipment.rows.filter((item) => item.metrology_type === "dispenser"),
     };
 };
 

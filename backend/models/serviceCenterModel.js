@@ -149,9 +149,17 @@ export const getStationById = async (stationId, clientId = null) => {
 
     const [assets, requests, workOrders, documents, deadlines] = await Promise.all([
         pool.query(
-            `SELECT * FROM equipment_assets
-             WHERE station_id = $1
-             ORDER BY category, name`,
+            `SELECT ea.*,parent.name parent_asset_name,
+                    parent.serial_number parent_serial_number,
+                    (SELECT COUNT(*)::int FROM equipment_assets child
+                     WHERE child.parent_asset_id=ea.id) child_count
+             FROM equipment_assets ea
+             LEFT JOIN equipment_assets parent ON parent.id=ea.parent_asset_id
+             WHERE ea.station_id = $1
+             ORDER BY CASE ea.metrology_type
+                WHEN 'dispenser' THEN 1 WHEN 'volumeter' THEN 2
+                WHEN 'tank' THEN 3 WHEN 'amn_probe' THEN 4
+                WHEN 'dipstick' THEN 5 ELSE 6 END,ea.category,ea.name`,
             [stationId]
         ),
         pool.query(
@@ -221,16 +229,37 @@ export const createAsset = async (stationId, data, clientId = null) => {
         stationValues
     );
     if (!station.rows[0]) return null;
+    if (["volumeter","amn_probe"].includes(data.metrology_type) && !data.parent_asset_id) {
+        const error = new Error("Metrology parent required");
+        error.code = "INVALID_METROLOGY_PARENT";
+        throw error;
+    }
+    if (data.parent_asset_id) {
+        const parent = await pool.query(
+            `SELECT id,metrology_type FROM equipment_assets
+             WHERE id=$1 AND station_id=$2 AND client_id=$3`,
+            [data.parent_asset_id,stationId,station.rows[0].client_id]
+        );
+        const expected = data.metrology_type === "volumeter" ? "dispenser"
+            : data.metrology_type === "amn_probe" ? "tank" : null;
+        if (!parent.rows[0] || (expected && parent.rows[0].metrology_type !== expected)) {
+            const error = new Error("Invalid metrology parent");
+            error.code = "INVALID_METROLOGY_PARENT";
+            throw error;
+        }
+    }
 
     const result = await pool.query(
         `INSERT INTO equipment_assets (
             client_id, station_id, asset_code, category, name, manufacturer, model,
             serial_number, official_mark, fuel_type, status, criticality,
             location_description, installed_at, last_service_at, next_service_at,
-            last_calibration_at, calibration_expires_at, warranty_expires_at, notes, metadata
+            last_calibration_at, calibration_expires_at, warranty_expires_at, notes,
+            metadata, metrology_type, metrology_enabled,metrology_required,
+            verification_interval_months,parent_asset_id
          ) VALUES (
             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
-            $15, $16, $17, $18, $19, $20, $21
+            $15, $16, $17, $18, $19, $20, $21, $22, $23, $24,$25,$26
          ) RETURNING *`,
         [
             station.rows[0].client_id,
@@ -254,12 +283,43 @@ export const createAsset = async (stationId, data, clientId = null) => {
             data.warranty_expires_at || null,
             data.notes || null,
             data.metadata || {},
+            data.metrology_type || null,
+            data.metrology_enabled !== false,
+            Boolean(data.metrology_type && data.metrology_enabled !== false),
+            Number(data.verification_interval_months) || ({
+                volumeter: 12,dispenser: 12,tank: 72,amn_probe: 24,dipstick: 24,
+            }[data.metrology_type] || 12),
+            data.parent_asset_id || null,
         ]
     );
     return result.rows[0];
 };
 
 export const updateAsset = async (assetId, data, clientId = null) => {
+    const current = await pool.query(
+        "SELECT station_id,client_id FROM equipment_assets WHERE id=$1",
+        [assetId]
+    );
+    if (!current.rows[0]) return null;
+    if (["volumeter","amn_probe"].includes(data.metrology_type) && !data.parent_asset_id) {
+        const error = new Error("Metrology parent required");
+        error.code = "INVALID_METROLOGY_PARENT";
+        throw error;
+    }
+    if (data.parent_asset_id) {
+        const parent = await pool.query(
+            `SELECT id,metrology_type FROM equipment_assets
+             WHERE id=$1 AND station_id=$2 AND client_id=$3`,
+            [data.parent_asset_id,current.rows[0].station_id,current.rows[0].client_id]
+        );
+        const expected = data.metrology_type === "volumeter" ? "dispenser"
+            : data.metrology_type === "amn_probe" ? "tank" : null;
+        if (!parent.rows[0] || (expected && parent.rows[0].metrology_type !== expected)) {
+            const error = new Error("Invalid metrology parent");
+            error.code = "INVALID_METROLOGY_PARENT";
+            throw error;
+        }
+    }
     const values = [
         data.asset_code || null,
         data.category,
@@ -276,6 +336,14 @@ export const updateAsset = async (assetId, data, clientId = null) => {
         data.calibration_expires_at || null,
         data.warranty_expires_at || null,
         data.notes || null,
+        data.metadata || {},
+        data.metrology_type || null,
+        data.metrology_enabled !== false,
+        Boolean(data.metrology_type && data.metrology_enabled !== false),
+        Number(data.verification_interval_months) || ({
+            volumeter: 12,dispenser: 12,tank: 72,amn_probe: 24,dipstick: 24,
+        }[data.metrology_type] || 12),
+        data.parent_asset_id || null,
         assetId,
     ];
     let clientCondition = "";
@@ -290,8 +358,11 @@ export const updateAsset = async (assetId, data, clientId = null) => {
             model = $5, serial_number = $6, official_mark = $7, fuel_type = $8,
             status = $9, criticality = $10, location_description = $11,
             next_service_at = $12, calibration_expires_at = $13,
-            warranty_expires_at = $14, notes = $15, updated_at = NOW()
-         WHERE id = $16 ${clientCondition}
+            warranty_expires_at = $14, notes = $15,metadata=$16,
+            metrology_type=$17,metrology_enabled=$18,metrology_required=$19,
+            verification_interval_months=$20,parent_asset_id=$21,
+            updated_at = NOW()
+         WHERE id = $22 ${clientCondition}
          RETURNING *`,
         values
     );

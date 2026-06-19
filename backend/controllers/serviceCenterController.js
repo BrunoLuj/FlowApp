@@ -48,6 +48,9 @@ export const addAsset = async (req, res) => {
         if (!asset) return res.status(404).json({ error: "Station not found" });
         res.status(201).json(asset);
     } catch (error) {
+        if (error.code === "INVALID_METROLOGY_PARENT") {
+            return res.status(400).json({ error: "Volumetar mora pripadati aparatu, a AMN sonda rezervoaru iste stanice." });
+        }
         console.error("Error creating asset:", error);
         res.status(500).json({ error: "Error creating asset" });
     }
@@ -66,6 +69,9 @@ export const editAsset = async (req, res) => {
         if (!asset) return res.status(404).json({ error: "Asset not found" });
         res.json(asset);
     } catch (error) {
+        if (error.code === "INVALID_METROLOGY_PARENT") {
+            return res.status(400).json({ error: "Volumetar mora pripadati aparatu, a AMN sonda rezervoaru iste stanice." });
+        }
         console.error("Error updating asset:", error);
         res.status(500).json({ error: "Error updating asset" });
     }
@@ -77,6 +83,9 @@ export const removeAsset = async (req, res) => {
         if (!asset) return res.status(404).json({ error: "Asset not found" });
         res.json({ message: "Asset deleted" });
     } catch (error) {
+        if (error.code === "23503") {
+            return res.status(409).json({ error: "Oprema ima povezane volumetre ili AMN sonde. Prvo uklonite ili premjestite povezanu opremu." });
+        }
         console.error("Error deleting asset:", error);
         res.status(500).json({ error: "Error deleting asset" });
     }

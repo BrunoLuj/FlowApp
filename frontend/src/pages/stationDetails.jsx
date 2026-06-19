@@ -46,6 +46,13 @@ const emptyAsset = {
   next_service_at: "",
   calibration_expires_at: "",
   warranty_expires_at: "",
+  metrology_type: "",
+  metrology_enabled: true,
+  verification_interval_months: 12,
+  parent_asset_id: "",
+  capacity: "",
+  measurement_range: "",
+  controller_serial_number: "",
   notes: "",
 };
 
@@ -122,6 +129,9 @@ const StationDetails = () => {
       next_service_at: dateInput(asset.next_service_at),
       calibration_expires_at: dateInput(asset.calibration_expires_at),
       warranty_expires_at: dateInput(asset.warranty_expires_at),
+      capacity: asset.metadata?.capacity || "",
+      measurement_range: asset.metadata?.measurement_range || "",
+      controller_serial_number: asset.metadata?.controller_serial_number || "",
     } : emptyAsset);
     setShowAssetForm(true);
   };
@@ -130,11 +140,20 @@ const StationDetails = () => {
     event.preventDefault();
     setSaving(true);
     try {
+      const payload = {
+        ...assetForm,
+        metadata: {
+          ...(assetForm.metadata || {}),
+          capacity: assetForm.capacity || null,
+          measurement_range: assetForm.measurement_range || null,
+          controller_serial_number: assetForm.controller_serial_number || null,
+        },
+      };
       if (assetForm.id) {
-        await updateAsset(assetForm.id, assetForm);
+        await updateAsset(assetForm.id, payload);
         toast.success("Oprema je ažurirana.");
       } else {
-        await createAsset(id, assetForm);
+        await createAsset(id, payload);
         toast.success("Oprema je dodana u registar.");
       }
       setShowAssetForm(false);
@@ -382,6 +401,7 @@ const StationDetails = () => {
                       <td className="px-5 py-4">
                         <button onClick={() => canManageAssets && openAssetForm(asset)} className="text-left">
                           <div className="font-bold text-slate-800">{asset.name}</div>
+                          {asset.metrology_type && <div className={`mt-1 text-xs font-semibold ${asset.metrology_enabled ? "text-indigo-600" : "text-slate-400"}`}>{asset.metrology_type}{asset.parent_asset_name ? ` · pripada: ${asset.parent_asset_name}` : ""} · {asset.metrology_enabled ? "uključeno u mjeriteljstvo" : "isključeno iz mjeriteljstva"}</div>}
                           <div className="text-xs text-slate-500">{asset.category} · {[asset.manufacturer, asset.model].filter(Boolean).join(" ") || "—"}</div>
                         </button>
                       </td>
@@ -400,6 +420,7 @@ const StationDetails = () => {
                       {(canManageAssets || canDeleteAssets || canManageAssetQr) && (
                         <td className="flex gap-1 px-5 py-4">
                           {canManageAssetQr && <button onClick={() => showQr(asset)} className="rounded-lg p-2 text-indigo-600 hover:bg-indigo-50" title="QR oznaka"><FaQrcode /></button>}
+                          {asset.metrology_type && permissions.includes("view_metrology_cases") && <button onClick={() => navigate(`/metrology-cases?station=${id}&client=${data.station.client_id}&type=${asset.metrology_type}`)} className="rounded-lg p-2 text-emerald-600 hover:bg-emerald-50" title="Mjeriteljski predmet"><FaClipboardList /></button>}
                           {canDeleteAssets && <button onClick={() => removeAsset(asset)} className="rounded-lg p-2 text-red-500 hover:bg-red-50"><FaTrash /></button>}
                         </td>
                       )}
@@ -509,10 +530,17 @@ const StationDetails = () => {
               <Field label="Službena oznaka"><input value={assetForm.official_mark} onChange={(e) => setAssetForm({ ...assetForm, official_mark: e.target.value })} /></Field>
               <Field label="Gorivo"><input value={assetForm.fuel_type} onChange={(e) => setAssetForm({ ...assetForm, fuel_type: e.target.value })} /></Field>
               <Field label="Lokacija na stanici"><input value={assetForm.location_description} onChange={(e) => setAssetForm({ ...assetForm, location_description: e.target.value })} /></Field>
+              <Field label="Mjeriteljski tip"><select value={assetForm.metrology_type || ""} onChange={(e) => { const type=e.target.value; setAssetForm({ ...assetForm, metrology_type:type, parent_asset_id:"", verification_interval_months:{volumeter:12,dispenser:12,tank:72,amn_probe:24,dipstick:24}[type]||12 }); }}><option value="">Nije mjeriteljska oprema</option><option value="dispenser">Aparat / agregat</option><option value="volumeter">Volumetar</option><option value="tank">Rezervoar</option><option value="amn_probe">AMN sonda</option><option value="dipstick">Mjerna letva</option><option value="standard">Etalon / mjerna oprema</option></select></Field>
+              {assetForm.metrology_type && <label className="flex items-center gap-3 rounded-xl bg-indigo-50 p-3"><input type="checkbox" checked={assetForm.metrology_enabled !== false} onChange={(e) => setAssetForm({ ...assetForm, metrology_enabled: e.target.checked })} /><span className="text-sm font-semibold text-indigo-800">Uključeno u mjeriteljski centar</span></label>}
+              {assetForm.metrology_type && <Field label="Period kalibracije / ovjere (mjeseci)"><input type="number" min="1" value={assetForm.verification_interval_months || 12} onChange={(e) => setAssetForm({ ...assetForm, verification_interval_months: e.target.value })} /></Field>}
+              {["volumeter","amn_probe"].includes(assetForm.metrology_type) && <Field label={assetForm.metrology_type === "volumeter" ? "Pripada aparatu *" : "Pripada rezervoaru *"}><select required value={assetForm.parent_asset_id || ""} onChange={(e) => setAssetForm({ ...assetForm, parent_asset_id: e.target.value })}><option value="">Odaberite</option>{data.assets.filter((asset) => asset.id !== assetForm.id && asset.metrology_type === (assetForm.metrology_type === "volumeter" ? "dispenser" : "tank")).map((asset) => <option key={asset.id} value={asset.id}>{asset.name} · {asset.serial_number || asset.asset_code || "bez oznake"}</option>)}</select></Field>}
+              {assetForm.metrology_type === "tank" && <Field label="Nazivna zapremina (L)"><input type="number" value={assetForm.capacity || ""} onChange={(e) => setAssetForm({ ...assetForm, capacity: e.target.value })} /></Field>}
+              {["volumeter","dipstick"].includes(assetForm.metrology_type) && <Field label="Mjerni opseg"><input value={assetForm.measurement_range || ""} onChange={(e) => setAssetForm({ ...assetForm, measurement_range: e.target.value })} /></Field>}
+              {assetForm.metrology_type === "amn_probe" && <Field label="Serijski broj kontrolera"><input value={assetForm.controller_serial_number || ""} onChange={(e) => setAssetForm({ ...assetForm, controller_serial_number: e.target.value })} /></Field>}
               <Field label="Status"><select value={assetForm.status} onChange={(e) => setAssetForm({ ...assetForm, status: e.target.value })}><option value="active">Aktivno</option><option value="inactive">Neaktivno</option><option value="out_of_service">Izvan funkcije</option></select></Field>
               <Field label="Kritičnost"><select value={assetForm.criticality} onChange={(e) => setAssetForm({ ...assetForm, criticality: e.target.value })}><option value="low">Niska</option><option value="normal">Normalna</option><option value="high">Visoka</option><option value="critical">Kritična</option></select></Field>
               <Field label="Sljedeći servis"><input type="date" value={assetForm.next_service_at} onChange={(e) => setAssetForm({ ...assetForm, next_service_at: e.target.value })} /></Field>
-              <Field label="Istek ovjere / kalibracije"><input type="date" value={assetForm.calibration_expires_at} onChange={(e) => setAssetForm({ ...assetForm, calibration_expires_at: e.target.value })} /></Field>
+              <Field label="Naredna kalibracija / ovjera"><input type="date" value={assetForm.calibration_expires_at} onChange={(e) => setAssetForm({ ...assetForm, calibration_expires_at: e.target.value })} /></Field>
               <Field label="Istek jamstva"><input type="date" value={assetForm.warranty_expires_at} onChange={(e) => setAssetForm({ ...assetForm, warranty_expires_at: e.target.value })} /></Field>
               <label className="md:col-span-3"><span className="mb-2 block text-sm font-semibold text-slate-700">Napomena</span><textarea rows={3} value={assetForm.notes} onChange={(e) => setAssetForm({ ...assetForm, notes: e.target.value })} className="w-full rounded-xl border border-slate-300 p-3" /></label>
             </div>

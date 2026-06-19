@@ -8,9 +8,9 @@ export const getOverview = async (clientId = null) => {
     const [summary, dueAssets, recent] = await Promise.all([
         pool.query(
             `SELECT
-                COUNT(*) FILTER (WHERE ea.metrology_required)::int required_assets,
-                COUNT(*) FILTER (WHERE ea.metrology_required AND ea.calibration_expires_at<CURRENT_DATE)::int expired,
-                COUNT(*) FILTER (WHERE ea.metrology_required AND ea.calibration_expires_at BETWEEN CURRENT_DATE AND CURRENT_DATE+30)::int due_30_days,
+                COUNT(*) FILTER (WHERE ea.metrology_required AND ea.metrology_enabled)::int required_assets,
+                COUNT(*) FILTER (WHERE ea.metrology_required AND ea.metrology_enabled AND ea.calibration_expires_at<CURRENT_DATE)::int expired,
+                COUNT(*) FILTER (WHERE ea.metrology_required AND ea.metrology_enabled AND ea.calibration_expires_at BETWEEN CURRENT_DATE AND CURRENT_DATE+30)::int due_30_days,
                 COUNT(*) FILTER (WHERE mi.status IN ('draft','in_progress'))::int open_inspections,
                 COUNT(*) FILTER (WHERE mi.result='failed' AND mi.status IN ('completed','approved'))::int failed
              FROM equipment_assets ea
@@ -31,7 +31,7 @@ export const getOverview = async (clientId = null) => {
              FROM equipment_assets ea
              LEFT JOIN projects p ON p.id=ea.station_id
              JOIN clients c ON c.id=ea.client_id
-             WHERE ea.metrology_required ${clientId ? "AND ea.client_id=$1" : ""}
+             WHERE ea.metrology_required AND ea.metrology_enabled ${clientId ? "AND ea.client_id=$1" : ""}
              ORDER BY ea.calibration_expires_at NULLS FIRST,c.company_name,p.name,ea.name`,
             scope.values
         ),
@@ -107,7 +107,7 @@ export const generateDueMetrologyOrders = async (user = { userId: null, clientId
          FROM equipment_assets ea
          JOIN clients c ON c.id=ea.client_id
          JOIN projects p ON p.id=ea.station_id
-         WHERE ea.metrology_required AND ea.metrology_auto_order
+         WHERE ea.metrology_required AND ea.metrology_enabled AND ea.metrology_auto_order
            AND ea.calibration_expires_at IS NOT NULL
            AND ea.calibration_expires_at<=CURRENT_DATE+ea.metrology_lead_days
            ${user.clientId?"AND ea.client_id=$1":""}

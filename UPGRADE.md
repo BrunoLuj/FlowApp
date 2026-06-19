@@ -44,6 +44,12 @@ vezana uz jedan rezervoar; jedan aparat može imati više volumetara, ali jednu
 verifikacijsku markicu i plombu. Posebne mjerne tablice primjenjuju se na AMN,
 volumetre, mjerne letve i rezervoare.
 
+Registar opreme benzinske stanice izravno je povezan s mjeriteljskim centrom.
+Hijerarhija stanice vodi aparate s pripadajućim volumetrima te rezervoare s
+pripadajućim AMN sondama; mjeriteljski predmet može odabrati isključivo opremu
+odabrane stanice. Svaki volumetar, AMN sonda, rezervoar i mjerna letva imaju
+zaseban status uključen/isključen, interval ovjere i datum naredne kalibracije.
+
 ## Pokretanje
 
 Backend koristi `backend/.env`:

@@ -1,4 +1,5 @@
 import React,{useCallback,useEffect,useState} from "react";
+import {useSearchParams} from "react-router-dom";
 import {FaCertificate,FaClipboardList,FaFileAlt,FaPlus,FaSave,FaStamp} from "react-icons/fa";
 import {toast} from "sonner";
 import useStore from "../store";
@@ -16,6 +17,7 @@ const date=value=>value?new Date(value).toLocaleDateString("hr-HR"):"—";
 
 const MetrologyCases=()=>{
   const permissions=useStore(state=>state.permissions);
+  const [searchParams]=useSearchParams();
   const canManage=permissions.includes("manage_metrology_cases");
   const canGenerate=permissions.includes("generate_metrology_case_documents");
   const [cases,setCases]=useState([]);
@@ -34,6 +36,16 @@ const MetrologyCases=()=>{
     finally{setLoading(false);}
   },[]);
   useEffect(()=>{load();},[load]);
+  useEffect(()=>{
+    const station=searchParams.get("station");
+    const client=searchParams.get("client");
+    const rawType=searchParams.get("type");
+    const type={dispenser:"volumeter",volumeter:"volumeter",tank:"tank",amn_probe:"amn",dipstick:"dipstick"}[rawType];
+    if(station&&client&&type){
+      setForm(current=>({...current,station_id:station,client_id:client,service_type:type}));
+      setShowNew(true);
+    }
+  },[searchParams]);
   const open=async id=>{
     try{const response=await getMetrologyCase(id);setSelected(response.data);setForm({...response.data,inspector_ids:(response.data.inspectors||[]).map(item=>item.id)});}
     catch{toast.error("Predmet nije moguće učitati.");}
@@ -77,7 +89,10 @@ const CaseEditor=({record,form,setForm,options,canManage,canGenerate,onBack,onRe
     try{const response=await generateMetrologyCaseDocument(record.id,type);const file=await downloadAttachment(response.data.id);downloadBlob(file.data,response.data.file_name);toast.success("Dokument je generiran i arhiviran.");await onReload();}
     catch(error){toast.error(error.response?.data?.error||"Dokument nije moguće generirati.");}
   };
-  const available=sources[record.service_type].filter(source=>Number(source.client_id)===Number(record.client_id));
+  const available=sources[record.service_type].filter(source=>
+    Number(source.client_id)===Number(record.client_id)
+    && (!record.station_id||Number(source.station_id)===Number(record.station_id))
+  );
   return <div className="min-h-screen bg-slate-100 px-4 pb-10 pt-24 sm:ml-16 sm:px-7"><div className="mx-auto max-w-7xl">
     <button onClick={onBack} className="mb-4 font-bold text-indigo-600">← Povratak na predmete</button>
     <div className="rounded-2xl bg-slate-900 p-6 text-white"><div className="flex flex-wrap justify-between gap-4"><div><p className="text-indigo-300">{serviceLabels[record.service_type]}</p><h1 className="text-2xl font-bold">{record.case_number}</h1><p className="text-slate-300">{record.company_name} · {record.station_name}</p></div><div className="text-right"><div className="font-bold">{statusLabels[record.status]}</div><div className={record.result==="passed"?"text-emerald-300":record.result==="failed"?"text-rose-300":"text-slate-300"}>{record.result}</div></div></div></div>
@@ -105,7 +120,7 @@ const measurementFields={
   tank:[{key:"filling_mass",label:"Masa punjenja"},{key:"cumulative_volume",label:"Kumulativno L"},{key:"height_mm",label:"Visina mm"},{key:"tank_temperature",label:"Temp. rezervoara"},{key:"flow_l_min",label:"Protok l/min"}],
 };
 const measurementTemplate=serviceType=>({measurement_group:serviceType==="volumeter"?"flow_test":serviceType==="tank"?"volumetric_fill":"comparison",values:{},passed:true});
-const fromSource=(serviceType,source)=>({item_type:{volumeter:"volumeter",dipstick:"dipstick",tank:"tank",amn:"amn_probe"}[serviceType],source_table:{volumeter:"volumeters",dipstick:"mjerna_letva",tank:"rezervoar",amn:"sonda"}[serviceType],source_id:source.id,name:source.name,manufacturer:source.manufacturer,model:source.volumetype||source.tanktype||source.sondatype,serial_number:source.serial_number,official_mark:source.officialmark,apparatus_serial_number:serviceType==="volumeter"?source.serial_number_device:serviceType==="amn"?source.serial_number_controller:"",tank_reference:source.tank||"",fuel_type:source.fuel||"",nominal_capacity:source.capacity||"",measurement_range:source.length||source.volume||"",verification_mark:"",seal_number:"",measurements:[measurementTemplate(serviceType)],checks:defaultChecks(serviceType)});
+const fromSource=(serviceType,source)=>({item_type:{volumeter:"volumeter",dipstick:"dipstick",tank:"tank",amn:"amn_probe"}[serviceType],source_table:"equipment_assets",source_id:source.id,name:source.name,manufacturer:source.manufacturer,model:source.model,serial_number:source.serial_number,official_mark:source.official_mark,apparatus_serial_number:serviceType==="volumeter"?(source.parent_serial_number||source.parent_name||""):serviceType==="amn"?(source.metadata?.controller_serial_number||""):"",tank_reference:serviceType==="amn"?(source.parent_serial_number||source.parent_name||""):"",fuel_type:source.fuel_type||"",nominal_capacity:source.metadata?.capacity||"",measurement_range:source.metadata?.measurement_range||"",verification_mark:"",seal_number:"",measurements:[measurementTemplate(serviceType)],checks:defaultChecks(serviceType)});
 const defaultChecks=serviceType=>(serviceType==="volumeter"?[["flow","Provjera protoka"],["external","Spoljašnji pregled"],["leak","Provjera curenja"],["display","Pokazivač zapremine"]]:[["installation","Ugradnja"],["labels","Oznake"],["integrity","Integritet"]]).map(([check_code,label])=>({check_code,label,passed:true}));
 const ruleHint=type=>({amn:"Jedna sonda pripada jednom konkretnom rezervoaru.",volumeter:"Jedan aparat može sadržavati više volumetara; jedna markica i plomba vrijede za cijeli aparat.",dipstick:"Svaka mjerna letva vodi se kao zasebno mjerilo.",tank:"Svaki rezervoar ima vlastitu volumetrijsku tablicu i period od 6 godina."}[type]);
 const documentButtons=status=>[{type:"inspection_request",label:"Zahtjev",icon:FaFileAlt},{type:"inspection_work_order",label:"Radni nalog",icon:FaClipboardList},...(status==="approved"?[{type:"inspection_report",label:"Izvještaj",icon:FaFileAlt},{type:"inspection_certificate",label:"Certifikat inspekcije",icon:FaCertificate},{type:"verification_certificate",label:"Certifikat verifikacije",icon:FaStamp}]:[])];
