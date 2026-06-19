@@ -5,6 +5,7 @@ import {
   FaChartLine,
   FaCog,
   FaFileInvoiceDollar,
+  FaFolderOpen,
   FaHeadset,
   FaProjectDiagram,
   FaShieldAlt,
@@ -34,6 +35,7 @@ export const menu = [
     items: [
       { label: "Servisni centar", link: "/service-center", icon: <FaHeadset />, permission: "view_service_center" },
       { label: "Radni nalozi", link: "/work-order", icon: <FaTasks />, permission: "view_work_orders" },
+      { label: "Dokumentni centar", link: "/documents", icon: <FaFolderOpen />, permission: "view_document_center" },
       { label: "Preventivno održavanje", link: "/maintenance", icon: <FaCalendarCheck />, permission: "view_maintenance_plans" },
     ],
   },

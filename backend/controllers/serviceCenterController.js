@@ -110,6 +110,9 @@ export const uploadDocument = async (req, res) => {
 
     const documentData = {
         ...req.body,
+        tags: req.body.tags
+            ? req.body.tags.split(",").map((tag) => tag.trim()).filter(Boolean)
+            : [],
         file_name: req.file.originalname,
         storage_key: req.file.filename,
         mime_type: req.file.mimetype,
