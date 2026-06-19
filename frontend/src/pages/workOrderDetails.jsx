@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   FaArrowLeft, FaCar, FaCheck, FaClipboardCheck, FaDownload,
-  FaFilePdf, FaPaperclip, FaPen, FaPlus, FaSave, FaTools,
+  FaFilePdf, FaHistory, FaPaperclip, FaPen, FaPlus, FaSave, FaTools,
 } from "react-icons/fa";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
@@ -13,6 +13,7 @@ import {
   addWorkOrderMaterial,
   completeWorkOrder,
   getWorkOrder,
+  getWorkOrderHistory,
   updateWorkOrderChecklist,
   updateWorkOrderFieldData,
 } from "../services/workorderServices";
@@ -47,6 +48,7 @@ const WorkOrderDetails = () => {
   const canRecordMaterial = permissions.includes("record_work_order_material");
   const canEditFieldReport = permissions.includes("edit_work_order_field_report");
   const canComplete = permissions.includes("complete_work_orders");
+  const canViewHistory = permissions.includes("view_work_order_history");
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [savingField, setSavingField] = useState(false);
@@ -62,17 +64,20 @@ const WorkOrderDetails = () => {
   });
   const [fieldData, setFieldData] = useState(emptyFieldData);
   const [attachmentFile, setAttachmentFile] = useState(null);
+  const [history, setHistory] = useState([]);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [response, inventoryResponse] = await Promise.all([
+      const [response, inventoryResponse, historyResponse] = await Promise.all([
         getWorkOrder(id),
         getAvailableInventory().catch(() => ({ data: [] })),
+        canViewHistory ? getWorkOrderHistory(id).catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
       ]);
       const loaded = response.data;
       setOrder(loaded);
       setAvailableInventory(inventoryResponse.data || []);
+      setHistory(historyResponse.data || []);
       setFieldData({
         arrival_at: toLocalInput(loaded.arrival_at),
         departure_at: toLocalInput(loaded.departure_at),
@@ -92,7 +97,7 @@ const WorkOrderDetails = () => {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [canViewHistory, id]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -400,6 +405,21 @@ const WorkOrderDetails = () => {
             {canEditFieldReport && <><input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx" onChange={(event) => setAttachmentFile(event.target.files?.[0] || null)} className="mt-3 w-full rounded-xl border border-slate-300 p-2 text-sm" />
             <button type="button" disabled={!attachmentFile} onClick={addAttachment} className="mt-2 w-full rounded-xl bg-indigo-600 py-3 font-semibold text-white disabled:opacity-40">Učitaj prilog</button></>}
           </Card>
+
+          {canViewHistory && <Card title="Povijest promjena" icon={FaHistory}>
+            <div className="space-y-4">
+              {history.map((item) => (
+                <div key={item.event_key} className="relative border-l-2 border-indigo-100 pl-4">
+                  <span className="absolute -left-[5px] top-1 h-2 w-2 rounded-full bg-indigo-500" />
+                  <div className="text-sm font-semibold text-slate-800">{item.summary}</div>
+                  <div className="mt-1 text-xs text-slate-400">
+                    {item.user_name || "Sustav"} · {formatDateTime(item.created_at)}
+                  </div>
+                </div>
+              ))}
+              {!history.length && <div className="text-sm text-slate-400">Još nema evidentiranih promjena.</div>}
+            </div>
+          </Card>}
         </div>
       </div>
     </div>

@@ -5,6 +5,7 @@ export const getWorkOrders = async () => {
 };
 
 export const getWorkOrder = (id) => api.get(`/work-orders/${id}`);
+export const getWorkOrderHistory = (id) => api.get(`/work-orders/${id}/history`);
 export const addWorkOrderActivity = (id, activity) => api.post(`/work-orders/${id}/activities`, activity);
 export const addWorkOrderMaterial = (id, material) => api.post(`/work-orders/${id}/materials`, material);
 export const addWorkOrderChecklist = (id, item) => api.post(`/work-orders/${id}/checklist`, item);

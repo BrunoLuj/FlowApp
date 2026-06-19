@@ -1,5 +1,17 @@
 import { pool } from "../libs/database.js";
 
+const addWorkOrderAudit = async (database, workOrderId, userId, action, summary, changes = {}) => {
+    await database.query(
+        `INSERT INTO audit_logs
+            (user_id, client_id, entity_type, entity_id, action, summary, changes)
+         SELECT $1, p.client_id, 'work_order', $2, $3, $4, $5::jsonb
+         FROM work_orders wo
+         JOIN projects p ON p.id = COALESCE(wo.station_id, wo.project_id)
+         WHERE wo.id = $2::integer`,
+        [userId || null, String(workOrderId), action, summary, JSON.stringify(changes)]
+    );
+};
+
 export const getAllWorkOrders = async (clientId = null) => {
     try {
         // Dohvati sve work ordere zajedno s projektom i klijentom
@@ -146,6 +158,60 @@ export const getWorkOrderById = async (id, clientId = null) => {
         checklist: checklist.rows,
         attachments: attachments.rows,
     };
+};
+
+export const getWorkOrderHistory = async (id) => {
+    const result = await pool.query(
+        `SELECT event_key, action, summary, changes, created_at, user_name
+         FROM (
+            SELECT 'audit-' || log.id AS event_key, log.action, log.summary,
+                   log.changes, log.created_at,
+                   NULLIF(TRIM(CONCAT(u.firstname, ' ', u.lastname)), '') AS user_name
+            FROM audit_logs log
+            LEFT JOIN users u ON u.id = log.user_id
+            WHERE log.entity_type = 'work_order' AND log.entity_id = $1
+
+            UNION ALL
+
+            SELECT 'activity-' || activity.id, 'activity_added',
+                   'Evidentiran rad: ' || activity.description,
+                   jsonb_build_object('duration_minutes', activity.duration_minutes),
+                   activity.created_at,
+                   NULLIF(TRIM(CONCAT(u.firstname, ' ', u.lastname)), '')
+            FROM work_order_activities activity
+            LEFT JOIN users u ON u.id = activity.user_id
+            WHERE activity.work_order_id = $1::integer
+
+            UNION ALL
+
+            SELECT 'material-' || material.id, 'material_added',
+                   'Evidentiran materijal: ' || material.item_name,
+                   jsonb_build_object('quantity', material.quantity, 'unit', material.unit),
+                   material.created_at, NULL
+            FROM work_order_materials material
+            WHERE material.work_order_id = $1::integer
+
+            UNION ALL
+
+            SELECT 'checklist-' || item.id, 'checklist_completed',
+                   'Dovršena checklista: ' || item.label,
+                   '{}'::jsonb, item.completed_at,
+                   NULLIF(TRIM(CONCAT(u.firstname, ' ', u.lastname)), '')
+            FROM work_order_checklist_items item
+            LEFT JOIN users u ON u.id = item.completed_by
+            WHERE item.work_order_id = $1::integer AND item.completed = TRUE
+
+            UNION ALL
+
+            SELECT 'created-' || wo.id, 'created', 'Radni nalog je kreiran',
+                   jsonb_build_object('status', wo.status), wo.created_at, NULL
+            FROM work_orders wo
+            WHERE wo.id = $1::integer
+         ) history
+         ORDER BY created_at DESC, event_key DESC`,
+        [String(id)]
+    );
+    return result.rows;
 };
 
 export const addWorkOrderActivity = async (workOrderId, data, userId) => {
@@ -418,6 +484,19 @@ export const completeWorkOrder = async (id, data, userId) => {
             [result.rows[0].service_request_id]
             );
         }
+        if (result.rows[0]) {
+            await addWorkOrderAudit(
+                connection,
+                id,
+                userId,
+                "completed",
+                "Radni nalog je završen",
+                {
+                    status: "Completed",
+                    customer_signature_name: data.customer_signature_name || null,
+                }
+            );
+        }
         await connection.query("COMMIT");
         return result.rows[0];
     } catch (error) {
@@ -428,7 +507,7 @@ export const completeWorkOrder = async (id, data, userId) => {
     }
 };
 
-export const updateWorkOrderSchedule = async (id, data, clientId = null) => {
+export const updateWorkOrderSchedule = async (id, data, clientId = null, userId = null) => {
     const assignedTo = Array.isArray(data.assigned_to) ? data.assigned_to.map(Number).filter(Number.isInteger) : [];
     const scheduledStart = data.scheduled_start_at || null;
     const duration = Math.max(Number(data.estimated_duration_minutes) || 120, 15);
@@ -516,6 +595,23 @@ export const updateWorkOrderSchedule = async (id, data, clientId = null) => {
              RETURNING wo.*`,
             values
         );
+        if (result.rows[0]) {
+            await addWorkOrderAudit(
+                connection,
+                id,
+                userId,
+                "schedule_updated",
+                "Ažuriran raspored i dodjela radnog naloga",
+                {
+                    planned_date: data.planned_date || null,
+                    scheduled_start_at: scheduledStart,
+                    scheduled_end_at: scheduledEnd,
+                    estimated_duration_minutes: duration,
+                    assigned_to: assignedTo,
+                    dispatch_status: data.dispatch_status || null,
+                }
+            );
+        }
         await connection.query("COMMIT");
         return result.rows[0];
     } catch (error) {
