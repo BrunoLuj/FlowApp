@@ -7,6 +7,9 @@ Centralni dokumentni centar omogućuje pretragu po klijentu, stanici, vrsti i st
 valjanosti, čuva povijest verzija te automatski povezuje dokumente s rokovima.
 Obavijesti za aktivne rokove pojavljuju se na pragovima 60, 30, 15 i 7 dana prije isteka.
 
+Dispatch servisera daje tjedni pregled termina po tehničaru, evidenciju godišnjih
+odmora, bolovanja i edukacija te automatski sprječava dvostruku rezervaciju servisera.
+
 ## Pokretanje
 
 Backend koristi `backend/.env`:
