@@ -22,6 +22,10 @@ Mobilni serviserski portal prikazuje dodijeljene naloge, navigaciju, dolazak, po
 i završetak rada te terenske bilješke. PWA može se instalirati na mobitel, a događaji
 se offline spremaju na uređaj i idempotentno sinkroniziraju nakon povratka veze.
 
+Servisni PDF zapisnik generira se na backendu iz pohranjenih podataka naloga. Svako
+generiranje stvara numeriranu, nepromjenjivu verziju dokumenta, sprema je među priloge
+vidljive klijentu i bilježi događaj u audit povijesti radnog naloga.
+
 ## Pokretanje
 
 Backend koristi `backend/.env`:

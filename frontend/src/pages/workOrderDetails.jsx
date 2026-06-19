@@ -4,14 +4,13 @@ import {
   FaArrowLeft, FaCar, FaCheck, FaClipboardCheck, FaDownload,
   FaFilePdf, FaHistory, FaPaperclip, FaPen, FaPlus, FaSave, FaTools,
 } from "react-icons/fa";
-import { jsPDF } from "jspdf";
-import "jspdf-autotable";
 import { toast } from "sonner";
 import {
   addWorkOrderActivity,
   addWorkOrderChecklist,
   addWorkOrderMaterial,
   completeWorkOrder,
+  generateServiceReport,
   getWorkOrder,
   getWorkOrderHistory,
   updateWorkOrderChecklist,
@@ -49,6 +48,7 @@ const WorkOrderDetails = () => {
   const canEditFieldReport = permissions.includes("edit_work_order_field_report");
   const canComplete = permissions.includes("complete_work_orders");
   const canViewHistory = permissions.includes("view_work_order_history");
+  const canGenerateReport = permissions.includes("generate_service_reports");
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [savingField, setSavingField] = useState(false);
@@ -209,103 +209,11 @@ const WorkOrderDetails = () => {
   const generatePdf = async () => {
     setGeneratingPdf(true);
     try {
-      const currentOrder = { ...order, ...fieldData, ...completion };
-      const doc = new jsPDF();
-      const number = currentOrder.work_order_number || `WO-${currentOrder.id}`;
-      doc.setFillColor(15, 23, 42);
-      doc.rect(0, 0, 210, 34, "F");
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(19);
-      doc.text("SERVISNI ZAPISNIK", 14, 15);
-      doc.setFontSize(10);
-      doc.text(number, 14, 24);
-      doc.text(new Date().toLocaleDateString("hr-HR"), 196, 24, { align: "right" });
-
-      doc.setTextColor(15, 23, 42);
-      doc.autoTable({
-        startY: 42,
-        theme: "grid",
-        head: [["Podatak", "Vrijednost"]],
-        body: [
-          ["Klijent", currentOrder.client_name || "-"],
-          ["Benzinska stanica", `${currentOrder.station_name || "-"}, ${currentOrder.address || ""} ${currentOrder.city || ""}`],
-          ["Oprema", currentOrder.asset_name || "-"],
-          ["Vrsta / naslov", `${currentOrder.type || "-"} / ${currentOrder.title || "-"}`],
-          ["Dolazak / odlazak", `${formatDateTime(currentOrder.arrival_at)} / ${formatDateTime(currentOrder.departure_at)}`],
-          ["Kilometraza", `${currentOrder.odometer_start || "-"} - ${currentOrder.odometer_end || "-"} km (put: ${currentOrder.travel_distance_km || "-"} km)`],
-          ["Vrijeme puta", `${currentOrder.travel_time_minutes || 0} min`],
-        ],
-        headStyles: { fillColor: [79, 70, 229] },
-      });
-
-      doc.autoTable({
-        startY: doc.lastAutoTable.finalY + 7,
-        head: [["Checklista", "Status"]],
-        body: currentOrder.checklist.length
-          ? currentOrder.checklist.map((item) => [item.label, item.completed ? "Izvrseno" : "Nije izvrseno"])
-          : [["Nema stavki", "-"]],
-        headStyles: { fillColor: [15, 23, 42] },
-      });
-
-      doc.autoTable({
-        startY: doc.lastAutoTable.finalY + 7,
-        head: [["Izvrseni rad", "Trajanje"]],
-        body: currentOrder.activities.length
-          ? currentOrder.activities.map((item) => [item.description, `${item.duration_minutes || 0} min`])
-          : [["Nema evidentiranih aktivnosti", "-"]],
-        headStyles: { fillColor: [15, 23, 42] },
-      });
-
-      doc.autoTable({
-        startY: doc.lastAutoTable.finalY + 7,
-        head: [["Materijal", "Kolicina"]],
-        body: currentOrder.materials.length
-          ? currentOrder.materials.map((item) => [item.item_name, `${item.quantity} ${item.unit}`])
-          : [["Nema utrosenog materijala", "-"]],
-        headStyles: { fillColor: [15, 23, 42] },
-      });
-
-      let y = doc.lastAutoTable.finalY + 10;
-      if (y > 235) {
-        doc.addPage();
-        y = 20;
-      }
-      doc.setFontSize(11);
-      doc.setFont(undefined, "bold");
-      doc.text("Zavrsna napomena", 14, y);
-      doc.setFont(undefined, "normal");
-      doc.setFontSize(9);
-      const notes = [currentOrder.field_notes, currentOrder.completion_notes].filter(Boolean).join("\n") || "-";
-      doc.text(doc.splitTextToSize(notes, 180), 14, y + 7);
-      y += Math.max(22, doc.splitTextToSize(notes, 180).length * 5 + 12);
-
-      if (currentOrder.customer_signature_data) {
-        if (y > 245) {
-          doc.addPage();
-          y = 20;
-        }
-        doc.setFont(undefined, "bold");
-        doc.setFontSize(10);
-        doc.text("Potvrda klijenta", 14, y);
-        doc.addImage(currentOrder.customer_signature_data, "PNG", 14, y + 4, 65, 24);
-        doc.setFont(undefined, "normal");
-        doc.text(currentOrder.customer_signature_name || "", 14, y + 33);
-      }
-
-      const blob = doc.output("blob");
-      const file = new File([blob], `servisni-zapisnik-${number}.pdf`, { type: "application/pdf" });
-      await uploadAttachment("work-order", id, {
-        file,
-        title: `Servisni zapisnik ${number}`,
-        visible_to_client: true,
-      });
-      await updateWorkOrderFieldData(id, {
-        ...fieldData,
-        ...completion,
-        report_generated: true,
-      });
-      toast.success("PDF zapisnik je generiran i spremljen među priloge.");
-      load();
+      const saved = await saveFieldData();
+      if (!saved) return;
+      const response = await generateServiceReport(id);
+      toast.success(`PDF zapisnik v${response.data.version_no} je generiran na serveru.`);
+      await load();
     } catch (error) {
       toast.error(error.response?.data?.error || "PDF zapisnik nije moguće generirati.");
     } finally {
@@ -387,7 +295,7 @@ const WorkOrderDetails = () => {
             <input disabled={!canEditFieldReport} value={completion.customer_signature_name} onChange={(e) => setCompletion({ ...completion, customer_signature_name: e.target.value })} placeholder="Ime osobe koja potvrđuje rad" className="mt-2 w-full rounded-xl border p-3 disabled:bg-slate-100" />
             <SignaturePad disabled={!canEditFieldReport} value={completion.customer_signature_data} onChange={(value) => setCompletion({ ...completion, customer_signature_data: value })} />
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              {canEditFieldReport && <button type="button" disabled={generatingPdf} onClick={generatePdf} className="flex items-center justify-center gap-2 rounded-xl bg-rose-600 py-3 font-bold text-white disabled:opacity-50"><FaFilePdf /> {generatingPdf ? "Generiranje…" : "Generiraj PDF"}</button>}
+              {canGenerateReport && <button type="button" disabled={generatingPdf || savingField} onClick={generatePdf} className="flex items-center justify-center gap-2 rounded-xl bg-rose-600 py-3 font-bold text-white disabled:opacity-50"><FaFilePdf /> {generatingPdf ? "Generiranje na serveru…" : "Generiraj PDF zapisnik"}</button>}
               {canComplete && <button type="button" disabled={order.status === "Completed"} onClick={finish} className="rounded-xl bg-emerald-600 py-3 font-bold text-white disabled:bg-slate-300">{order.status === "Completed" ? "Nalog je završen" : "Završi nalog"}</button>}
             </div>
           </Card>
@@ -396,7 +304,10 @@ const WorkOrderDetails = () => {
             <div className="space-y-2">
               {order.attachments?.map((item) => (
                 <button key={item.id} onClick={() => getAttachment(item)} className="flex w-full items-center justify-between rounded-xl border border-slate-200 p-3 text-left hover:bg-slate-50">
-                  <span className="min-w-0 truncate text-sm font-semibold text-slate-700">{item.title || item.file_name}</span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-semibold text-slate-700">{item.title || item.file_name}</span>
+                    {item.system_generated && <span className="mt-1 block text-xs font-bold text-emerald-600">Serverski zapisnik · v{item.version_no}</span>}
+                  </span>
                   <FaDownload className="shrink-0 text-indigo-600" />
                 </button>
               ))}

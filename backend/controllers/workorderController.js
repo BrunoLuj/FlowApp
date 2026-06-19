@@ -1,4 +1,9 @@
 import * as workOrdersModel from '../models/workorderModel.js';
+import crypto from "crypto";
+import fs from "fs/promises";
+import path from "path";
+import { uploadsRoot, removeUploadedFile } from "../middleware/uploadMiddleware.js";
+import { buildServiceReportPdf } from "../libs/serviceReportPdf.js";
 
 // GET /work-orders
 export const getWorkOrders = async (req, res) => {
@@ -119,6 +124,44 @@ export const getWorkOrderHistory = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Error fetching work order history" });
+    }
+};
+
+export const generateServiceReport = async (req, res) => {
+    let storageKey;
+    try {
+        const order = await workOrdersModel.getWorkOrderById(req.params.id, req.user.clientId);
+        if (!order) return res.status(404).json({ error: "Work order not found" });
+        const version = await workOrdersModel.getNextServiceReportVersion(req.params.id);
+        const buffer = await buildServiceReportPdf(order, version);
+        const safeNumber = (order.work_order_number || `WO-${order.id}`)
+            .replace(/[^a-zA-Z0-9_-]/g, "-");
+        storageKey = `${Date.now()}-${crypto.randomUUID()}.pdf`;
+        const fileName = `servisni-zapisnik-${safeNumber}-v${version}.pdf`;
+        await fs.writeFile(path.join(uploadsRoot, storageKey), buffer, { flag: "wx" });
+        const attachment = await workOrdersModel.registerGeneratedServiceReport(
+            req.params.id,
+            {
+                version,
+                fileName,
+                storageKey,
+                fileSize: buffer.length,
+            },
+            req.user.userId,
+            req.user.clientId
+        );
+        if (!attachment) {
+            await removeUploadedFile(storageKey);
+            return res.status(404).json({ error: "Work order not found" });
+        }
+        res.status(201).json(attachment);
+    } catch (error) {
+        if (storageKey) await removeUploadedFile(storageKey);
+        if (error.code === "REPORT_VERSION_CONFLICT") {
+            return res.status(409).json({ error: "Report version changed. Please retry." });
+        }
+        console.error("Error generating service report:", error);
+        res.status(500).json({ error: "Error generating service report" });
     }
 };
 
