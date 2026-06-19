@@ -132,7 +132,10 @@ export const getPlanner = async ({ from, to, clientId = null }) => {
     const [orders, users, availability] = await Promise.all([
         pool.query(
             `SELECT wo.id, wo.work_order_number, wo.title, wo.type, wo.status,
-                    wo.planned_date, wo.start_date, wo.end_date, wo.assigned_to,
+                    TO_CHAR(wo.planned_date, 'YYYY-MM-DD') AS planned_date,
+                    TO_CHAR(wo.start_date, 'YYYY-MM-DD') AS start_date,
+                    TO_CHAR(wo.end_date, 'YYYY-MM-DD') AS end_date,
+                    wo.assigned_to,
                     wo.scheduled_start_at, wo.scheduled_end_at,
                     wo.estimated_duration_minutes, wo.dispatch_status, wo.dispatch_notes,
                     p.name AS station_name, p.city, p.address,
@@ -161,7 +164,12 @@ export const getPlanner = async ({ from, to, clientId = null }) => {
              ORDER BY firstname, lastname`
         ),
         pool.query(
-            `SELECT ta.*, CONCAT(u.firstname, ' ', u.lastname) AS technician_name
+            `SELECT ta.id, ta.user_id,
+                    TO_CHAR(ta.availability_date, 'YYYY-MM-DD') AS availability_date,
+                    TO_CHAR(ta.start_time, 'HH24:MI') AS start_time,
+                    TO_CHAR(ta.end_time, 'HH24:MI') AS end_time,
+                    ta.status, ta.note, ta.created_by, ta.created_at, ta.updated_at,
+                    CONCAT(u.firstname, ' ', u.lastname) AS technician_name
              FROM technician_availability ta
              JOIN users u ON u.id = ta.user_id
              WHERE ta.availability_date BETWEEN $1 AND $2
@@ -174,6 +182,30 @@ export const getPlanner = async ({ from, to, clientId = null }) => {
 };
 
 export const setTechnicianAvailability = async (data, userId) => {
+    if (data.id) {
+        const result = await pool.query(
+            `UPDATE technician_availability SET
+                user_id = $1,
+                availability_date = $2,
+                start_time = $3,
+                end_time = $4,
+                status = $5,
+                note = $6,
+                updated_at = NOW()
+             WHERE id = $7
+             RETURNING *`,
+            [
+                data.user_id,
+                data.availability_date,
+                data.start_time || "00:00",
+                data.end_time || "23:59",
+                data.status || "unavailable",
+                data.note || null,
+                data.id,
+            ]
+        );
+        return result.rows[0];
+    }
     const result = await pool.query(
         `INSERT INTO technician_availability (
             user_id, availability_date, start_time, end_time, status, note, created_by

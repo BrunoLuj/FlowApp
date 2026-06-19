@@ -70,7 +70,7 @@ export const updateWorkOrder = async (id, project_id, type, title, description, 
         `UPDATE work_orders
          SET project_id=$1, type=$2, title=$3, description=$4, assigned_to=$5, planned_date=$6, status=$7, updated_at=NOW()
          WHERE id=$8 RETURNING *`,
-         [project_id, type, title, description, assigned_to, planned_date, status, id]
+         [project_id, type, title, description, JSON.stringify(Array.isArray(assigned_to) ? assigned_to : []), planned_date, status, id]
     );
     return result.rows[0];
 };

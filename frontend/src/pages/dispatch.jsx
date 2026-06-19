@@ -6,6 +6,7 @@ import {
 import { toast } from "sonner";
 import useStore from "../store";
 import {
+  deleteTechnicianAvailability,
   getPlanner,
   saveTechnicianAvailability,
   updateWorkOrderSchedule,
@@ -74,7 +75,7 @@ const Dispatch = () => {
 
   const ordersBySlot = useMemo(() => planner.orders.reduce((result, order) => {
     const date = order.scheduled_start_at
-      ? String(order.scheduled_start_at).slice(0, 10)
+      ? isoDate(new Date(order.scheduled_start_at))
       : order.planned_date ? String(order.planned_date).slice(0, 10) : "unplanned";
     const assigned = order.assigned_to?.length ? order.assigned_to : ["unassigned"];
     assigned.forEach((userId) => {
@@ -85,7 +86,7 @@ const Dispatch = () => {
   }, {}), [planner.orders]);
 
   const availabilityBySlot = useMemo(() => planner.availability.reduce((result, item) => {
-    result[`${item.user_id}:${String(item.availability_date).slice(0, 10)}`] = item;
+    result[`${item.user_id}:${item.availability_date}`] = item;
     return result;
   }, {}), [planner.availability]);
 
@@ -127,6 +128,18 @@ const Dispatch = () => {
     }
   };
 
+  const removeAvailability = async () => {
+    if (!availabilityForm?.id) return;
+    try {
+      await deleteTechnicianAvailability(availabilityForm.id);
+      toast.success("Odsutnost je uklonjena.");
+      setAvailabilityForm(null);
+      load();
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Odsutnost nije moguće ukloniti.");
+    }
+  };
+
   const rows = [...planner.technicians, { id: "unassigned", firstname: "Nedodijeljeni", lastname: "nalozi" }];
 
   return (
@@ -165,7 +178,7 @@ const Dispatch = () => {
                       return <div key={slot} className={`min-h-32 border-r p-2 ${availability && availability.status !== "available" ? "bg-rose-50" : ""}`}>
                         {availability && availability.status !== "available" && <div className="mb-1 rounded bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700">{availability.status}{availability.note ? ` · ${availability.note}` : ""}</div>}
                         <div className="space-y-1">{(ordersBySlot[slot] || []).map((order) => <button key={order.id} onClick={() => canSchedule && openSchedule(order)} className={`w-full rounded-lg border px-2 py-1.5 text-left text-xs ${statusColor[order.status] || statusColor.New}`}><div className="flex items-center gap-1 font-bold"><FaClock /> {order.scheduled_start_at ? new Intl.DateTimeFormat("hr-HR", { hour: "2-digit", minute: "2-digit" }).format(new Date(order.scheduled_start_at)) : "Bez vremena"}</div><div className="truncate font-semibold">{order.title}</div><div className="truncate opacity-70">{order.station_name}</div></button>)}</div>
-                        {canManageAvailability && technician.id !== "unassigned" && <button onClick={() => setAvailabilityForm({ user_id: technician.id, availability_date: dateKey, start_time: "", end_time: "", status: availability?.status || "unavailable", note: availability?.note || "" })} className="mt-2 text-xs font-semibold text-slate-400 hover:text-indigo-600"><FaUserClock className="mr-1 inline" /> Odsutnost</button>}
+                        {canManageAvailability && technician.id !== "unassigned" && <button onClick={() => setAvailabilityForm({ id: availability?.id || null, user_id: technician.id, availability_date: dateKey, start_time: availability?.start_time || "", end_time: availability?.end_time || "", status: availability?.status || "unavailable", note: availability?.note || "" })} className="mt-2 text-xs font-semibold text-slate-400 hover:text-indigo-600"><FaUserClock className="mr-1 inline" /> {availability ? "Uredi odsutnost" : "Odsutnost"}</button>}
                       </div>;
                     })}
                   </div>
@@ -191,7 +204,7 @@ const Dispatch = () => {
           <Field label="Status"><select value={availabilityForm.status} onChange={(e) => setAvailabilityForm({ ...availabilityForm, status: e.target.value })}><option value="unavailable">Nedostupan</option><option value="vacation">Godišnji odmor</option><option value="sick_leave">Bolovanje</option><option value="training">Edukacija</option><option value="available">Dostupan</option></select></Field>
           <div className="grid grid-cols-2 gap-3"><Field label="Od"><input type="time" value={availabilityForm.start_time} onChange={(e) => setAvailabilityForm({ ...availabilityForm, start_time: e.target.value })} /></Field><Field label="Do"><input type="time" value={availabilityForm.end_time} onChange={(e) => setAvailabilityForm({ ...availabilityForm, end_time: e.target.value })} /></Field></div>
           <Field label="Napomena"><textarea rows={3} value={availabilityForm.note} onChange={(e) => setAvailabilityForm({ ...availabilityForm, note: e.target.value })} /></Field>
-          <button className="w-full rounded-xl bg-indigo-600 py-3 font-semibold text-white">Spremi raspoloživost</button>
+          <div className="flex gap-2">{availabilityForm.id && <button type="button" onClick={removeAvailability} className="flex-1 rounded-xl bg-red-50 py-3 font-semibold text-red-600">Ukloni</button>}<button className="flex-1 rounded-xl bg-indigo-600 py-3 font-semibold text-white">Spremi raspoloživost</button></div>
         </form>
       </Modal>}
     </div>

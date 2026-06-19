@@ -34,8 +34,16 @@ export const saveAvailability = async (req, res) => {
         return res.status(400).json({ error: "Technician and date are required" });
     }
     try {
-        res.json(await managementModel.setTechnicianAvailability(req.body, req.user.userId));
+        const item = await managementModel.setTechnicianAvailability(req.body, req.user.userId);
+        if (!item) return res.status(404).json({ error: "Availability record not found" });
+        res.json(item);
     } catch (error) {
+        if (error.code === "23505") {
+            return res.status(409).json({ error: "Za servisera već postoji odsutnost s istim početnim vremenom." });
+        }
+        if (error.code === "23514" || error.code === "22007") {
+            return res.status(400).json({ error: "Vrijeme završetka mora biti nakon vremena početka." });
+        }
         console.error("Error saving technician availability:", error);
         res.status(500).json({ error: "Error saving technician availability" });
     }
