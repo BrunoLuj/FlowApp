@@ -34,6 +34,10 @@ Preventivno održavanje podržava kalendarske, radne i hibridne cikluse. Sustav 
 očitanja opreme, automatski generira naloge u definiranom horizontu, čuva povijest
 svakog ciklusa te nakon završetka naloga računa novi datum i novo ciljno očitanje.
 
+Mjeriteljski centar povezuje ovjere, kalibracije i inspekcije s opremom i radnim
+nalozima. Vodi mjerne točke, tolerancije, automatski rezultat prolaz/pad, rok sljedeće
+ovjere te generira verzionirane PDF certifikate dostupne u dokumentaciji klijenta.
+
 ## Pokretanje
 
 Backend koristi `backend/.env`:

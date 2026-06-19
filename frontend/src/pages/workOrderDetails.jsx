@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   FaArrowLeft, FaCar, FaCheck, FaClipboardCheck, FaDownload,
-  FaFilePdf, FaHistory, FaPaperclip, FaPen, FaPlus, FaSave, FaTools,
+  FaFilePdf, FaFlask, FaHistory, FaPaperclip, FaPen, FaPlus, FaSave, FaTools,
 } from "react-icons/fa";
 import { toast } from "sonner";
 import {
@@ -293,6 +293,15 @@ const WorkOrderDetails = () => {
           </Card>
 
           <Card title="Potvrda klijenta" icon={FaPen}>
+            {order.asset_id && ["Calibration", "Inspection"].includes(order.type) && permissions.includes("manage_metrology_inspections") && order.status !== "Completed" && (
+              <button
+                type="button"
+                onClick={() => navigate(`/metrology?workOrder=${order.id}&asset=${order.asset_id}`)}
+                className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-300 bg-indigo-50 p-3 font-bold text-indigo-700"
+              >
+                <FaFlask /> Otvori mjeriteljski pregled
+              </button>
+            )}
             <textarea disabled={!canEditFieldReport} rows={4} value={completion.completion_notes} onChange={(e) => setCompletion({ ...completion, completion_notes: e.target.value })} placeholder="Završna napomena…" className="w-full rounded-xl border p-3 disabled:bg-slate-100" />
             {order.maintenance_plan_id && (
               <Field label={`Završno očitanje opreme${order.asset_meter_unit ? ` (${order.asset_meter_unit})` : ""}`}>

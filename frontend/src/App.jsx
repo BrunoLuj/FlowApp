@@ -38,6 +38,7 @@ import DocumentCenter from "./pages/documentCenter";
 import Dispatch from "./pages/dispatch";
 import MobileWorkOrders from "./pages/mobileWorkOrders";
 import EmailCenter from "./pages/emailCenter";
+import Metrology from "./pages/metrology";
 
 const secured = (permission, element) => (
     <RequirePermission permission={permission}>{element}</RequirePermission>
@@ -110,6 +111,7 @@ function App() {
                         <Route path="/management" element={secured("view_management", <Management />)} />
                         <Route path="/inventory" element={secured("view_inventory", <Inventory />)} />
                         <Route path="/maintenance" element={secured("view_maintenance_plans", <Maintenance />)} />
+                        <Route path="/metrology" element={secured("view_metrology_center", <Metrology />)} />
                         <Route path="/commercial" element={secured("view_commercial", <Commercial />)} />
                         <Route path="/forbidden" element={<Forbidden />} />
                     </Route>

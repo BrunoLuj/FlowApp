@@ -18,6 +18,7 @@ import commercialRoutes from "./commercialRoutes.js";
 import roleRoutes from "./roleRoutes.js";
 import documentCenterRoutes from "./documentCenterRoutes.js";
 import emailNotificationRoutes from "./emailNotificationRoutes.js";
+import metrologyRoutes from "./metrologyRoutes.js";
 
 const router = express.Router();
 
@@ -40,5 +41,6 @@ router.use("/commercial", commercialRoutes);
 router.use("/roles", roleRoutes);
 router.use("/document-center", documentCenterRoutes);
 router.use("/email-center", emailNotificationRoutes);
+router.use("/metrology", metrologyRoutes);
 
 export default router;

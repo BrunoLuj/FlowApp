@@ -267,6 +267,12 @@ export const completeWorkOrder = async (req, res) => {
         if (error.code === "INVALID_READING") {
             return res.status(400).json({ error: "Očitanje opreme mora biti pozitivan broj." });
         }
+        if (error.code === "METROLOGY_REQUIRED") {
+            return res.status(409).json({ error: "Za ovu opremu prvo kreirajte mjeriteljski pregled." });
+        }
+        if (error.code === "METROLOGY_INCOMPLETE") {
+            return res.status(409).json({ error: "Mjeriteljski pregled mora biti završen prije zatvaranja naloga." });
+        }
         console.error(error);
         res.status(500).json({ error: "Error completing work order" });
     }

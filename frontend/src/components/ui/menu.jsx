@@ -14,6 +14,7 @@ import {
   FaShieldAlt,
   FaTachometerAlt,
   FaTasks,
+  FaFlask,
   FaUserFriends,
   FaUsers,
 } from "react-icons/fa";
@@ -41,6 +42,7 @@ export const menu = [
       { label: "Radni nalozi", link: "/work-order", icon: <FaTasks />, permission: "view_work_orders" },
       { label: "Moji nalozi", link: "/mobile-work-orders", icon: <FaMobileAlt />, permission: "use_mobile_work_orders" },
       { label: "Dokumentni centar", link: "/documents", icon: <FaFolderOpen />, permission: "view_document_center" },
+      { label: "Mjeriteljski centar", link: "/metrology", icon: <FaFlask />, permission: "view_metrology_center" },
       { label: "Dispatch servisera", link: "/dispatch", icon: <FaRoute />, permission: "view_dispatch" },
       { label: "Preventivno održavanje", link: "/maintenance", icon: <FaCalendarCheck />, permission: "view_maintenance_plans" },
     ],

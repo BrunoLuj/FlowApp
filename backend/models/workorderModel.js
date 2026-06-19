@@ -1,5 +1,6 @@
 import { pool } from "../libs/database.js";
 import { completeMaintenanceCycle } from "./maintenanceModel.js";
+import { assertWorkOrderMetrologyComplete } from "./metrologyModel.js";
 
 const addWorkOrderAudit = async (database, workOrderId, userId, action, summary, changes = {}) => {
     await database.query(
@@ -729,6 +730,16 @@ export const completeWorkOrder = async (id, data, userId) => {
             error.code = "CHECKLIST_INCOMPLETE";
             throw error;
         }
+
+        const workOrder = (await connection.query(
+            "SELECT * FROM work_orders WHERE id=$1 FOR UPDATE",
+            [id]
+        )).rows[0];
+        if (!workOrder) {
+            await connection.query("ROLLBACK");
+            return null;
+        }
+        await assertWorkOrderMetrologyComplete(connection, workOrder);
 
         const result = await connection.query(
             `UPDATE work_orders SET
