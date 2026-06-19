@@ -26,6 +26,10 @@ Servisni PDF zapisnik generira se na backendu iz pohranjenih podataka naloga. Sv
 generiranje stvara numeriranu, nepromjenjivu verziju dokumenta, sprema je među priloge
 vidljive klijentu i bilježi događaj u audit povijesti radnog naloga.
 
+E-mail centar priprema potvrde zahtjeva, dodjele i podsjetnike naloga, SLA eskalacije,
+PDF zapisnike te podsjetnike na dokumente i ovjere. Poruke prolaze kroz pouzdani red
+slanja s retry pravilima, evidencijom pokušaja i podesivim skupinama primatelja.
+
 ## Pokretanje
 
 Backend koristi `backend/.env`:
@@ -35,6 +39,13 @@ DATABASE_URI=postgresql://...
 JWT_SECRET=...
 PORT=5000
 CORS_ORIGIN=http://localhost:3000
+APP_URL=http://localhost:3000
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=korisnik
+SMTP_PASS=lozinka
+SMTP_FROM="FlowApp servis <servis@example.com>"
 ```
 
 ```powershell

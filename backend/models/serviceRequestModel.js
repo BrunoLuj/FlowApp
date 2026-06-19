@@ -285,7 +285,7 @@ export const getServiceRequestById = async (id, clientId = null) => {
 
     const requestResult = await pool.query(
         `SELECT sr.*, ${slaColumns}, c.company_name AS client_name, p.name AS station_name,
-                ea.name AS asset_name, ea.asset_code,
+                ea.name AS asset_name, ea.asset_code, c.email AS client_email,
                 CONCAT(assignee.firstname, ' ', assignee.lastname) AS assigned_to_name,
                 CONCAT(requester.firstname, ' ', requester.lastname) AS requested_by_name
          FROM service_requests sr

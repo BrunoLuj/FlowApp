@@ -17,6 +17,7 @@ import maintenanceRoutes from "./maintenanceRoutes.js";
 import commercialRoutes from "./commercialRoutes.js";
 import roleRoutes from "./roleRoutes.js";
 import documentCenterRoutes from "./documentCenterRoutes.js";
+import emailNotificationRoutes from "./emailNotificationRoutes.js";
 
 const router = express.Router();
 
@@ -38,5 +39,6 @@ router.use("/maintenance", maintenanceRoutes);
 router.use("/commercial", commercialRoutes);
 router.use("/roles", roleRoutes);
 router.use("/document-center", documentCenterRoutes);
+router.use("/email-center", emailNotificationRoutes);
 
 export default router;

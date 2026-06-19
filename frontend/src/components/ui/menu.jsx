@@ -1,5 +1,6 @@
 import {
   FaBell,
+  FaEnvelope,
   FaBoxes,
   FaCalendarCheck,
   FaChartLine,
@@ -23,6 +24,7 @@ export const menu = [
     items: [
       { label: "Pregled", link: "/overview", icon: <FaTachometerAlt />, permission: "view_dashboard" },
       { label: "Obavijesti", link: "/notifications", icon: <FaBell />, permission: "view_dashboard" },
+      { label: "E-mail centar", link: "/email-center", icon: <FaEnvelope />, permission: "view_email_center" },
     ],
   },
   {

@@ -4,6 +4,7 @@ import fs from "fs/promises";
 import path from "path";
 import { uploadsRoot, removeUploadedFile } from "../middleware/uploadMiddleware.js";
 import { buildServiceReportPdf } from "../libs/serviceReportPdf.js";
+import { queueEmailEvent } from "../models/emailNotificationModel.js";
 
 // GET /work-orders
 export const getWorkOrders = async (req, res) => {
@@ -154,6 +155,29 @@ export const generateServiceReport = async (req, res) => {
             await removeUploadedFile(storageKey);
             return res.status(404).json({ error: "Work order not found" });
         }
+        try {
+            await queueEmailEvent({
+                eventType: "service_report_generated",
+                clientId: order.client_id,
+                entityType: "work_order",
+                entityId: order.id,
+                notificationBase: `service-report:${order.id}:v${attachment.version_no}`,
+                clientRecipients: [{ email: order.client_email, name: order.client_name }],
+                attachments: [{
+                    filename: attachment.file_name,
+                    storage_key: attachment.storage_key,
+                    content_type: attachment.mime_type,
+                }],
+                data: {
+                    work_order_number: order.work_order_number || `WO-${order.id}`,
+                    station_name: order.station_name,
+                    version: attachment.version_no,
+                    target_url: `/work-orders/${order.id}`,
+                },
+            });
+        } catch (emailError) {
+            console.error("Unable to queue service report email:", emailError);
+        }
         res.status(201).json(attachment);
     } catch (error) {
         if (storageKey) await removeUploadedFile(storageKey);
@@ -288,6 +312,32 @@ export const updateSchedule = async (req, res) => {
             req.user.userId
         );
         if (!order) return res.status(404).json({ error: "Work order not found" });
+        const fullOrder = await workOrdersModel.getWorkOrderById(req.params.id, req.user.clientId);
+        try {
+            await queueEmailEvent({
+                eventType: "work_order_assigned",
+                clientId: fullOrder.client_id,
+                entityType: "work_order",
+                entityId: fullOrder.id,
+                notificationBase: `work-order-assigned:${fullOrder.id}:${(fullOrder.assigned_to || []).join("-")}:${fullOrder.updated_at}`,
+                assigneeRecipients: (fullOrder.assigned_users || []).map((user) => ({
+                    email: user.email,
+                    name: `${user.firstname} ${user.lastname}`,
+                })),
+                data: {
+                    work_order_number: fullOrder.work_order_number || `WO-${fullOrder.id}`,
+                    title: fullOrder.title,
+                    client_name: fullOrder.client_name,
+                    station_name: fullOrder.station_name,
+                    scheduled_at: fullOrder.scheduled_start_at
+                        ? new Intl.DateTimeFormat("hr-HR", { dateStyle: "short", timeStyle: "short" }).format(new Date(fullOrder.scheduled_start_at))
+                        : fullOrder.planned_date || "-",
+                    target_url: `/work-orders/${fullOrder.id}`,
+                },
+            });
+        } catch (emailError) {
+            console.error("Unable to queue work order assignment email:", emailError);
+        }
         res.json(order);
     } catch (error) {
         if (error.code === "SCHEDULE_CONFLICT") {
