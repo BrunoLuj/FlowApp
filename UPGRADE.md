@@ -10,6 +10,10 @@ Obavijesti za aktivne rokove pojavljuju se na pragovima 60, 30, 15 i 7 dana prij
 Dispatch servisera daje tjedni pregled termina po tehničaru, evidenciju godišnjih
 odmora, bolovanja i edukacija te automatski sprječava dvostruku rezervaciju servisera.
 
+Detalj radnog naloga sadrži vremensku crtu promjena: kreiranje naloga, raspored i
+dodjelu servisera, terenske zapise, aktivnosti, materijal, checklistu i završetak.
+Pregled je zaštićen zasebnom permisijom `view_work_order_history`.
+
 ## Pokretanje
 
 Backend koristi `backend/.env`:

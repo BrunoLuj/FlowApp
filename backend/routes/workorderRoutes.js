@@ -4,6 +4,7 @@ import checkPermission from "../middleware/permissionsMiddleware.js";
 import {
     getWorkOrders,
     getWorkOrder,
+    getWorkOrderHistory,
     getActiveWorkOrders,
     addWorkOrder,
     addActivity,
@@ -21,6 +22,7 @@ const router = express.Router();
 
 router.get("/", authMiddleware, checkPermission('view_work_orders'), getWorkOrders);
 router.get("/active", authMiddleware, checkPermission('view_work_orders'), getActiveWorkOrders);
+router.get("/:id/history", authMiddleware, checkPermission('view_work_order_history'), getWorkOrderHistory);
 router.get("/:id", authMiddleware, checkPermission('view_work_orders'), getWorkOrder);
 router.post("/", authMiddleware, checkPermission('create_work_orders'), addWorkOrder);
 router.post("/:id/activities", authMiddleware, checkPermission('record_work_order_activity'), addActivity);

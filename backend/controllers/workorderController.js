@@ -78,6 +78,17 @@ export const getWorkOrder = async (req, res) => {
     }
 };
 
+export const getWorkOrderHistory = async (req, res) => {
+    try {
+        const order = await workOrdersModel.getWorkOrderById(req.params.id, req.user.clientId);
+        if (!order) return res.status(404).json({ error: "Work order not found" });
+        res.json(await workOrdersModel.getWorkOrderHistory(req.params.id));
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error fetching work order history" });
+    }
+};
+
 export const addActivity = async (req, res) => {
     if (!req.body.description?.trim()) return res.status(400).json({ error: "Description is required" });
     try {
@@ -197,7 +208,8 @@ export const updateSchedule = async (req, res) => {
         const order = await workOrdersModel.updateWorkOrderSchedule(
             req.params.id,
             req.body,
-            req.user.clientId
+            req.user.clientId,
+            req.user.userId
         );
         if (!order) return res.status(404).json({ error: "Work order not found" });
         res.json(order);
