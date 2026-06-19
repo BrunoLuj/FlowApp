@@ -72,7 +72,7 @@ export const getMyMobileWorkOrders = async (userId) => {
                 wo.scheduled_start_at, wo.scheduled_end_at,
                 wo.arrival_at, wo.departure_at, wo.field_notes,
                 p.name AS station_name, p.address, p.city,
-                c.company_name AS client_name, ea.name AS asset_name,
+                c.company_name AS client_name, c.email AS client_email, ea.name AS asset_name,
                 (
                     SELECT event.event_type
                     FROM work_order_mobile_events event
@@ -285,7 +285,7 @@ export const getWorkOrderById = async (id, clientId = null) => {
     }
 
     const orderResult = await pool.query(
-        `SELECT wo.*, p.name AS station_name, p.address, p.city,
+        `SELECT wo.*, p.client_id, p.name AS station_name, p.address, p.city,
                 c.company_name AS client_name, ea.name AS asset_name,
                 sr.request_number
          FROM work_orders wo
@@ -316,7 +316,7 @@ export const getWorkOrderById = async (id, clientId = null) => {
              WHERE work_order_id = $1 ORDER BY sort_order, id`,
             [id]
         ),
-        pool.query("SELECT id, firstname, lastname FROM users"),
+        pool.query("SELECT id, firstname, lastname, email FROM users"),
         pool.query(
             `SELECT id, title, file_name, mime_type, file_size,
                     visible_to_client, document_type, version_no,

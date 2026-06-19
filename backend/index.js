@@ -2,6 +2,10 @@ import cors from "cors";
 import express from "express";
 import dotenv from  "dotenv";
 import routes from "./routes/index.js"
+import {
+    generateScheduledEmails,
+    processEmailQueue,
+} from "./models/emailNotificationModel.js";
 
 dotenv.config();
 
@@ -46,5 +50,17 @@ app.use((error, _req, res, _next) => {
 app.listen(PORT, () =>{
     console.log(`Server running on ${PORT}`);
 });
+
+const runEmailWorker = async () => {
+    try {
+        await generateScheduledEmails();
+        await processEmailQueue(25);
+    } catch (error) {
+        console.error("Email worker failed:", error);
+    }
+};
+const emailWorker = setInterval(runEmailWorker, 5 * 60 * 1000);
+emailWorker.unref();
+setTimeout(runEmailWorker, 15 * 1000).unref();
 
 

@@ -1,4 +1,5 @@
 import * as serviceRequestModel from "../models/serviceRequestModel.js";
+import { queueEmailEvent } from "../models/emailNotificationModel.js";
 
 export const getServiceRequests = async (req, res) => {
     try {
@@ -25,6 +26,20 @@ export const addServiceRequest = async (req, res) => {
 
     try {
         const request = await serviceRequestModel.createServiceRequest(req.body, req.user);
+        const fullRequest = await serviceRequestModel.getServiceRequestById(request.id, req.user.clientId);
+        try {
+            await queueEmailEvent({
+                eventType: "service_request_created",
+                clientId: request.client_id,
+                entityType: "service_request",
+                entityId: request.id,
+                notificationBase: `service-request-created:${request.id}`,
+                clientRecipients: [{ email: fullRequest?.client_email, name: fullRequest?.client_name }],
+                data: { ...fullRequest, target_url: "/service-center" },
+            });
+        } catch (emailError) {
+            console.error("Unable to queue service request email:", emailError);
+        }
         res.status(201).json(request);
     } catch (error) {
         console.error("Error creating service request:", error);
