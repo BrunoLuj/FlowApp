@@ -14,6 +14,10 @@ Detalj radnog naloga sadrži vremensku crtu promjena: kreiranje naloga, raspored
 dodjelu servisera, terenske zapise, aktivnosti, materijal, checklistu i završetak.
 Pregled je zaštićen zasebnom permisijom `view_work_order_history`.
 
+SLA servisnih zahtjeva računa ugovorne rokove prvog odziva i rješavanja, automatski
+eskalira prekoračenja te zaustavlja SLA sat dok je zahtjev u statusu „Čeka klijenta”.
+Voditelji imaju pregled SLA rezultata, rizika i odgovorne osobe u upravljačkom centru.
+
 ## Pokretanje
 
 Backend koristi `backend/.env`:

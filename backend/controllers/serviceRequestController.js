@@ -37,7 +37,7 @@ export const updateServiceRequest = async (req, res) => {
         const request = await serviceRequestModel.updateServiceRequest(
             req.params.id,
             req.body,
-            req.user.clientId
+            req.user
         );
         if (!request) return res.status(404).json({ error: "Service request not found" });
         res.json(request);

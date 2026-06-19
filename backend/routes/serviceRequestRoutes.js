@@ -15,7 +15,7 @@ const router = express.Router();
 router.get("/", authMiddleware, checkPermission("view_service_requests"), getServiceRequests);
 router.get("/:id", authMiddleware, checkPermission("view_service_requests"), getServiceRequest);
 router.post("/", authMiddleware, checkPermission("create_service_requests"), addServiceRequest);
-router.patch("/:id", authMiddleware, checkPermission("update_service_requests"), updateServiceRequest);
+router.patch("/:id", authMiddleware, checkPermission("manage_service_request_sla"), updateServiceRequest);
 router.post("/:id/messages", authMiddleware, checkPermission("reply_service_requests"), addMessage);
 router.post(
     "/:id/convert-to-work-order",

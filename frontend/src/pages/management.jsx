@@ -150,6 +150,35 @@ const Management = () => {
               <Kpi label="Završeno ovaj mjesec" value={overview.kpis.completed_this_month} icon={FaTasks} color="emerald" />
             </div>
 
+            <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <Kpi label="SLA prvog odziva" value={`${overview.kpis.response_sla_percent}%`} icon={FaClock} color="indigo" />
+              <Kpi label="SLA rješavanja" value={`${overview.kpis.resolution_sla_percent}%`} icon={FaChartLine} color="emerald" />
+              <Kpi label="Aktivna prekoračenja" value={overview.kpis.active_sla_breaches} icon={FaExclamationTriangle} color="red" />
+              <Kpi label="Uskoro ističe" value={overview.kpis.sla_at_risk} icon={FaClock} color="orange" />
+            </div>
+
+            <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="border-b border-slate-100 p-5">
+                <h2 className="font-bold text-slate-900">SLA eskalacije i rizici</h2>
+                <p className="text-sm text-slate-500">Aktivni zahtjevi koji traže pažnju voditelja servisa</p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr><th className="px-5 py-3">Zahtjev</th><th className="px-5 py-3">Klijent</th><th className="px-5 py-3">Odgovoran</th><th className="px-5 py-3">SLA</th><th className="px-5 py-3">Rok rješenja</th></tr></thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {overview.slaRequests.map((request) => <tr key={request.id}>
+                      <td className="px-5 py-4"><div className="font-bold text-indigo-600">{request.request_number}</div><div className="font-semibold text-slate-800">{request.subject}</div></td>
+                      <td className="px-5 py-4 text-slate-600">{request.client_name}<div className="text-xs text-slate-400">{request.station_name || "Sve lokacije"}</div></td>
+                      <td className="px-5 py-4 text-slate-600">{request.assigned_to_name || "Nije dodijeljeno"}</td>
+                      <td className="px-5 py-4"><SlaBadge status={request.sla_status} level={request.escalation_level} /></td>
+                      <td className="whitespace-nowrap px-5 py-4 text-slate-600">{request.resolution_due_at ? new Intl.DateTimeFormat("hr-HR", { dateStyle: "short", timeStyle: "short" }).format(new Date(request.resolution_due_at)) : "—"}</td>
+                    </tr>)}
+                  </tbody>
+                </table>
+                {!overview.slaRequests.length && <div className="p-10 text-center text-slate-400">Nema aktivnih SLA rizika.</div>}
+              </div>
+            </section>
+
             <div className="mt-6 grid gap-6 xl:grid-cols-3">
               <ChartCard title="Trend servisnih zahtjeva" className="xl:col-span-2">
                 <Line
@@ -280,5 +309,11 @@ const kpiColors = {
 const Kpi = ({ label, value, icon: Icon, color }) => <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className={`inline-flex rounded-xl p-3 ${kpiColors[color]}`}><Icon /></div><div className="mt-3 text-3xl font-bold text-slate-900">{value}</div><div className="mt-1 text-sm text-slate-500">{label}</div></div>;
 
 const ChartCard = ({ title, children, className = "" }) => <section className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${className}`}><h2 className="mb-4 font-bold text-slate-900">{title}</h2><div className="h-72">{children}</div></section>;
+
+const SlaBadge = ({ status, level }) => {
+  const labels = { paused: "Pauzirano", response_breached: "Odziv prekoračen", resolution_breached: "Rješenje prekoračeno", at_risk: "U riziku", on_track: "U roku" };
+  const color = status?.includes("breached") ? "bg-red-100 text-red-700" : status === "at_risk" ? "bg-amber-100 text-amber-700" : status === "paused" ? "bg-slate-100 text-slate-700" : "bg-emerald-100 text-emerald-700";
+  return <span className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold ${color}`}>{labels[status] || status}{level > 0 ? ` · E${level}` : ""}</span>;
+};
 
 export default Management;
