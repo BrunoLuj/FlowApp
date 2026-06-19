@@ -38,6 +38,12 @@ Mjeriteljski centar povezuje ovjere, kalibracije i inspekcije s opremom i radnim
 nalozima. Vodi mjerne točke, tolerancije, automatski rezultat prolaz/pad, rok sljedeće
 ovjere te generira verzionirane PDF certifikate dostupne u dokumentaciji klijenta.
 
+Predmeti mjeriteljske inspekcije prate zakonski slijed zahtjev → radni nalog →
+izvještaj → certifikat inspekcije → certifikat verifikacije. AMN sonda je obavezno
+vezana uz jedan rezervoar; jedan aparat može imati više volumetara, ali jednu
+verifikacijsku markicu i plombu. Posebne mjerne tablice primjenjuju se na AMN,
+volumetre, mjerne letve i rezervoare.
+
 ## Pokretanje
 
 Backend koristi `backend/.env`:
