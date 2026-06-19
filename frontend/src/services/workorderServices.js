@@ -6,6 +6,7 @@ export const getWorkOrders = async () => {
 
 export const getWorkOrder = (id) => api.get(`/work-orders/${id}`);
 export const getWorkOrderHistory = (id) => api.get(`/work-orders/${id}/history`);
+export const generateServiceReport = (id) => api.post(`/work-orders/${id}/service-report`);
 export const getMyMobileWorkOrders = () => api.get("/work-orders/mobile/mine");
 export const sendMobileWorkOrderEvent = (id, event) => api.post(`/work-orders/${id}/mobile-events`, event);
 export const addWorkOrderActivity = (id, activity) => api.post(`/work-orders/${id}/activities`, activity);

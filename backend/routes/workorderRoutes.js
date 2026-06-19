@@ -5,6 +5,7 @@ import {
     getWorkOrders,
     getWorkOrder,
     getWorkOrderHistory,
+    generateServiceReport,
     getActiveWorkOrders,
     getMyMobileWorkOrders,
     addMobileEvent,
@@ -27,6 +28,7 @@ router.get("/active", authMiddleware, checkPermission('view_work_orders'), getAc
 router.get("/mobile/mine", authMiddleware, checkPermission('use_mobile_work_orders'), getMyMobileWorkOrders);
 router.post("/:id/mobile-events", authMiddleware, checkPermission('use_mobile_work_orders'), addMobileEvent);
 router.get("/:id/history", authMiddleware, checkPermission('view_work_order_history'), getWorkOrderHistory);
+router.post("/:id/service-report", authMiddleware, checkPermission('generate_service_reports'), generateServiceReport);
 router.get("/:id", authMiddleware, checkPermission('view_work_orders'), getWorkOrder);
 router.post("/", authMiddleware, checkPermission('create_work_orders'), addWorkOrder);
 router.post("/:id/activities", authMiddleware, checkPermission('record_work_order_activity'), addActivity);

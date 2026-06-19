@@ -319,7 +319,8 @@ export const getWorkOrderById = async (id, clientId = null) => {
         pool.query("SELECT id, firstname, lastname FROM users"),
         pool.query(
             `SELECT id, title, file_name, mime_type, file_size,
-                    visible_to_client, created_at
+                    visible_to_client, document_type, version_no,
+                    system_generated, created_at
              FROM entity_attachments
              WHERE work_order_id = $1
              ${clientId ? "AND visible_to_client = TRUE" : ""}
@@ -392,6 +393,99 @@ export const getWorkOrderHistory = async (id) => {
         [String(id)]
     );
     return result.rows;
+};
+
+export const getNextServiceReportVersion = async (id) => {
+    const result = await pool.query(
+        `SELECT COALESCE(MAX(version_no), 0)::integer + 1 AS version
+         FROM entity_attachments
+         WHERE work_order_id = $1 AND document_type = 'service_report'`,
+        [id]
+    );
+    return result.rows[0].version;
+};
+
+export const registerGeneratedServiceReport = async (id, file, userId, clientId = null) => {
+    const connection = await pool.connect();
+    try {
+        await connection.query("BEGIN");
+        const values = [id];
+        let scope = "";
+        if (clientId) {
+            values.push(clientId);
+            scope = `AND p.client_id = $${values.length}`;
+        }
+        const orderResult = await connection.query(
+            `SELECT wo.id, wo.work_order_number, p.client_id,
+                    COALESCE(wo.station_id, wo.project_id) AS station_id
+             FROM work_orders wo
+             JOIN projects p ON p.id = COALESCE(wo.station_id, wo.project_id)
+             WHERE wo.id = $1 ${scope}
+             FOR UPDATE OF wo`,
+            values
+        );
+        const order = orderResult.rows[0];
+        if (!order) {
+            await connection.query("ROLLBACK");
+            return null;
+        }
+        const versionResult = await connection.query(
+            `SELECT COALESCE(MAX(version_no), 0)::integer + 1 AS version
+             FROM entity_attachments
+             WHERE work_order_id = $1 AND document_type = 'service_report'`,
+            [id]
+        );
+        const version = versionResult.rows[0].version;
+        if (version !== file.version) {
+            const error = new Error("Service report version changed");
+            error.code = "REPORT_VERSION_CONFLICT";
+            throw error;
+        }
+        const attachment = await connection.query(
+            `INSERT INTO entity_attachments (
+                client_id, station_id, work_order_id, title, file_name,
+                storage_key, mime_type, file_size, visible_to_client,
+                uploaded_by, document_type, version_no, system_generated
+             ) VALUES ($1,$2,$3,$4,$5,$6,'application/pdf',$7,TRUE,$8,
+                       'service_report',$9,TRUE)
+             RETURNING *`,
+            [
+                order.client_id,
+                order.station_id,
+                id,
+                `Servisni zapisnik ${order.work_order_number || `WO-${id}`} v${version}`,
+                file.fileName,
+                file.storageKey,
+                file.fileSize,
+                userId,
+                version,
+            ]
+        );
+        await connection.query(
+            `UPDATE work_orders SET report_generated_at = NOW(), updated_at = NOW()
+             WHERE id = $1`,
+            [id]
+        );
+        await connection.query(
+            `INSERT INTO audit_logs
+                (user_id, client_id, entity_type, entity_id, action, summary, changes)
+             VALUES ($1,$2,'work_order',$3,'service_report_generated',$4,$5::jsonb)`,
+            [
+                userId,
+                order.client_id,
+                String(id),
+                `Generiran servisni PDF zapisnik, verzija ${version}`,
+                JSON.stringify({ attachment_id: attachment.rows[0].id, version }),
+            ]
+        );
+        await connection.query("COMMIT");
+        return attachment.rows[0];
+    } catch (error) {
+        await connection.query("ROLLBACK");
+        throw error;
+    } finally {
+        connection.release();
+    }
 };
 
 export const addWorkOrderActivity = async (workOrderId, data, userId) => {
