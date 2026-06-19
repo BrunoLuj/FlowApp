@@ -57,12 +57,6 @@ export const downloadAttachment = async (req, res) => {
 };
 
 export const removeAttachment = async (req, res) => {
-    const canDelete = req.user.permissions?.some((permission) =>
-        ["manage_documents", "update_service_requests", "update_work_orders"].includes(permission)
-    );
-    if (!canDelete) {
-        return res.status(403).json({ error: "You do not have permission to delete attachments" });
-    }
     try {
         const attachment = await attachmentModel.deleteAttachment(
             req.params.id,

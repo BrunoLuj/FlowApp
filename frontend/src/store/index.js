@@ -3,21 +3,37 @@ import { jwtDecode } from 'jwt-decode';
 import i18n from 'i18next';
 
 const useStore = create((set) => {
-    const user = JSON.parse(localStorage.getItem("user")) || null;
+    let user;
+    try {
+        user = JSON.parse(localStorage.getItem("user")) || null;
+    } catch {
+        user = null;
+        localStorage.removeItem("user");
+    }
     const token = localStorage.getItem("token");
     const language = localStorage.getItem("language") || 'en';
 
     let permissions = [];
     if (token) {
-        const decodedToken = jwtDecode(token);
-        permissions = decodedToken.permissions || [];
+        try {
+            const decodedToken = jwtDecode(token);
+            permissions = decodedToken.permissions || [];
+        } catch {
+            user = null;
+            localStorage.removeItem("user");
+            localStorage.removeItem("token");
+        }
     }
 
     const checkTokenExpiration = (token) => {
         if (!token) return false;
-        const decodedToken = jwtDecode(token);
-        const currentTime = Date.now() / 1000;
-        return decodedToken.exp < currentTime;
+        try {
+            const decodedToken = jwtDecode(token);
+            const currentTime = Date.now() / 1000;
+            return decodedToken.exp < currentTime;
+        } catch {
+            return true;
+        }
     };
 
     const signOut = () => {
@@ -30,7 +46,6 @@ const useStore = create((set) => {
     const handleUserUpdate = (newUser) => {
         if (newUser && newUser.token) {
             if (checkTokenExpiration(newUser.token)) {
-                console.log("Token je istekao. Korisnik se odjavljuje.");
                 signOut();
             } else {
                 const decodedToken = jwtDecode(newUser.token);

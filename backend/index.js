@@ -7,28 +7,40 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
 
 app.use(cors({
-    origin: process.env.CORS_ORIGIN?.split(",") || "*",
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+        callback(new Error("Origin is not allowed by CORS"));
+    },
     credentials: true,
 }));
+app.disable("x-powered-by");
+app.use((_req, res, next) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    next();
+});
 app.use(express.json({limit: "10mb"}));
-app.use(express.urlencoded({extended: true}));
+app.use(express.urlencoded({extended: true, limit: "2mb"}));
 
 app.use("/api-v1", routes);
-
-//Za mob
-// app.use(cors({
-//     origin: 'ip adresa', 
-//     methods: 'GET,POST',
-//     allowedHeaders: ['Content-Type', 'Authorization']
-//   }));
 
 app.use("*", (req, res) =>{
     res.status(404).json({
         status: "404 Not found",
         message: "Route not exist",
     });
+});
+
+app.use((error, _req, res, _next) => {
+    console.error("Unhandled request error:", error);
+    res.status(500).json({ status: "error", message: "Internal server error" });
 });
 
 app.listen(PORT, () =>{

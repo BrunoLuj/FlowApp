@@ -14,13 +14,13 @@ export const comparePassword = async(userPassword, password) =>{
         const isMatch = await bcrypt.compare(userPassword, password);
 
         return isMatch;
-    } catch (error) {
-        console.log(error);
+    } catch {
+        return false;
     }
 };
 
 export const createJWT = (user_id, roles_id, user_permissions, client_id = null) =>{
-
+    if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET is not configured");
     return JWT.sign(
         {
             userId: user_id,
@@ -35,21 +35,3 @@ export const createJWT = (user_id, roles_id, user_permissions, client_id = null)
         }
     )
 };
-
-export function getMonthName(index) {
-    const months = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ];
-    return months[index];
-}

@@ -21,12 +21,9 @@ const authMiddleware = async(req, res, next)=>{
             clientId: userToken.client_id ?? null,
             permissions: userToken.permissions ?? [],
         };
-        req.body.user = { userId: userToken.userId };
-
         next();
         
     } catch (error) {
-        console.log(error);
         return res.status(401).json({
             status: "auth_failed",
             message: "Authentication failed",

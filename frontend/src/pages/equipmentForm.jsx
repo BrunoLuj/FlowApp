@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
-import useStore from '../store';
 import { saveEquipment, fetchEquipment, deleteEquipment } from '../services/equipmentServices';
 
 const EquipmentTabs = () => {
@@ -11,10 +10,10 @@ const EquipmentTabs = () => {
 
     const location = useLocation();
     const client = location.state?.client;
-    const { permissions } = useStore();
     
     // Fetch equipment data based on active tab
-    const fetchEquipmentData = async (type) => {
+    const fetchEquipmentData = useCallback(async (type) => {
+        if (!client?.id) return;
         try {
             const data = await fetchEquipment(client.id, type);
             setEquipmentList(data.data);  // Postavite podatke u stanje
@@ -23,10 +22,7 @@ const EquipmentTabs = () => {
             console.error('Failed to fetch data:', error);
             toast.error('Failed to fetch equipment data.');
         }
-    };
-    
-    useEffect(() => {
-    }, [equipmentList]);
+    }, [client?.id]);
 
     // Handle tab change
     const handleTabChange = (type) => {
@@ -61,7 +57,7 @@ const EquipmentTabs = () => {
 
     useEffect(() => {
         fetchEquipmentData(activeTab); // Load data for default tab
-    }, [activeTab]);
+    }, [activeTab, fetchEquipmentData]);
 
     const handleDelete = async (id) => {
         try {

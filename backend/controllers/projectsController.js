@@ -2,7 +2,7 @@ import * as projectModel from '../models/projectsModel.js';
 
 export const getProjects = async (req, res) => {
     try {
-        const projects = await projectModel.getAllProjects();
+        const projects = await projectModel.getAllProjects(req.user.clientId);
         res.json(projects);
     } catch (error) {
         res.status(500).json({ error: 'Error fetching projects' });
@@ -14,7 +14,6 @@ export const addProjects = async (req, res) => {
     const { client_id, name, address, city, gps_lat, gps_lng, active, sttn } = req.body;
     try {
         const newProject = await projectModel.createProject(client_id, name, address, city, gps_lat, gps_lng, active, sttn );
-        console.log(newProject);
         res.status(201).json(newProject);
     } catch (error) {
         res.status(500).json({ error: 'Error creating project', error });
@@ -52,7 +51,7 @@ export const deleteProjects = async (req, res) => {
 
 export const getActiveProjects = async (req, res) => {
     try {
-        const projects = await projectModel.getActiveProjects();
+        const projects = await projectModel.getActiveProjects(req.user.clientId);
         res.json(projects);
     } catch (error) {
         res.status(500).json({ error: 'Error fetching projects' });

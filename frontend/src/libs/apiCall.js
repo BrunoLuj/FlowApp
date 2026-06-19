@@ -5,27 +5,24 @@ const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/api-v1";
 
 const api = axios.create({
   baseURL: API_URL,
+  timeout: 30000,
 });
 
-// Interceptor za hvatanje 401 greške
 api.interceptors.response.use(
-  response => response,
-  error => {
-    if (error.response && error.response.status === 401) {
-      const { signOut } = useStore.getState();
-      signOut(); // Odjavi korisnika na 401 grešku
-      console.warn("Korisnik nije autorizovan. Odjava je izvršena.");
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      useStore.getState().signOut();
     }
     return Promise.reject(error);
   }
 );
 
-
 export function setAuthToken(token) {
   if (token) {
-    api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    api.defaults.headers.common.Authorization = `Bearer ${token}`;
   } else {
-    delete api.defaults.headers.common["Authorization"];
+    delete api.defaults.headers.common.Authorization;
   }
 }
 

@@ -1,12 +1,18 @@
 import { pool } from "../libs/database.js";
 
-export const getAllClients = async () => {
-    const result = await pool.query('SELECT * FROM clients');
+export const getAllClients = async (clientId = null) => {
+    const result = await pool.query(
+        `SELECT * FROM clients ${clientId ? "WHERE id = $1" : ""}`,
+        clientId ? [clientId] : []
+    );
     return result.rows;
 };
 
-export const getClientById = async (id) => {
-    const result = await pool.query('SELECT * FROM clients WHERE id = $1', [id]);
+export const getClientById = async (id, clientId = null) => {
+    const result = await pool.query(
+        `SELECT * FROM clients WHERE id = $1 ${clientId ? "AND id = $2" : ""}`,
+        clientId ? [id, clientId] : [id]
+    );
     return result.rows[0]; // Vraća prvi red (klijenta) ili undefined ako ne postoji
 };
 

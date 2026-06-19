@@ -4,7 +4,5 @@ export const signIn = async (data) => {
   return await api.post("/auth/sign-in", data);
 };
 
-export const signUp = async (data) => {
-    return await api.post("/auth/sign-up", data);
-};
+export const getSession = () => api.get("/auth/session");
 

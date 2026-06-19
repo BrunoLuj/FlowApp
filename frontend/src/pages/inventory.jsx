@@ -30,7 +30,9 @@ const Inventory = () => {
   const [movementForm, setMovementForm] = useState(emptyMovement);
   const [warehouseForm, setWarehouseForm] = useState({ code: "", name: "", address: "" });
   const [modal, setModal] = useState(null);
-  const canManage = permissions.includes("manage_inventory");
+  const canManageItems = permissions.includes("manage_inventory_items");
+  const canMoveStock = permissions.includes("manage_inventory_movements");
+  const canManageWarehouses = permissions.includes("manage_warehouses");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -104,11 +106,11 @@ const Inventory = () => {
             <h1 className="mt-1 text-3xl font-bold text-slate-900">Skladište i rezervni dijelovi</h1>
             <p className="mt-2 text-slate-500">Stanje zaliha, ulazi, izdavanja i minimalne količine.</p>
           </div>
-          {canManage && <div className="flex flex-wrap gap-2">
-            <button onClick={() => { setItemForm(emptyItem); setModal("item"); }} className="rounded-xl bg-indigo-600 px-4 py-3 font-semibold text-white"><FaPlus className="mr-2 inline" />Novi artikl</button>
-            <button onClick={() => setModal("movement")} className="rounded-xl bg-slate-900 px-4 py-3 font-semibold text-white"><FaExchangeAlt className="mr-2 inline" />Ulaz / izlaz</button>
-            <button onClick={() => setModal("warehouse")} className="rounded-xl border bg-white px-4 py-3 font-semibold text-slate-700"><FaWarehouse className="mr-2 inline" />Skladište</button>
-          </div>}
+          <div className="flex flex-wrap gap-2">
+            {canManageItems && <button onClick={() => { setItemForm(emptyItem); setModal("item"); }} className="rounded-xl bg-indigo-600 px-4 py-3 font-semibold text-white"><FaPlus className="mr-2 inline" />Novi artikl</button>}
+            {canMoveStock && <button onClick={() => setModal("movement")} className="rounded-xl bg-slate-900 px-4 py-3 font-semibold text-white"><FaExchangeAlt className="mr-2 inline" />Ulaz / izlaz</button>}
+            {canManageWarehouses && <button onClick={() => setModal("warehouse")} className="rounded-xl border bg-white px-4 py-3 font-semibold text-slate-700"><FaWarehouse className="mr-2 inline" />Skladište</button>}
+          </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -130,7 +132,7 @@ const Inventory = () => {
             <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr><th className="px-5 py-4">Artikl</th><th className="px-5 py-4">Kategorija</th><th className="px-5 py-4">Stanje</th><th className="px-5 py-4">Minimum</th><th className="px-5 py-4">Nabavna cijena</th><th className="px-5 py-4">Status</th></tr></thead>
             <tbody className="divide-y">{filteredItems.map((item) => {
               const low = Number(item.total_quantity) <= Number(item.minimum_quantity);
-              return <tr key={item.id} onClick={() => { if (canManage) { setItemForm(item); setModal("item"); } }} className={canManage ? "cursor-pointer hover:bg-slate-50" : ""}>
+              return <tr key={item.id} onClick={() => { if (canManageItems) { setItemForm(item); setModal("item"); } }} className={canManageItems ? "cursor-pointer hover:bg-slate-50" : ""}>
                 <td className="px-5 py-4"><b>{item.name}</b><div className="text-xs text-slate-400">{item.sku} · {item.manufacturer || "—"}</div></td>
                 <td className="px-5 py-4">{item.category || "—"}</td>
                 <td className={`px-5 py-4 font-bold ${low ? "text-red-600" : "text-emerald-600"}`}>{Number(item.total_quantity)} {item.unit}</td>

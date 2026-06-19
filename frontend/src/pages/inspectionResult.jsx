@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { saveAllInspectionsResults } from '../services/inspectionsServices';
@@ -47,12 +47,7 @@ function InspectionResult() {
         setNewResult((prev) => ({ ...prev, [field]: !prev[field] }));
     };
 
-    useEffect(() => {
-        calculateErrors();
-    }, [newResult.referenceResults, newResult.amnResults]);
-
-    const calculateErrors = () => {
-        const { referenceResults, amnResults } = newResult;
+    const calculateErrors = useCallback((referenceResults, amnResults) => {
         
         // Izračunaj greške između etalona i AMN rezultata
         const newErrors = referenceResults.map((ref, index) => {
@@ -84,7 +79,11 @@ function InspectionResult() {
             exceedsIndividualMaxError: hasExceedsIndividualMaxError,
             exceedsAMNDifference: hasExceedsAMNDifference,
         }));
-    };
+    }, []);
+
+    useEffect(() => {
+        calculateErrors(newResult.referenceResults, newResult.amnResults);
+    }, [calculateErrors, newResult.referenceResults, newResult.amnResults]);
 
     useEffect(() => {
         const temperature = parseFloat(newResult.temperature);
@@ -122,7 +121,8 @@ function InspectionResult() {
         newResult.amnResults,
         newResult.installationCheck,
         newResult.labelCheck,
-        newResult.integrityCheck
+        newResult.integrityCheck,
+        newResult.inspectionResult
     ]);
     
     const addResultToList = () => {
@@ -134,7 +134,7 @@ function InspectionResult() {
             return;
         }
 
-        calculateErrors(); // Izračunaj greške prije dodavanja rezultata
+        calculateErrors(newResult.referenceResults, newResult.amnResults);
 
         const hasErrors = newResult.errors.some(error => error && parseFloat(error) > 4);
         const temperature = parseFloat(newResult.temperature);

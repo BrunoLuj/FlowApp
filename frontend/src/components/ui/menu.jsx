@@ -1,170 +1,56 @@
 import {
-  FaTachometerAlt,
-  FaUsers,
-  FaBuilding,
-  FaProjectDiagram,
-  FaTools,
-  FaTasks,
-  FaClipboardCheck,
-  FaExclamationTriangle,
-  FaUserFriends,
-  FaCog,
-  FaHeadset,
   FaBell,
-  FaChartLine,
   FaBoxes,
   FaCalendarCheck,
-  FaFileInvoiceDollar
+  FaChartLine,
+  FaCog,
+  FaFileInvoiceDollar,
+  FaHeadset,
+  FaProjectDiagram,
+  FaShieldAlt,
+  FaTachometerAlt,
+  FaTasks,
+  FaUserFriends,
+  FaUsers,
 } from "react-icons/fa";
 
 export const menu = [
   {
     title: "Dashboard",
     items: [
-      {
-        label: "Pregled",
-        link: "/overview",
-        icon: <FaTachometerAlt />,
-        permission: "view_dashboard"
-      },
-      {
-        label: "Obavijesti",
-        link: "/notifications",
-        icon: <FaBell />,
-        permission: "view_dashboard"
-      }
-    ]
+      { label: "Pregled", link: "/overview", icon: <FaTachometerAlt />, permission: "view_dashboard" },
+      { label: "Obavijesti", link: "/notifications", icon: <FaBell />, permission: "view_dashboard" },
+    ],
   },
-
   {
     title: "Organizacija",
     items: [
-      {
-        label: "Klijenti",
-        link: "/clients",
-        icon: <FaUsers />,
-        permission: "view_clients"
-      },
-      {
-        label: "Firme",
-        link: "/companies",
-        icon: <FaBuilding />,
-        permission: "view_companies"
-      },
-      {
-        label: "Projekti",
-        link: "/projects",
-        icon: <FaProjectDiagram />,
-        permission: "view_projects"
-      },
-      {
-        label: "Uređaji / Instrumenti",
-        link: "/devices",
-        icon: <FaTools />,
-        permission: "view_devices"
-      }
-    ]
+      { label: "Klijenti", link: "/clients", icon: <FaUsers />, permission: "view_clients" },
+      { label: "Benzinske stanice", link: "/projects", icon: <FaProjectDiagram />, permission: "view_projects" },
+    ],
   },
-
   {
     title: "Servis",
     items: [
-      {
-        label: "Servisni centar",
-        link: "/service-center",
-        icon: <FaHeadset />,
-        permission: "view_service_center"
-      },
-      {
-        label: "Radni nalozi",
-        link: "/work-order",
-        icon: <FaTasks />,
-        permission: "view_work_orders"
-      },
-      {
-        label: "Preventivno održavanje",
-        link: "/maintenance",
-        icon: <FaCalendarCheck />,
-        permission: "view_maintenance_plans"
-      },
-      {
-        label: "Aktivni nalozi",
-        link: "/work-orders/active",
-        icon: <FaTasks />,
-        permission: "view_work_orders"
-      },
-      {
-        label: "Završeni nalozi",
-        link: "/work-orders/completed",
-        icon: <FaTasks />,
-        permission: "view_work_orders"
-      }
-    ]
+      { label: "Servisni centar", link: "/service-center", icon: <FaHeadset />, permission: "view_service_center" },
+      { label: "Radni nalozi", link: "/work-order", icon: <FaTasks />, permission: "view_work_orders" },
+      { label: "Preventivno održavanje", link: "/maintenance", icon: <FaCalendarCheck />, permission: "view_maintenance_plans" },
+    ],
   },
-
-  {
-    title: "Kalibracije",
-    items: [
-      {
-        label: "Kalibracioni nalozi",
-        link: "/calibrations",
-        icon: <FaClipboardCheck />,
-        permission: "view_calibrations"
-      },
-      {
-        label: "Plan kalibracija",
-        link: "/calibrations/schedule",
-        icon: <FaClipboardCheck />,
-        permission: "view_calibrations"
-      },
-      {
-        label: "Istekle kalibracije",
-        link: "/calibrations/expired",
-        icon: <FaExclamationTriangle />,
-        permission: "view_calibrations"
-      }
-    ]
-  },
-
   {
     title: "Rukovodstvo",
     items: [
-      {
-        label: "Upravljački centar",
-        link: "/management",
-        icon: <FaChartLine />,
-        permission: "view_dashboard"
-      },
-      {
-        label: "Skladište",
-        link: "/inventory",
-        icon: <FaBoxes />,
-        permission: "view_inventory"
-      },
-      {
-        label: "Ugovori i ponude",
-        link: "/commercial",
-        icon: <FaFileInvoiceDollar />,
-        permission: "view_commercial"
-      }
-    ]
+      { label: "Upravljački centar", link: "/management", icon: <FaChartLine />, permission: "view_management" },
+      { label: "Skladište", link: "/inventory", icon: <FaBoxes />, permission: "view_inventory" },
+      { label: "Ugovori i ponude", link: "/commercial", icon: <FaFileInvoiceDollar />, permission: "view_commercial" },
+    ],
   },
-
   {
     title: "Administracija",
     items: [
-      {
-        label: "Korisnici",
-        link: "/users",
-        icon: <FaUserFriends />,
-        permission: "view_users"
-      },
-      {
-        label: "Postavke",
-        link: "/settings",
-        icon: <FaCog />,
-        permission: "view_settings"
-      }
-    ]
-  }
+      { label: "Korisnici", link: "/users", icon: <FaUserFriends />, permission: "view_users" },
+      { label: "Role i permisije", link: "/roles", icon: <FaShieldAlt />, permission: "view_roles" },
+      { label: "Postavke", link: "/settings", icon: <FaCog />, permission: "view_settings" },
+    ],
+  },
 ];

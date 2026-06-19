@@ -5,7 +5,7 @@ import { pool } from "../libs/database.js";
     return result.rows;
 };*/
 
-export const getAllProjects = async () => {
+export const getAllProjects = async (clientId = null) => {
     const result = await pool.query(`
         SELECT 
             p.*, 
@@ -13,7 +13,9 @@ export const getAllProjects = async () => {
             c.company_name AS client_name
         FROM projects p
         JOIN clients c ON p.client_id = c.id
-    `);
+        ${clientId ? "WHERE p.client_id = $1" : ""}
+        ORDER BY p.name
+    `, clientId ? [clientId] : []);
     return result.rows;
 };
 
@@ -39,7 +41,6 @@ export const updateProject = async (client_id, name, address, city, gps_lat, gps
             [client_id, name, address, city, gps_lat, gps_lng, active, sttn, id]);
         return result.rows[0];
     } catch (error) {
-        console.log(error.error);
         console.error('Error updating project:', error);
         throw error;
     }
@@ -50,7 +51,12 @@ export const deleteProject = async (id) => {
     return result.rows[0];
 };
 
-export const getActiveProjects = async () => {
-  const result = await pool.query("SELECT * FROM projects WHERE status = 'Active'");
+export const getActiveProjects = async (clientId = null) => {
+  const result = await pool.query(
+    `SELECT * FROM projects
+     WHERE active = TRUE ${clientId ? "AND client_id = $1" : ""}
+     ORDER BY name`,
+    clientId ? [clientId] : []
+  );
   return result.rows;
 };

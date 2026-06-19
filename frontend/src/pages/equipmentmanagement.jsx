@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { fetchEquipment, updateCalibrationExpiry, fetchCalibrationExpiriesHistory } from '../services/equipmentServices';
@@ -23,7 +23,8 @@ const EquipmentManagement = () => {
   };
 
   // Funkcija za učitavanje opreme prema vrsti
-  const fetchEquipmentData = async (type) => {
+  const fetchEquipmentData = useCallback(async (type) => {
+    if (!client?.id) return;
     try {
       const data = await fetchEquipment(client.id, type);
       setEquipmentData(data.data);
@@ -31,10 +32,10 @@ const EquipmentManagement = () => {
     //   console.error('Failed to fetch data:', error);
       toast.error('Failed to fetch equipment data.');
     }
-  };
+  }, [client?.id]);
 
   // Funkcija za učitavanje podataka o kalibraciji i istoriji
-  const fetchCalibrationData = async () => {
+  const fetchCalibrationData = useCallback(async () => {
     try {
       const newCalibrationExpiries = {};
 
@@ -49,17 +50,17 @@ const EquipmentManagement = () => {
       console.error('Error fetching calibration expiries:', error);
       toast.error('Failed to fetch calibration expiry data.');
     }
-  };
+  }, [activeTab, client?.id, equipmentData]);
 
   useEffect(() => {
     fetchEquipmentData(activeTab); // Učitavanje podataka za trenutni tab
-  }, [activeTab]);
+  }, [activeTab, fetchEquipmentData]);
 
   useEffect(() => {
     if (equipmentData.length > 0) {
       fetchCalibrationData(); // Učitavanje podataka o kalibracijama
     }
-  }, [equipmentData, activeTab]); // Promenjena zavisnost za aktivni tab
+  }, [equipmentData, activeTab, fetchCalibrationData]);
 
   // Funkcija za promenu datuma isteka
   const handleDateChange = (equipmentId, date) => {

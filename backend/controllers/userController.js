@@ -1,5 +1,6 @@
 import { comparePassword, hashPassword} from "../libs/index.js";
 import * as userModel from "../models/userModel.js";
+import crypto from "crypto";
 
 export const getAllUsers = async (req, res) => {
   try {
@@ -26,7 +27,7 @@ export const getUsersRoles = async(req, res) =>{
 
 export const getUser = async(req, res) =>{
     try{
-        const {userId} = req.body.user;
+        const {userId} = req.user;
         const user = await userModel.getUserById(userId);
 
         if(!user){
@@ -44,7 +45,7 @@ export const getUser = async(req, res) =>{
         });
 
     }catch(error){
-        console.log(error);
+        console.error("Error fetching user:", error);
         res.status(500).json({
             status: "Failed",
             message: error.message,
@@ -53,26 +54,35 @@ export const getUser = async(req, res) =>{
 };
 
 export const addUsers= async (req, res) => {
-  const { email, firstname, lastname, address, country, currency, contact, roles_id, status } = req.body;
-  const defaultPassword = 'FlowApp2024@';
-
-  const hashedPassword = await hashPassword(defaultPassword);
-
+  const { email, firstname, lastname, address, country, currency, contact, roles_id, status, client_id } = req.body;
   try {
-      const newUser = await userModel.createUser(email, firstname, lastname, address, country, currency, contact, roles_id, status, hashedPassword);
-      console.log(newUser);
-      res.status(201).json(newUser);
+      if (!email?.trim() || !firstname?.trim() || !roles_id) {
+        return res.status(400).json({ error: "Email, first name and role are required" });
+      }
+      const role = await userModel.getRoleById(roles_id);
+      if (!role) return res.status(400).json({ error: "Selected role does not exist" });
+      if (role.name.startsWith("client_") && !client_id) {
+        return res.status(400).json({ error: "Client role must be linked to a client" });
+      }
+      const temporaryPassword = `Fl!${crypto.randomBytes(9).toString("base64url")}`;
+      const hashedPassword = await hashPassword(temporaryPassword);
+      const newUser = await userModel.createUser(
+        email.trim().toLowerCase(), firstname.trim(), lastname?.trim(), address,
+        country, currency, contact, roles_id, status, hashedPassword, client_id
+      );
+      res.status(201).json({ ...newUser, temporary_password: temporaryPassword });
   } catch (error) {
+      if (error.code === "23505") return res.status(409).json({ error: "Email already exists" });
       res.status(500).json({ error: 'Error creating User' });
   }
 };
 
 export const changePassword = async (req, res) => {
     try {
-      const { userId } = req.body.user;
+      const { userId } = req.user;
       const { currentPassword, newPassword, confirmPassword } = req.body;
 
-      const user = await userModel.getUserById(userId);
+      const user = await userModel.getUserCredentialsById(userId);
   
       if (!user) {
         return res
@@ -81,9 +91,22 @@ export const changePassword = async (req, res) => {
       }
   
       if (newPassword !== confirmPassword) {
-        return res.status(401).json({
+        return res.status(400).json({
           status: "Failed",
           message: "New Passwords does not match.",
+        });
+      }
+      if (
+        typeof newPassword !== "string" ||
+        newPassword.length < 10 ||
+        !/[A-Z]/.test(newPassword) ||
+        !/[a-z]/.test(newPassword) ||
+        !/[0-9]/.test(newPassword) ||
+        !/[^A-Za-z0-9]/.test(newPassword)
+      ) {
+        return res.status(400).json({
+          status: "Failed",
+          message: "Password must have at least 10 characters, uppercase, lowercase, number and special character.",
         });
       }
   
@@ -102,14 +125,14 @@ export const changePassword = async (req, res) => {
         message: "Password changed successfully",
       });
     } catch (error) {
-      console.log(error);
+      console.error("Password change failed:", error);
       res.status(500).json({ status: "failed", message: error.message });
     }
 };
 
 export const updateUser = async (req, res) => {
   const { id } = req.params;
-  const { firstname, lastname, address, country, currency, contact, roles_id, status  } = req.body;
+  const { firstname, lastname, address, country, currency, contact, roles_id, status, client_id  } = req.body;
 
   const user = await userModel.getUserById(id);
   
@@ -119,11 +142,13 @@ export const updateUser = async (req, res) => {
       .json({ status: "Failed", message: "User not found." });
   }
 
-  console.log(req.params);
-  console.log(req.body);
-
   try {
-      const updatedUser = await userModel.updateUserById(id, firstname, lastname, address, country, currency, contact, roles_id, status );
+      const role = await userModel.getRoleById(roles_id);
+      if (!role) return res.status(400).json({ error: "Selected role does not exist" });
+      if (role.name.startsWith("client_") && !client_id) {
+        return res.status(400).json({ error: "Client role must be linked to a client" });
+      }
+      const updatedUser = await userModel.updateUserById(id, firstname, lastname, address, country, currency, contact, roles_id, status, client_id);
       updatedUser.password = undefined; 
       if (updatedUser) {
           // res.json(updatedUser);
@@ -141,7 +166,7 @@ export const updateUser = async (req, res) => {
 };
 
 export const updateUserProfile = async (req, res) => {
-  const { id } = req.params;
+  const id = req.user.userId;
   const { firstname, lastname, address, country, currency, contact  } = req.body;
 
   const user = await userModel.getUserById(id);
@@ -169,36 +194,6 @@ export const updateUserProfile = async (req, res) => {
       res.status(500).json({ status: "Failed", message: error.message });
   }
 };
-
-// export const updateUser = async (req, res) => {
-//     try {
-//       const { userId } = req.body.user;
-//       const userData = req.body;
-
-//       console.log(req.body)
-  
-//       const user = await userModel.getUserById(userId);
-  
-//       if (!user) {
-//         return res
-//           .status(404)
-//           .json({ status: "Failed", message: "User not found." });
-//       }
-  
-//       const updatedUser = await userModel.updateUserById(userId, userData);
-//       updatedUser.password = undefined;
-  
-//       res.status(200).json({
-//         status: "Success",
-//         message: "User information updated successfully",
-//         user: updatedUser,
-//       });
-//     } catch (error) {
-//       console.log(error);
-//       res.status(500).json({ status: "Failed", message: error.message });
-//     }
-// };
-
 
 export const deleteUser = async (req, res) => {
   const { id } = req.params;
