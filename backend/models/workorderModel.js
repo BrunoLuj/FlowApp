@@ -1,4 +1,5 @@
 import { pool } from "../libs/database.js";
+import { completeMaintenanceCycle } from "./maintenanceModel.js";
 
 const addWorkOrderAudit = async (database, workOrderId, userId, action, summary, changes = {}) => {
     await database.query(
@@ -287,6 +288,8 @@ export const getWorkOrderById = async (id, clientId = null) => {
     const orderResult = await pool.query(
         `SELECT wo.*, p.client_id, p.name AS station_name, p.address, p.city,
                 c.company_name AS client_name, ea.name AS asset_name,
+                ea.meter_value AS asset_meter_value,
+                ea.meter_unit AS asset_meter_unit,
                 sr.request_number
          FROM work_orders wo
          JOIN projects p ON p.id = COALESCE(wo.station_id, wo.project_id)
@@ -756,6 +759,16 @@ export const completeWorkOrder = async (id, data, userId) => {
              SET status = 'resolved', resolved_at = NOW(), updated_at = NOW()
              WHERE id = $1`,
             [result.rows[0].service_request_id]
+            );
+        }
+        if (result.rows[0]?.maintenance_plan_id) {
+            await completeMaintenanceCycle(
+                connection,
+                result.rows[0],
+                result.rows[0].departure_at || new Date(),
+                data.asset_meter_value === "" || data.asset_meter_value === undefined
+                    ? null
+                    : Number(data.asset_meter_value)
             );
         }
         if (result.rows[0]) {

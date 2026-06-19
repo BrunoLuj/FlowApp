@@ -30,6 +30,10 @@ E-mail centar priprema potvrde zahtjeva, dodjele i podsjetnike naloga, SLA eskal
 PDF zapisnike te podsjetnike na dokumente i ovjere. Poruke prolaze kroz pouzdani red
 slanja s retry pravilima, evidencijom pokušaja i podesivim skupinama primatelja.
 
+Preventivno održavanje podržava kalendarske, radne i hibridne cikluse. Sustav vodi
+očitanja opreme, automatski generira naloge u definiranom horizontu, čuva povijest
+svakog ciklusa te nakon završetka naloga računa novi datum i novo ciljno očitanje.
+
 ## Pokretanje
 
 Backend koristi `backend/.env`:

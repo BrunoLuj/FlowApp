@@ -6,6 +6,7 @@ import {
   FaPlay,
   FaPlus,
   FaQrcode,
+  FaTachometerAlt,
 } from "react-icons/fa";
 import { toast } from "sonner";
 import useStore from "../store";
@@ -14,7 +15,9 @@ import {
   generateDueMaintenance,
   generateMaintenancePlan,
   getMaintenanceAssets,
+  getMaintenanceOverview,
   getMaintenancePlans,
+  recordAssetMeter,
   updateMaintenancePlan,
 } from "../services/maintenanceServices.js";
 import { getUsers } from "../services/usersServices.js";
@@ -29,6 +32,12 @@ const emptyPlan = {
   interval_unit: "months",
   lead_days: 14,
   next_due_date: "",
+  trigger_type: "calendar",
+  meter_interval: "",
+  meter_lead: 0,
+  next_due_meter: "",
+  auto_generate: true,
+  generation_horizon_days: 30,
   assigned_to: [],
   checklist_text: "",
   active: true,
@@ -39,22 +48,28 @@ const Maintenance = () => {
   const [plans, setPlans] = useState([]);
   const [assets, setAssets] = useState([]);
   const [users, setUsers] = useState([]);
+  const [overview, setOverview] = useState({ calendar: [], readings: [], history: [], summary: {} });
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(emptyPlan);
   const [showForm, setShowForm] = useState(false);
   const [filter, setFilter] = useState("all");
+  const [tab, setTab] = useState("plans");
+  const [meterForm, setMeterForm] = useState(null);
   const canManage = permissions.includes("manage_maintenance_plans");
+  const canRecordMeter = permissions.includes("record_asset_meter");
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [plansResponse, assetsResponse, usersResponse] = await Promise.all([
+      const [plansResponse, assetsResponse, overviewResponse, usersResponse] = await Promise.all([
         getMaintenancePlans(),
         getMaintenanceAssets(),
+        getMaintenanceOverview(),
         getUsers().catch(() => ({ data: [] })),
       ]);
       setPlans(plansResponse.data);
       setAssets(assetsResponse.data);
+      setOverview(overviewResponse.data || { calendar: [], readings: [], history: [], summary: {} });
       setUsers(usersResponse.data || []);
     } catch {
       toast.error("Planove održavanja nije moguće učitati.");
@@ -66,8 +81,13 @@ const Maintenance = () => {
   useEffect(() => { load(); }, [load]);
 
   const filteredPlans = useMemo(() => plans.filter((plan) => {
-    if (filter === "due") return plan.active && plan.days_remaining <= plan.lead_days;
-    if (filter === "overdue") return plan.active && plan.days_remaining < 0;
+    const calendarDue = plan.days_remaining !== null && plan.days_remaining <= plan.lead_days;
+    const meterDue = plan.meter_remaining !== null && Number(plan.meter_remaining) <= Number(plan.meter_lead);
+    if (filter === "due") return plan.active && (calendarDue || meterDue);
+    if (filter === "overdue") return plan.active && (
+      (plan.days_remaining !== null && plan.days_remaining < 0)
+      || (plan.meter_remaining !== null && Number(plan.meter_remaining) < 0)
+    );
     if (filter === "inactive") return !plan.active;
     return true;
   }), [filter, plans]);
@@ -88,6 +108,9 @@ const Maintenance = () => {
     event.preventDefault();
     const payload = {
       ...form,
+      next_due_date: form.trigger_type === "meter" ? null : form.next_due_date,
+      next_due_meter: form.trigger_type === "calendar" ? null : form.next_due_meter,
+      meter_interval: form.trigger_type === "calendar" ? null : form.meter_interval,
       checklist_template: form.checklist_text
         .split("\n")
         .map((line) => line.trim())
@@ -103,6 +126,22 @@ const Maintenance = () => {
       load();
     } catch (error) {
       toast.error(error.response?.data?.error || "Plan nije moguće spremiti.");
+    }
+  };
+
+  const saveMeter = async (event) => {
+    event.preventDefault();
+    try {
+      await recordAssetMeter(meterForm.asset_id, {
+        reading_value: meterForm.reading_value,
+        reading_unit: meterForm.reading_unit,
+        note: meterForm.note,
+      });
+      toast.success("Očitanje opreme je evidentirano.");
+      setMeterForm(null);
+      load();
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Očitanje nije moguće spremiti.");
     }
   };
 
@@ -130,8 +169,8 @@ const Maintenance = () => {
 
   const summary = {
     active: plans.filter((plan) => plan.active).length,
-    due: plans.filter((plan) => plan.active && plan.days_remaining <= plan.lead_days).length,
-    overdue: plans.filter((plan) => plan.active && plan.days_remaining < 0).length,
+    due: Number(overview.summary?.due_30_days || 0) + Number(overview.summary?.meter_due || 0),
+    overdue: overview.summary?.overdue || 0,
     coveredAssets: new Set(plans.filter((plan) => plan.active).map((plan) => plan.asset_id)).size,
   };
 
@@ -162,6 +201,13 @@ const Maintenance = () => {
         </div>
 
         <div className="my-6 flex flex-wrap gap-2 rounded-xl bg-white p-2 shadow-sm">
+          {[["plans", "Planovi"], ["calendar", "Kalendar"], ["readings", "Očitanja"], ["history", "Povijest"]].map(([value, label]) => (
+            <button key={value} onClick={() => setTab(value)} className={`rounded-lg px-4 py-2 font-semibold ${tab === value ? "bg-indigo-600 text-white" : "text-slate-600"}`}>{label}</button>
+          ))}
+        </div>
+
+        {tab === "plans" && <>
+        <div className="mb-6 flex flex-wrap gap-2">
           {[["all", "Svi"], ["due", "Dospjeli"], ["overdue", "Zakašnjeli"], ["inactive", "Neaktivni"]].map(([value, label]) => (
             <button key={value} onClick={() => setFilter(value)} className={`rounded-lg px-4 py-2 font-semibold ${filter === value ? "bg-indigo-600 text-white" : "text-slate-600"}`}>{label}</button>
           ))}
@@ -172,7 +218,7 @@ const Maintenance = () => {
             <section key={plan.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="text-xs font-bold uppercase tracking-wide text-indigo-600">{plan.work_order_type}</div>
+                  <div className="text-xs font-bold uppercase tracking-wide text-indigo-600">{plan.trigger_type} · {plan.work_order_type}</div>
                   <h2 className="mt-1 text-xl font-bold text-slate-900">{plan.name}</h2>
                   <p className="mt-1 text-sm text-slate-500">{plan.client_name} · {plan.station_name} · {plan.asset_name}</p>
                 </div>
@@ -186,19 +232,29 @@ const Maintenance = () => {
                 </span>
               </div>
               <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
-                <div><b>Sljedeći termin</b><br />{new Intl.DateTimeFormat("hr-HR").format(new Date(plan.next_due_date))}</div>
-                <div><b>Interval</b><br />svakih {plan.interval_value} {plan.interval_unit}</div>
+                <div><b>Sljedeći termin</b><br />{plan.next_due_date ? new Intl.DateTimeFormat("hr-HR").format(new Date(plan.next_due_date)) : "Po očitanju"}</div>
+                <div><b>Interval</b><br />{plan.trigger_type === "meter" ? "Po očitanju" : `svakih ${plan.interval_value} ${plan.interval_unit}`}</div>
                 <div><b>Najava</b><br />{plan.lead_days} dana prije</div>
                 <div><b>Checklista</b><br />{plan.checklist_template?.length || 0} stavki</div>
+                <div><b>Trenutno očitanje</b><br />{plan.meter_value == null ? "Nije uneseno" : `${plan.meter_value} ${plan.meter_unit || ""}`}</div>
+                <div><b>Sljedeći cilj</b><br />{plan.next_due_meter == null ? "—" : `${plan.next_due_meter} ${plan.meter_unit || ""}`}</div>
               </div>
-              {canManage && <div className="mt-4 flex gap-2">
+              <div className="mt-4 flex flex-wrap gap-2">
+                {canRecordMeter && <button onClick={() => setMeterForm({ asset_id: plan.asset_id, asset_name: plan.asset_name, reading_value: plan.meter_value ?? "", reading_unit: plan.meter_unit || "hours", note: "" })} className="rounded-xl border border-emerald-300 px-4 py-2 font-semibold text-emerald-700"><FaTachometerAlt className="mr-2 inline" />Očitanje</button>}
+                {canManage && <>
                 <button onClick={() => openForm(plan)} className="flex-1 rounded-xl border border-slate-300 px-4 py-2 font-semibold text-slate-700">Uredi</button>
                 <button onClick={() => generateOne(plan)} disabled={!plan.active} className="flex-1 rounded-xl bg-indigo-600 px-4 py-2 font-semibold text-white disabled:opacity-40">Generiraj nalog</button>
-              </div>}
+                </>}
+              </div>
             </section>
           ))}
           {!filteredPlans.length && <div className="rounded-2xl bg-white p-12 text-center text-slate-400 lg:col-span-2">Nema planova u odabranom prikazu.</div>}
         </div>
+        </>}
+
+        {tab === "calendar" && <DataTable columns={["Datum", "Plan", "Oprema", "Stanica", "Ciljno očitanje"]} rows={(overview.calendar || []).map((item) => [item.due_date || "—", item.name, item.asset_name, item.station_name, item.next_due_meter == null ? "—" : `${item.next_due_meter} ${item.meter_unit || ""}`])} empty="Nema termina u prikazanom periodu." />}
+        {tab === "readings" && <DataTable columns={["Vrijeme", "Oprema", "Očitanje", "Izvor", "Evidentirao"]} rows={(overview.readings || []).map((item) => [new Date(item.reading_at).toLocaleString("hr-HR"), item.asset_name, `${item.reading_value} ${item.reading_unit}`, item.source, item.recorded_by_name || "Sustav"])} empty="Još nema očitanja." />}
+        {tab === "history" && <DataTable columns={["Kreirano", "Plan", "Oprema", "Status", "Radni nalog"]} rows={(overview.history || []).map((item) => [new Date(item.created_at).toLocaleString("hr-HR"), item.plan_name, item.asset_name, item.status, item.work_order_number || "—"])} empty="Povijest ciklusa još je prazna." />}
       </div>
 
       {showForm && <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/60 p-4">
@@ -208,16 +264,37 @@ const Maintenance = () => {
             <Field label="Oprema *"><select required disabled={Boolean(form.id)} value={form.asset_id} onChange={(e) => setForm({ ...form, asset_id: e.target.value })}><option value="">Odaberite opremu</option>{assets.map((asset) => <option key={asset.id} value={asset.id}>{asset.client_name} · {asset.station_name} · {asset.name}</option>)}</select></Field>
             <Field label="Naziv plana *"><input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
             <Field label="Vrsta naloga"><select value={form.work_order_type} onChange={(e) => setForm({ ...form, work_order_type: e.target.value })}><option>Preventive</option><option>Calibration</option><option>Inspection</option><option>Service</option></select></Field>
-            <Field label="Sljedeći termin *"><input required type="date" value={form.next_due_date} onChange={(e) => setForm({ ...form, next_due_date: e.target.value })} /></Field>
-            <Field label="Interval *"><input required type="number" min="1" value={form.interval_value} onChange={(e) => setForm({ ...form, interval_value: e.target.value })} /></Field>
-            <Field label="Jedinica intervala"><select value={form.interval_unit} onChange={(e) => setForm({ ...form, interval_unit: e.target.value })}><option value="days">dana</option><option value="weeks">tjedana</option><option value="months">mjeseci</option><option value="years">godina</option></select></Field>
-            <Field label="Najava dana prije"><input type="number" min="0" value={form.lead_days} onChange={(e) => setForm({ ...form, lead_days: e.target.value })} /></Field>
+            <Field label="Okidač ciklusa"><select value={form.trigger_type} onChange={(e) => setForm({ ...form, trigger_type: e.target.value })}><option value="calendar">Kalendar</option><option value="meter">Očitanje</option><option value="hybrid">Kalendar ili očitanje</option></select></Field>
+            {form.trigger_type !== "meter" && <>
+              <Field label="Sljedeći termin *"><input required type="date" value={form.next_due_date} onChange={(e) => setForm({ ...form, next_due_date: e.target.value })} /></Field>
+              <Field label="Interval *"><input required type="number" min="1" value={form.interval_value} onChange={(e) => setForm({ ...form, interval_value: e.target.value })} /></Field>
+              <Field label="Jedinica intervala"><select value={form.interval_unit} onChange={(e) => setForm({ ...form, interval_unit: e.target.value })}><option value="days">dana</option><option value="weeks">tjedana</option><option value="months">mjeseci</option><option value="years">godina</option></select></Field>
+              <Field label="Najava dana prije"><input type="number" min="0" value={form.lead_days} onChange={(e) => setForm({ ...form, lead_days: e.target.value })} /></Field>
+            </>}
+            {form.trigger_type !== "calendar" && <>
+              <Field label="Sljedeće ciljno očitanje *"><input required type="number" min="0" step="0.01" value={form.next_due_meter} onChange={(e) => setForm({ ...form, next_due_meter: e.target.value })} /></Field>
+              <Field label="Interval očitanja *"><input required type="number" min="0.01" step="0.01" value={form.meter_interval} onChange={(e) => setForm({ ...form, meter_interval: e.target.value })} /></Field>
+              <Field label="Najava prije cilja"><input type="number" min="0" step="0.01" value={form.meter_lead} onChange={(e) => setForm({ ...form, meter_lead: e.target.value })} /></Field>
+            </>}
+            <Field label="Horizont automatskog naloga"><input type="number" min="0" value={form.generation_horizon_days} onChange={(e) => setForm({ ...form, generation_horizon_days: e.target.value })} /></Field>
             <Field label="Odgovorni serviser"><select value={form.assigned_to[0] || ""} onChange={(e) => setForm({ ...form, assigned_to: e.target.value ? [Number(e.target.value)] : [] })}><option value="">Nije dodijeljen</option>{users.map((user) => <option key={user.id} value={user.id}>{user.firstname} {user.lastname}</option>)}</select></Field>
             <label className="flex items-center gap-3 rounded-xl bg-slate-50 p-3"><input type="checkbox" checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} /><span className="font-semibold">Aktivan plan</span></label>
+            <label className="flex items-center gap-3 rounded-xl bg-slate-50 p-3"><input type="checkbox" checked={form.auto_generate} onChange={(e) => setForm({ ...form, auto_generate: e.target.checked })} /><span className="font-semibold">Automatski generiraj naloge</span></label>
             <label className="md:col-span-2"><span className="mb-2 block text-sm font-semibold">Opis posla</span><textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full rounded-xl border p-3" /></label>
             <label className="md:col-span-2"><span className="mb-2 block text-sm font-semibold">Checklista — jedna stavka po retku</span><textarea rows={6} value={form.checklist_text} onChange={(e) => setForm({ ...form, checklist_text: e.target.value })} className="w-full rounded-xl border p-3" /></label>
           </div>
           <div className="flex justify-end gap-3 border-t p-6"><button type="button" onClick={() => setShowForm(false)} className="px-5 py-3">Odustani</button><button className="rounded-xl bg-indigo-600 px-5 py-3 font-semibold text-white">Spremi plan</button></div>
+        </form>
+      </div>}
+      {meterForm && <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/60 p-4">
+        <form onSubmit={saveMeter} className="w-full max-w-xl rounded-2xl bg-white shadow-2xl">
+          <div className="border-b p-6"><h2 className="text-xl font-bold">Novo očitanje · {meterForm.asset_name}</h2></div>
+          <div className="grid gap-4 p-6 sm:grid-cols-2">
+            <Field label="Vrijednost *"><input required type="number" min="0" step="0.01" value={meterForm.reading_value} onChange={(e) => setMeterForm({ ...meterForm, reading_value: e.target.value })} /></Field>
+            <Field label="Jedinica *"><select required value={meterForm.reading_unit} onChange={(e) => setMeterForm({ ...meterForm, reading_unit: e.target.value })}><option value="hours">radni sati</option><option value="cycles">ciklusi</option><option value="km">kilometri</option><option value="liters">litre</option></select></Field>
+            <label className="sm:col-span-2"><span className="mb-2 block text-sm font-semibold">Napomena</span><textarea rows={3} value={meterForm.note} onChange={(e) => setMeterForm({ ...meterForm, note: e.target.value })} className="w-full rounded-xl border p-3" /></label>
+          </div>
+          <div className="flex justify-end gap-3 border-t p-6"><button type="button" onClick={() => setMeterForm(null)} className="px-5 py-3">Odustani</button><button className="rounded-xl bg-emerald-600 px-5 py-3 font-semibold text-white">Spremi očitanje</button></div>
         </form>
       </div>}
     </div>
@@ -226,5 +303,6 @@ const Maintenance = () => {
 
 const Summary = ({ label, value, icon: Icon, tone }) => <div className="rounded-2xl border bg-white p-5 shadow-sm"><div className={`inline-flex rounded-xl p-3 ${tone}`}><Icon /></div><div className="mt-3 text-3xl font-bold">{value}</div><div className="text-sm text-slate-500">{label}</div></div>;
 const Field = ({ label, children }) => <label><span className="mb-2 block text-sm font-semibold">{label}</span>{React.cloneElement(children, { className: "w-full rounded-xl border p-3" })}</label>;
+const DataTable = ({ columns, rows, empty }) => <div className="overflow-hidden rounded-2xl border bg-white shadow-sm"><div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="bg-slate-50 text-slate-500"><tr>{columns.map((column) => <th key={column} className="whitespace-nowrap px-4 py-3">{column}</th>)}</tr></thead><tbody>{rows.map((row, rowIndex) => <tr key={rowIndex} className="border-t">{row.map((cell, cellIndex) => <td key={cellIndex} className="whitespace-nowrap px-4 py-3 text-slate-700">{cell}</td>)}</tr>)}</tbody></table></div>{!rows.length && <div className="p-12 text-center text-slate-400">{empty}</div>}</div>;
 
 export default Maintenance;
