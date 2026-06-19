@@ -55,6 +55,16 @@ ZA-19.03 i ZA-19.04. Unos prati izvorne tablice: Qmin/Qsr/Qmax za volumetre,
 tri usporedna mjerenja za AMN sondu, točke A/B/E i linearnost mjerne letve te
 provjeru pokretnog volumetra i volumetrijsku tablicu punjenja rezervoara.
 
+Službeni zahtjevi, radni nalozi, izvještaji i certifikati generiraju se iz
+izvornih predložaka s njihovim logotipima, akreditacijskim oznakama, oznakama
+dokumenta, revizijama i rasporedom stranica. Jedan AMN izvještaj obuhvaća sve
+sonde predmeta, jedan izvještaj volumetara sve odabrane volumetre, a jedan
+izvještaj mjernih letvi sve odabrane letve. Svaki rezervoar dobiva zaseban
+šestostranični izvještaj.
+
+Modul voznog parka vodi vozila, registracije, osiguranja, tehničke preglede,
+servise po datumu i kilometraži, PP aparate, gume, troškove i nadolazeće rokove.
+
 ## Pokretanje
 
 Backend koristi `backend/.env`:

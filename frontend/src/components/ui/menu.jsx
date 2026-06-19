@@ -16,6 +16,7 @@ import {
   FaTachometerAlt,
   FaTasks,
   FaFlask,
+  FaCar,
   FaUserFriends,
   FaUsers,
 } from "react-icons/fa";
@@ -55,6 +56,7 @@ export const menu = [
       { label: "Upravljački centar", link: "/management", icon: <FaChartLine />, permission: "view_management" },
       { label: "Skladište", link: "/inventory", icon: <FaBoxes />, permission: "view_inventory" },
       { label: "Ugovori i ponude", link: "/commercial", icon: <FaFileInvoiceDollar />, permission: "view_commercial" },
+      { label: "Vozni park", link: "/fleet", icon: <FaCar />, permission: "view_fleet" },
     ],
   },
   {

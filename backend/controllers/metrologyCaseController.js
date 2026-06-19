@@ -2,7 +2,7 @@ import crypto from "crypto";
 import fs from "fs/promises";
 import path from "path";
 import * as model from "../models/metrologyCaseModel.js";
-import { buildMetrologyCasePdf } from "../libs/metrologyCasePdf.js";
+import { buildExactMetrologyForm,buildExactMetrologyReport } from "../libs/metrologyTemplatePdf.js";
 import { removeUploadedFile, uploadsRoot } from "../middleware/uploadMiddleware.js";
 
 const knownErrors = {
@@ -60,7 +60,7 @@ export const completeCase = async (req,res) => {
     } catch(error) { fail(res,error,"Predmet nije moguće završiti."); }
 };
 export const generateDocument = async (req,res) => {
-    let storageKey;
+    const storageKeys=[];
     try {
         const record=await model.getCase(req.params.id,req.user.clientId);
         if(!record) return res.status(404).json({error:"Predmet nije pronađen."});
@@ -70,18 +70,38 @@ export const generateDocument = async (req,res) => {
         }
         const existing=record.documents.filter((item)=>item.document_type===type);
         const version=Math.max(0,...existing.map((item)=>Number(item.version_no)))+1;
-        const buffer=await buildMetrologyCasePdf(record,type,version);
-        storageKey=`${Date.now()}-${crypto.randomUUID()}.pdf`;
+        if(type==="inspection_report" && record.service_type==="tank"){
+            const attachments=[];
+            for(const item of record.items){
+                const tankRecord={...record,items:[item]};
+                const buffer=await buildExactMetrologyReport(tankRecord);
+                const storageKey=`${Date.now()}-${crypto.randomUUID()}.pdf`;
+                storageKeys.push(storageKey);
+                const tankLabel=(item.serial_number||item.name||item.id).replaceAll(/[^a-zA-Z0-9_-]/g,"-");
+                const fileName=`${record.case_number}-inspection-report-rezervoar-${tankLabel}.pdf`;
+                await fs.writeFile(path.join(uploadsRoot,storageKey),buffer,{flag:"wx"});
+                const attachment=await model.registerDocument(
+                    req.params.id,type,{fileName,storageKey,fileSize:buffer.length},req.user
+                );
+                if(!attachment) throw Object.assign(new Error("Case not found"),{code:"CASE_NOT_FOUND"});
+                attachments.push(attachment);
+            }
+            return res.status(201).json({multiple:true,attachments});
+        }
+        const buffer=type==="inspection_report"
+            ? await buildExactMetrologyReport(record)
+            : await buildExactMetrologyForm(record,type);
+        const storageKey=`${Date.now()}-${crypto.randomUUID()}.pdf`;
+        storageKeys.push(storageKey);
         const fileName=`${record.case_number}-${type}-v${version}.pdf`;
         await fs.writeFile(path.join(uploadsRoot,storageKey),buffer,{flag:"wx"});
-        const attachment=await model.registerDocument(req.params.id,type,{fileName,storageKey,fileSize:buffer.length},req.user);
-        if(!attachment){
-            await removeUploadedFile(storageKey);
-            return res.status(404).json({error:"Predmet nije pronađen."});
-        }
+        const attachment=await model.registerDocument(
+            req.params.id,type,{fileName,storageKey,fileSize:buffer.length},req.user
+        );
+        if(!attachment) return res.status(404).json({error:"Predmet nije pronađen."});
         res.status(201).json(attachment);
     } catch(error) {
-        if(storageKey) await removeUploadedFile(storageKey);
+        await Promise.all(storageKeys.map((storageKey)=>removeUploadedFile(storageKey)));
         fail(res,error,"Dokument nije moguće generirati.");
     }
 };

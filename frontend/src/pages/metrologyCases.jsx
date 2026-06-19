@@ -86,7 +86,7 @@ const CaseEditor=({record,form,setForm,options,canManage,canGenerate,onBack,onRe
     catch(error){toast.error(error.response?.data?.error||"Predmet nije moguće odobriti.");}
   };
   const generate=async type=>{
-    try{const response=await generateMetrologyCaseDocument(record.id,type);const file=await downloadAttachment(response.data.id);downloadBlob(file.data,response.data.file_name);toast.success("Dokument je generiran i arhiviran.");await onReload();}
+    try{const response=await generateMetrologyCaseDocument(record.id,type);const attachments=response.data.multiple?response.data.attachments:[response.data];for(const attachment of attachments){const file=await downloadAttachment(attachment.id);downloadBlob(file.data,attachment.file_name);}toast.success(attachments.length>1?`Generirano je ${attachments.length} zasebnih izvještaja za rezervoare.`:"Dokument je generiran i arhiviran.");await onReload();}
     catch(error){toast.error(error.response?.data?.error||"Dokument nije moguće generirati.");}
   };
   const available=sources[record.service_type].filter(source=>
