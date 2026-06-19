@@ -3,6 +3,9 @@ import * as equipmentModel from '../models/equipmentModel.js';
 // Kontroler za dohvat svih oprema za određenog klijenta
 export const getEquipments = async (req, res) => {
     const { clientId, type } = req.params;
+    if (req.user.clientId && Number(req.user.clientId) !== Number(clientId)) {
+        return res.status(403).json({ error: "Access denied" });
+    }
 
     try {
         const equipments = await equipmentModel.getEquipmentByClientId(clientId, type);
@@ -68,8 +71,9 @@ export const updateCalibrationExpiry = async (req, res) => {
 
 export const getCalibrationExpiry = async (req, res) => {
     const { clientId, equipmentId, activeTab } = req.params;
-
-    console.log(clientId, equipmentId);
+    if (req.user.clientId && Number(req.user.clientId) !== Number(clientId)) {
+        return res.status(403).json({ error: "Access denied" });
+    }
 
     try {
         // Pozivamo model za dohvat datuma isteka

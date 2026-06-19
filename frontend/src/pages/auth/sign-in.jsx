@@ -4,7 +4,7 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BiLoader } from "react-icons/bi";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import useStore from "../../store";
 import { signIn } from "../../services/authServices.js";
@@ -56,10 +56,6 @@ const SignIn = () => {
       <div className="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-8 animate-fadeIn">
         <h1 className="text-3xl font-bold text-center text-gray-800 dark:text-white mb-8">Sign In</h1>
 
-        <button className="w-full flex items-center justify-center bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-md mb-6 transition">
-          Sign in with Google
-        </button>
-
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="relative">
             <input
@@ -105,9 +101,8 @@ const SignIn = () => {
           </button>
         </form>
 
-        <p className="text-center text-gray-600 dark:text-gray-400 mt-6">
-          Don't have an account?{" "}
-          <Link to="/sign-up" className="text-violet-600 hover:underline font-semibold">Sign Up</Link>
+        <p className="mt-6 text-center text-sm text-gray-500">
+          Korisničke račune otvara administrator sustava.
         </p>
       </div>
     </div>

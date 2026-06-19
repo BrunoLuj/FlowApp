@@ -1,9 +1,7 @@
 import express from "express";
 import authRoutes from "./authRoutes.js";
-// import accountRoutes from "./accountRoutes.js";
 import userRoutes from "./userRoutes.js";
 import clientsRoutes from "./clientsRoutes.js";
-import transactionRoutes from "./transactionRoutes.js";
 import projectsRoutes from "./projectsRoutes.js";
 import translationRoutes from "./translationRoutes.js";
 import inspectionsRoutes from "./inspectionsRoutes.js";
@@ -17,6 +15,7 @@ import managementRoutes from "./managementRoutes.js";
 import inventoryRoutes from "./inventoryRoutes.js";
 import maintenanceRoutes from "./maintenanceRoutes.js";
 import commercialRoutes from "./commercialRoutes.js";
+import roleRoutes from "./roleRoutes.js";
 
 const router = express.Router();
 
@@ -24,8 +23,6 @@ router.use("/auth", authRoutes);
 router.use("/user", userRoutes);
 router.use("/projects", projectsRoutes);
 router.use("/clients", clientsRoutes);
-// router.use("/account", accountRoutes);
-router.use("/transaction", transactionRoutes);
 router.use("/translations", translationRoutes);
 router.use("/inspections", inspectionsRoutes);
 router.use("/equipment", equipmentRoutes);
@@ -38,5 +35,6 @@ router.use("/management", managementRoutes);
 router.use("/inventory", inventoryRoutes);
 router.use("/maintenance", maintenanceRoutes);
 router.use("/commercial", commercialRoutes);
+router.use("/roles", roleRoutes);
 
 export default router;

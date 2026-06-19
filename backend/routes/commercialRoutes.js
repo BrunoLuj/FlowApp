@@ -19,15 +19,15 @@ router.post("/public/quotations/:token/decision", decideQuotation);
 
 router.get("/", authMiddleware, checkPermission("view_commercial"), getOverview);
 router.get("/contracts/:id", authMiddleware, checkPermission("view_commercial"), getContract);
-router.post("/contracts", authMiddleware, checkPermission("manage_commercial"), saveContract);
-router.put("/contracts/:id", authMiddleware, checkPermission("manage_commercial"), saveContract);
+router.post("/contracts", authMiddleware, checkPermission("manage_contracts"), saveContract);
+router.put("/contracts/:id", authMiddleware, checkPermission("manage_contracts"), saveContract);
 router.get("/quotations/:id", authMiddleware, checkPermission("view_commercial"), getQuotation);
-router.post("/quotations", authMiddleware, checkPermission("manage_commercial"), saveQuotation);
-router.put("/quotations/:id", authMiddleware, checkPermission("manage_commercial"), saveQuotation);
+router.post("/quotations", authMiddleware, checkPermission("manage_quotations"), saveQuotation);
+router.put("/quotations/:id", authMiddleware, checkPermission("manage_quotations"), saveQuotation);
 router.post(
     "/quotations/from-work-order/:workOrderId",
     authMiddleware,
-    checkPermission("manage_commercial"),
+    checkPermission("manage_quotations"),
     createFromWorkOrder
 );
 

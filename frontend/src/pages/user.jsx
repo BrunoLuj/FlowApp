@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import useStore from '../store';
 import { deleteUser, getRoles, saveUser } from '../services/usersServices';
+import { getClients } from '../services/clientsServices';
 import { toast } from 'sonner';
 
 const UserForm = () => {
@@ -9,7 +10,11 @@ const UserForm = () => {
   const navigate = useNavigate();
   const { permissions } = useStore();
   const user = location.state?.user || {};
+  const canEdit = user.id
+    ? permissions.includes("update_users")
+    : permissions.includes("create_users");
   const [roles, setRoles] = useState([]);
+  const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [formData, setFormData] = useState({
@@ -22,6 +27,7 @@ const UserForm = () => {
     country: user.country || '',
     currency: user.currency || '',
     roles_id: user.roles_id || '',
+    client_id: user.client_id || '',
     status: user.status || false,
     description: user.description || '',
   });
@@ -214,8 +220,9 @@ const UserForm = () => {
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        const res = await getRoles();
-        setRoles(res.data);
+        const [rolesResponse, clientsResponse] = await Promise.all([getRoles(), getClients()]);
+        setRoles(rolesResponse.data);
+        setClients(clientsResponse.data);
       } catch {
         toast.error("Failed to load roles");
       } finally {
@@ -237,8 +244,13 @@ const UserForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await saveUser(formData);
-      toast.success("User saved successfully!");
+      const response = await saveUser(formData);
+      if (response.data.temporary_password) {
+        await navigator.clipboard?.writeText(response.data.temporary_password);
+        toast.success(`Korisnik je kreiran. Privremena lozinka: ${response.data.temporary_password}`, { duration: 15000 });
+      } else {
+        toast.success("Korisnik je spremljen.");
+      }
       navigate('/users');
     } catch (err) {
       toast.error(err.response?.data?.message || "Something went wrong");
@@ -275,8 +287,8 @@ const UserForm = () => {
                 name="firstname"
                 value={formData.firstname}
                 onChange={handleChange}
-                readOnly={!permissions.includes('create_users')}
-                className={`w-full border p-3 rounded-xl focus:ring focus:ring-blue-400 ${!permissions.includes('create_users') ? 'bg-gray-200' : 'bg-white'}`}
+                readOnly={!canEdit}
+                className={`w-full border p-3 rounded-xl focus:ring focus:ring-blue-400 ${!canEdit ? 'bg-gray-200' : 'bg-white'}`}
               />
             </div>
 
@@ -288,8 +300,8 @@ const UserForm = () => {
                 name="lastname"
                 value={formData.lastname}
                 onChange={handleChange}
-                readOnly={!permissions.includes('create_users')}
-                className={`w-full border p-3 rounded-xl focus:ring focus:ring-blue-400 ${!permissions.includes('create_users') ? 'bg-gray-200' : 'bg-white'}`}
+                readOnly={!canEdit}
+                className={`w-full border p-3 rounded-xl focus:ring focus:ring-blue-400 ${!canEdit ? 'bg-gray-200' : 'bg-white'}`}
               />
             </div>
 
@@ -301,8 +313,8 @@ const UserForm = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                readOnly={!permissions.includes('create_users')}
-                className={`w-full border p-3 rounded-xl focus:ring focus:ring-blue-400 ${!permissions.includes('create_users') ? 'bg-gray-200' : 'bg-white'}`}
+                readOnly={!canEdit}
+                className={`w-full border p-3 rounded-xl focus:ring focus:ring-blue-400 ${!canEdit ? 'bg-gray-200' : 'bg-white'}`}
               />
             </div>
 
@@ -314,8 +326,8 @@ const UserForm = () => {
                 name="address"
                 value={formData.address}
                 onChange={handleChange}
-                readOnly={!permissions.includes('create_users')}
-                className={`w-full border p-3 rounded-xl focus:ring focus:ring-blue-400 ${!permissions.includes('create_users') ? 'bg-gray-200' : 'bg-white'}`}
+                readOnly={!canEdit}
+                className={`w-full border p-3 rounded-xl focus:ring focus:ring-blue-400 ${!canEdit ? 'bg-gray-200' : 'bg-white'}`}
               />
             </div>
 
@@ -327,8 +339,8 @@ const UserForm = () => {
                 name="contact"
                 value={formData.contact}
                 onChange={handleChange}
-                readOnly={!permissions.includes('create_users')}
-                className={`w-full border p-3 rounded-xl focus:ring focus:ring-blue-400 ${!permissions.includes('create_users') ? 'bg-gray-200' : 'bg-white'}`}
+                readOnly={!canEdit}
+                className={`w-full border p-3 rounded-xl focus:ring focus:ring-blue-400 ${!canEdit ? 'bg-gray-200' : 'bg-white'}`}
               />
             </div>
 
@@ -339,8 +351,8 @@ const UserForm = () => {
                 name="roles_id"
                 value={formData.roles_id}
                 onChange={handleChange}
-                disabled={!permissions.includes('create_users')}
-                className={`w-full border p-3 rounded-xl focus:ring focus:ring-blue-400 ${!permissions.includes('create_users') ? 'bg-gray-200' : 'bg-white'}`}
+                disabled={!canEdit}
+                className={`w-full border p-3 rounded-xl focus:ring focus:ring-blue-400 ${!canEdit ? 'bg-gray-200' : 'bg-white'}`}
               >
                 <option value="" disabled>Select role</option>
                 {roles.map(role => (
@@ -356,12 +368,29 @@ const UserForm = () => {
                 name="status"
                 value={formData.status ? 'Active' : 'Inactive'}
                 onChange={handleChange}
-                disabled={!permissions.includes('create_users')}
-                className={`w-full border p-3 rounded-xl focus:ring focus:ring-blue-400 ${!permissions.includes('create_users') ? 'bg-gray-200' : 'bg-white'}`}
+                disabled={!canEdit}
+                className={`w-full border p-3 rounded-xl focus:ring focus:ring-blue-400 ${!canEdit ? 'bg-gray-200' : 'bg-white'}`}
               >
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
               </select>
+            </div>
+
+            <div>
+              <label className="block text-gray-700 mb-2">Klijent / tvrtka</label>
+              <select
+                name="client_id"
+                value={formData.client_id}
+                onChange={handleChange}
+                disabled={!canEdit}
+                className={`w-full border p-3 rounded-xl focus:ring focus:ring-blue-400 ${!canEdit ? 'bg-gray-200' : 'bg-white'}`}
+              >
+                <option value="">Interni korisnik</option>
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>{client.company_name}</option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-gray-500">Za client_admin i client_user obavezno odaberite tvrtku.</p>
             </div>
 
             {/* Country */}
@@ -374,8 +403,8 @@ const UserForm = () => {
                   const selected = countryCurrencyList.find(c => c.country === e.target.value);
                   setFormData({ ...formData, country: selected.country, currency: selected.currency });
                 }}
-                disabled={!permissions.includes('create_users')}
-                className={`w-full border p-3 rounded-xl focus:ring focus:ring-blue-400 ${!permissions.includes('create_users') ? 'bg-gray-200' : 'bg-white'}`}
+                disabled={!canEdit}
+                className={`w-full border p-3 rounded-xl focus:ring focus:ring-blue-400 ${!canEdit ? 'bg-gray-200' : 'bg-white'}`}
               >
                 <option value="">Select country</option>
                 {countryCurrencyList.map((c) => (
@@ -403,8 +432,8 @@ const UserForm = () => {
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                readOnly={!permissions.includes('create_users')}
-                className={`w-full border p-3 rounded-xl focus:ring focus:ring-blue-400 ${!permissions.includes('create_users') ? 'bg-gray-200' : 'bg-white'}`}
+                readOnly={!canEdit}
+                className={`w-full border p-3 rounded-xl focus:ring focus:ring-blue-400 ${!canEdit ? 'bg-gray-200' : 'bg-white'}`}
                 rows="4"
               />
             </div>
@@ -412,7 +441,7 @@ const UserForm = () => {
 
           {/* Buttons */}
           <div className="flex flex-wrap gap-4 mt-6 justify-end">
-            {permissions.includes('update_users') && (
+            {canEdit && (
               <button
                 type="submit"
                 className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold shadow hover:scale-105 transition"

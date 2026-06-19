@@ -91,9 +91,11 @@ const Navbar = () => {
                 <Link to="/profile" className="block px-4 py-2 hover:bg-gray-100">
                   {t("profile")}
                 </Link>
-                <Link to="/settings" className="block px-4 py-2 hover:bg-gray-100">
-                  {t("settings")}
-                </Link>
+                {permissionSet.has("view_settings") && (
+                  <Link to="/settings" className="block px-4 py-2 hover:bg-gray-100">
+                    {t("settings")}
+                  </Link>
+                )}
                 <button
                   onClick={signOut}
                   className="w-full text-left px-4 py-2 text-red-500 hover:bg-red-100"

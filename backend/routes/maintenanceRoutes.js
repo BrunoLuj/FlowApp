@@ -21,6 +21,6 @@ router.post("/plans", authMiddleware, checkPermission("manage_maintenance_plans"
 router.put("/plans/:id", authMiddleware, checkPermission("manage_maintenance_plans"), editPlan);
 router.post("/plans/:id/generate", authMiddleware, checkPermission("manage_maintenance_plans"), generatePlan);
 router.post("/generate-due", authMiddleware, checkPermission("manage_maintenance_plans"), generateDue);
-router.post("/assets/:assetId/token", authMiddleware, checkPermission("update_clients"), ensureAssetToken);
+router.post("/assets/:assetId/token", authMiddleware, checkPermission("manage_asset_qr"), ensureAssetToken);
 
 export default router;

@@ -31,7 +31,6 @@ export const addEquipment = async (type, equipmentData) => {
     try {
         // Using the pool to execute the query
         const result = await pool.query(query, values);
-        console.log('Equipment added successfully', result);
     } catch (error) {
         console.error('Error adding equipment:', error);
         throw error;  // Re-throw the error after logging it
@@ -67,7 +66,6 @@ export const updateEquipment = async (id, type, equipmentData) => {
 
     try {
         const result = await pool.query(query, values);
-        console.log('Equipment updated successfully', result);
     } catch (error) {
         console.error('Error updating equipment:', error);
         throw error;
@@ -97,7 +95,6 @@ export const deleteEquipment = async (id, type) => {
 
     try {
         const result = await pool.query(query, [id]);
-        console.log('Equipment deleted successfully', result);
     } catch (error) {
         console.error('Error deleting equipment:', error);
         throw error;
@@ -146,11 +143,9 @@ export const updateCalibrationExpiry = async (equipmentId, clientId, currentExpi
         );
 
         if (result.rows.length === 0) {
-            console.log('No expiry date found, adding initial date...');
             // Ako nema, dodajte početni datum isteka
             await addInitialCalibrationExpiry(equipmentId, clientId, currentExpiryDate, activeTab);
         } else {
-            console.log('Expiry date found, updating...');
             // Ako postoji, premestite ga u istoriju pre nego što ažurirate trenutni datum
             const currentDate = result.rows[0].current_expiry_date;
 
@@ -161,7 +156,6 @@ export const updateCalibrationExpiry = async (equipmentId, clientId, currentExpi
             await updateCurrentCalibrationExpiry(equipmentId, clientId, currentExpiryDate, activeTab);
         }
 
-        console.log('Calibration expiry date updated successfully');
     } catch (error) {
         console.error('Error updating calibration expiry date:', error);
         throw error;
@@ -175,7 +169,6 @@ const addInitialCalibrationExpiry = async (equipment_id, client_id, initial_expi
             'INSERT INTO calibration_expiries (equipment_id, client_id, current_expiry_date, active_tab, created_at) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)',
             [equipment_id, client_id, initial_expiry_date, activeTab]
         );
-        console.log('Initial expiry date added successfully!');
     } catch (error) {
         console.error('Error adding initial expiry date:', error);
         throw error;
@@ -189,7 +182,6 @@ const addToCalibrationExpiryHistory = async (equipment_id, client_id, expiry_dat
             'INSERT INTO calibration_expiry_history (equipment_id, client_id, expiry_date, active_tab) VALUES ($1, $2, $3, $4)',
             [equipment_id, client_id, expiry_date, activeTab]
         );
-        console.log('Old expiry date moved to history successfully!');
     } catch (error) {
         console.error('Error moving old expiry date to history:', error);
         throw error;
@@ -206,9 +198,7 @@ const updateCurrentCalibrationExpiry = async (equipment_id, client_id, current_e
         );
         
         if (result.rowCount > 0) {
-            console.log('Current expiry date updated successfully!');
         } else {
-            console.log('No matching records found to update.');
         }
     } catch (error) {
         console.error('Error updating current expiry date:', error);
@@ -218,7 +208,6 @@ const updateCurrentCalibrationExpiry = async (equipment_id, client_id, current_e
 
 // Funkcija za dohvaćanje trenutnog datuma isteka i povijesti za specifičan tab
 export const getCalibrationExpiry = async (clientId, equipmentId, activeTab) => {
-    console.log("Model", clientId, equipmentId, activeTab);
     try {
         // Dohvati trenutni datum isteka iz calibration_expiries za specifičan tip opreme (activeTab)
         const currentExpiryResult = await pool.query(
@@ -241,7 +230,6 @@ export const getCalibrationExpiry = async (clientId, equipmentId, activeTab) => 
             ? new Date(currentExpiryDate).toISOString().split('T')[0] // Pretvara Date u string (yyyy-mm-dd)
             : null;
         
-        console.log("Model", formattedExpiryDate); // Ispisuje samo datum (2024-11-20)
     
         const previousExpiryDates = historyResult.rows.map(row => row.expiry_date);
     

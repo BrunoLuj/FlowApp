@@ -9,7 +9,6 @@ export const getClient = async (clientId) => {
 };
 
 export const saveClient = async (clientData) => {
-    console.log(clientData);
     if (clientData.id) {
         return await api.put(`/clients/${clientData.id}`, clientData);
     } else {

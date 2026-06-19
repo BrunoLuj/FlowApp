@@ -38,7 +38,7 @@ const Projects = () => {
   };
 
   const openProject = (project) => {
-    navigate('/project-details', { state: { project } });
+    navigate(`/service-center/stations/${project.id}`);
   };
 
   const startEditing = (project) => {

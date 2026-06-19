@@ -8,7 +8,6 @@ const Profile = () => {
     const navigate = useNavigate();
     const { user, permissions, updateCredentials } = useStore();
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     const [formData, setFormData] = useState({
         id: '',
         firstname: '',
@@ -66,7 +65,6 @@ const Profile = () => {
     };
 
     if (loading) return <div className="p-6">Loading...</div>;
-    if (error) return <div className="p-6 text-red-600">Error: {error.message}</div>;
 
     return (
         <div className="bg-gray-100 min-h-screen p-6 mt-14 sm:ml-16">

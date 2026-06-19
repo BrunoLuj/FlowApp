@@ -89,7 +89,7 @@ const Users = () => {
         <table className="min-w-full bg-white rounded-2xl shadow-xl overflow-hidden">
           <thead className="bg-gray-50">
             <tr>
-              {['First Name','Last Name','Email','Role','Contact','Address','Country','Currency','Status','Actions'].map(h => (
+              {['First Name','Last Name','Email','Role','Klijent','Contact','Address','Country','Currency','Status','Actions'].map(h => (
                 <th key={h} className="p-3 text-left text-gray-600">{h}</th>
               ))}
             </tr>
@@ -97,7 +97,7 @@ const Users = () => {
           <tbody>
             {filteredUsers.length === 0 ? (
               <tr>
-                <td colSpan={10} className="text-center py-6 text-gray-500">No users found</td>
+                <td colSpan={11} className="text-center py-6 text-gray-500">No users found</td>
               </tr>
             ) : filteredUsers.map(user => (
               <tr key={user.id} className="hover:bg-gray-50 cursor-pointer transition" onClick={() => openUser(user)}>
@@ -105,6 +105,7 @@ const Users = () => {
                 <td className="p-3 border-b">{user.lastname}</td>
                 <td className="p-3 border-b">{user.email}</td>
                 <td className="p-3 border-b">{roleMap[user.roles_id] || 'Unknown'}</td>
+                <td className="p-3 border-b">{user.client_name || 'Interni'}</td>
                 <td className="p-3 border-b">{user.contact}</td>
                 <td className="p-3 border-b">{user.address}</td>
                 <td className="p-3 border-b">{user.country}</td>

@@ -19,6 +19,7 @@ import {
 import { downloadAttachment, uploadAttachment } from "../services/serviceCenterServices.js";
 import { downloadBlob } from "../libs/downloadBlob.js";
 import { getAvailableInventory } from "../services/inventoryServices.js";
+import useStore from "../store";
 
 const emptyFieldData = {
   arrival_at: "",
@@ -40,6 +41,12 @@ const toLocalInput = (value) => {
 const WorkOrderDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const permissions = useStore((state) => state.permissions);
+  const canChecklist = permissions.includes("manage_work_order_checklist");
+  const canRecordActivity = permissions.includes("record_work_order_activity");
+  const canRecordMaterial = permissions.includes("record_work_order_material");
+  const canEditFieldReport = permissions.includes("edit_work_order_field_report");
+  const canComplete = permissions.includes("complete_work_orders");
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [savingField, setSavingField] = useState(false);
@@ -323,35 +330,35 @@ const WorkOrderDetails = () => {
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
           <Card title="Terenski podaci" icon={FaCar}>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Dolazak"><input type="datetime-local" value={fieldData.arrival_at} onChange={(e) => setFieldData({ ...fieldData, arrival_at: e.target.value })} className="w-full rounded-xl border p-3" /></Field>
-              <Field label="Odlazak"><input type="datetime-local" value={fieldData.departure_at} onChange={(e) => setFieldData({ ...fieldData, departure_at: e.target.value })} className="w-full rounded-xl border p-3" /></Field>
-              <Field label="Početna kilometraža"><input type="number" min="0" step="0.1" value={fieldData.odometer_start} onChange={(e) => setFieldData({ ...fieldData, odometer_start: e.target.value })} className="w-full rounded-xl border p-3" /></Field>
-              <Field label="Završna kilometraža"><input type="number" min="0" step="0.1" value={fieldData.odometer_end} onChange={(e) => setFieldData({ ...fieldData, odometer_end: e.target.value })} className="w-full rounded-xl border p-3" /></Field>
-              <Field label="Udaljenost (km)"><input type="number" min="0" step="0.1" value={fieldData.travel_distance_km} onChange={(e) => setFieldData({ ...fieldData, travel_distance_km: e.target.value })} className="w-full rounded-xl border p-3" /></Field>
-              <Field label="Vrijeme puta (min)"><input type="number" min="0" value={fieldData.travel_time_minutes} onChange={(e) => setFieldData({ ...fieldData, travel_time_minutes: e.target.value })} className="w-full rounded-xl border p-3" /></Field>
+              <Field label="Dolazak"><input disabled={!canEditFieldReport} type="datetime-local" value={fieldData.arrival_at} onChange={(e) => setFieldData({ ...fieldData, arrival_at: e.target.value })} className="w-full rounded-xl border p-3 disabled:bg-slate-100" /></Field>
+              <Field label="Odlazak"><input disabled={!canEditFieldReport} type="datetime-local" value={fieldData.departure_at} onChange={(e) => setFieldData({ ...fieldData, departure_at: e.target.value })} className="w-full rounded-xl border p-3 disabled:bg-slate-100" /></Field>
+              <Field label="Početna kilometraža"><input disabled={!canEditFieldReport} type="number" min="0" step="0.1" value={fieldData.odometer_start} onChange={(e) => setFieldData({ ...fieldData, odometer_start: e.target.value })} className="w-full rounded-xl border p-3 disabled:bg-slate-100" /></Field>
+              <Field label="Završna kilometraža"><input disabled={!canEditFieldReport} type="number" min="0" step="0.1" value={fieldData.odometer_end} onChange={(e) => setFieldData({ ...fieldData, odometer_end: e.target.value })} className="w-full rounded-xl border p-3 disabled:bg-slate-100" /></Field>
+              <Field label="Udaljenost (km)"><input disabled={!canEditFieldReport} type="number" min="0" step="0.1" value={fieldData.travel_distance_km} onChange={(e) => setFieldData({ ...fieldData, travel_distance_km: e.target.value })} className="w-full rounded-xl border p-3 disabled:bg-slate-100" /></Field>
+              <Field label="Vrijeme puta (min)"><input disabled={!canEditFieldReport} type="number" min="0" value={fieldData.travel_time_minutes} onChange={(e) => setFieldData({ ...fieldData, travel_time_minutes: e.target.value })} className="w-full rounded-xl border p-3 disabled:bg-slate-100" /></Field>
             </div>
-            <textarea rows={3} value={fieldData.field_notes} onChange={(e) => setFieldData({ ...fieldData, field_notes: e.target.value })} placeholder="Napomena s terena…" className="mt-3 w-full rounded-xl border p-3" />
-            <button type="button" disabled={savingField} onClick={() => saveFieldData()} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 font-semibold text-white disabled:opacity-50"><FaSave /> {savingField ? "Spremanje…" : "Spremi terenske podatke"}</button>
+            <textarea disabled={!canEditFieldReport} rows={3} value={fieldData.field_notes} onChange={(e) => setFieldData({ ...fieldData, field_notes: e.target.value })} placeholder="Napomena s terena…" className="mt-3 w-full rounded-xl border p-3 disabled:bg-slate-100" />
+            {canEditFieldReport && <button type="button" disabled={savingField} onClick={() => saveFieldData()} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 font-semibold text-white disabled:opacity-50"><FaSave /> {savingField ? "Spremanje…" : "Spremi terenske podatke"}</button>}
           </Card>
 
           <Card title="Checklista" icon={FaClipboardCheck}>
             <div className="space-y-2">
               {order.checklist.map((item) => (
-                <button key={item.id} onClick={() => toggleChecklist(item)} className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left ${item.completed ? "border-emerald-200 bg-emerald-50" : "border-slate-200"}`}>
+                <button key={item.id} disabled={!canChecklist} onClick={() => toggleChecklist(item)} className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left disabled:cursor-default ${item.completed ? "border-emerald-200 bg-emerald-50" : "border-slate-200"}`}>
                   <span className={`flex h-6 w-6 items-center justify-center rounded-full ${item.completed ? "bg-emerald-500 text-white" : "border border-slate-300"}`}>{item.completed && <FaCheck size={11} />}</span>
                   <span className={item.completed ? "text-slate-500 line-through" : "text-slate-700"}>{item.label}{item.required && <span className="ml-1 text-rose-500">*</span>}</span>
                 </button>
               ))}
             </div>
-            <form onSubmit={submitChecklist} className="mt-3 flex gap-2">
+            {canChecklist && <form onSubmit={submitChecklist} className="mt-3 flex gap-2">
               <input required value={checklistLabel} onChange={(e) => setChecklistLabel(e.target.value)} placeholder="Nova stavka…" className="flex-1 rounded-xl border p-3" />
               <button className="rounded-xl bg-indigo-600 px-4 text-white"><FaPlus /></button>
-            </form>
+            </form>}
           </Card>
 
           <Card title="Utrošeni materijal" icon={FaTools}>
             <div className="space-y-2">{order.materials.map((item) => <div key={item.id} className="rounded-xl bg-slate-50 p-3 text-sm"><b>{item.item_name}</b> · {item.quantity} {item.unit}</div>)}</div>
-            <form onSubmit={submitMaterial} className="mt-3 grid grid-cols-4 gap-2">
+            {canRecordMaterial && <form onSubmit={submitMaterial} className="mt-3 grid grid-cols-4 gap-2">
               <select value={material.inventory_item_id ? `${material.inventory_item_id}:${material.warehouse_id}` : ""} onChange={(event) => selectInventoryItem(event.target.value)} className="col-span-4 rounded-xl border p-3">
                 <option value="">Ručni unos / artikl nije u skladištu</option>
                 {availableInventory.map((item) => <option key={`${item.id}-${item.warehouse_id}`} value={`${item.id}:${item.warehouse_id}`}>{item.sku} · {item.name} · {item.quantity} {item.unit} · {item.warehouse_name}</option>)}
@@ -359,24 +366,24 @@ const WorkOrderDetails = () => {
               <input required value={material.item_name} readOnly={Boolean(material.inventory_item_id)} onChange={(e) => setMaterial({ ...material, item_name: e.target.value })} placeholder="Materijal" className="col-span-2 rounded-xl border p-3 read-only:bg-slate-100" />
               <input type="number" min="0.001" step="0.001" value={material.quantity} onChange={(e) => setMaterial({ ...material, quantity: e.target.value })} className="rounded-xl border p-3" />
               <button className="rounded-xl bg-indigo-600 text-white"><FaPlus /></button>
-            </form>
+            </form>}
           </Card>
 
           <Card title="Rad i aktivnosti" icon={FaTools}>
             <div className="space-y-2">{order.activities.map((item) => <div key={item.id} className="rounded-xl bg-slate-50 p-3"><div className="text-sm text-slate-700">{item.description}</div><div className="mt-1 text-xs text-slate-400">{item.user_name} · {item.duration_minutes || 0} min</div></div>)}</div>
-            <form onSubmit={submitActivity} className="mt-3 space-y-2">
+            {canRecordActivity && <form onSubmit={submitActivity} className="mt-3 space-y-2">
               <textarea required rows={3} value={activity.description} onChange={(e) => setActivity({ ...activity, description: e.target.value })} placeholder="Opis izvršenog rada…" className="w-full rounded-xl border p-3" />
               <div className="flex gap-2"><input type="number" min="0" value={activity.duration_minutes} onChange={(e) => setActivity({ ...activity, duration_minutes: e.target.value })} placeholder="Minute" className="flex-1 rounded-xl border p-3" /><button className="rounded-xl bg-indigo-600 px-5 font-semibold text-white">Dodaj</button></div>
-            </form>
+            </form>}
           </Card>
 
           <Card title="Potvrda klijenta" icon={FaPen}>
-            <textarea rows={4} value={completion.completion_notes} onChange={(e) => setCompletion({ ...completion, completion_notes: e.target.value })} placeholder="Završna napomena…" className="w-full rounded-xl border p-3" />
-            <input value={completion.customer_signature_name} onChange={(e) => setCompletion({ ...completion, customer_signature_name: e.target.value })} placeholder="Ime osobe koja potvrđuje rad" className="mt-2 w-full rounded-xl border p-3" />
-            <SignaturePad value={completion.customer_signature_data} onChange={(value) => setCompletion({ ...completion, customer_signature_data: value })} />
+            <textarea disabled={!canEditFieldReport} rows={4} value={completion.completion_notes} onChange={(e) => setCompletion({ ...completion, completion_notes: e.target.value })} placeholder="Završna napomena…" className="w-full rounded-xl border p-3 disabled:bg-slate-100" />
+            <input disabled={!canEditFieldReport} value={completion.customer_signature_name} onChange={(e) => setCompletion({ ...completion, customer_signature_name: e.target.value })} placeholder="Ime osobe koja potvrđuje rad" className="mt-2 w-full rounded-xl border p-3 disabled:bg-slate-100" />
+            <SignaturePad disabled={!canEditFieldReport} value={completion.customer_signature_data} onChange={(value) => setCompletion({ ...completion, customer_signature_data: value })} />
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              <button type="button" disabled={generatingPdf} onClick={generatePdf} className="flex items-center justify-center gap-2 rounded-xl bg-rose-600 py-3 font-bold text-white disabled:opacity-50"><FaFilePdf /> {generatingPdf ? "Generiranje…" : "Generiraj PDF"}</button>
-              <button type="button" disabled={order.status === "Completed"} onClick={finish} className="rounded-xl bg-emerald-600 py-3 font-bold text-white disabled:bg-slate-300">{order.status === "Completed" ? "Nalog je završen" : "Završi nalog"}</button>
+              {canEditFieldReport && <button type="button" disabled={generatingPdf} onClick={generatePdf} className="flex items-center justify-center gap-2 rounded-xl bg-rose-600 py-3 font-bold text-white disabled:opacity-50"><FaFilePdf /> {generatingPdf ? "Generiranje…" : "Generiraj PDF"}</button>}
+              {canComplete && <button type="button" disabled={order.status === "Completed"} onClick={finish} className="rounded-xl bg-emerald-600 py-3 font-bold text-white disabled:bg-slate-300">{order.status === "Completed" ? "Nalog je završen" : "Završi nalog"}</button>}
             </div>
           </Card>
 
@@ -390,8 +397,8 @@ const WorkOrderDetails = () => {
               ))}
               {!order.attachments?.length && <div className="text-sm text-slate-400">Nema učitanih priloga.</div>}
             </div>
-            <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx" onChange={(event) => setAttachmentFile(event.target.files?.[0] || null)} className="mt-3 w-full rounded-xl border border-slate-300 p-2 text-sm" />
-            <button type="button" disabled={!attachmentFile} onClick={addAttachment} className="mt-2 w-full rounded-xl bg-indigo-600 py-3 font-semibold text-white disabled:opacity-40">Učitaj prilog</button>
+            {canEditFieldReport && <><input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx" onChange={(event) => setAttachmentFile(event.target.files?.[0] || null)} className="mt-3 w-full rounded-xl border border-slate-300 p-2 text-sm" />
+            <button type="button" disabled={!attachmentFile} onClick={addAttachment} className="mt-2 w-full rounded-xl bg-indigo-600 py-3 font-semibold text-white disabled:opacity-40">Učitaj prilog</button></>}
           </Card>
         </div>
       </div>
@@ -399,7 +406,7 @@ const WorkOrderDetails = () => {
   );
 };
 
-const SignaturePad = ({ value, onChange }) => {
+const SignaturePad = ({ value, onChange, disabled = false }) => {
   const canvasRef = useRef(null);
   const drawingRef = useRef(false);
 
@@ -427,6 +434,7 @@ const SignaturePad = ({ value, onChange }) => {
   };
 
   const start = (event) => {
+    if (disabled) return;
     event.preventDefault();
     drawingRef.current = true;
     const context = canvasRef.current.getContext("2d");
@@ -454,6 +462,7 @@ const SignaturePad = ({ value, onChange }) => {
   };
 
   const clear = () => {
+    if (disabled) return;
     onChange("");
     const context = canvasRef.current.getContext("2d");
     context.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
@@ -463,8 +472,8 @@ const SignaturePad = ({ value, onChange }) => {
 
   return (
     <div className="mt-3">
-      <div className="mb-1 flex items-center justify-between text-xs font-semibold text-slate-500"><span>Potpis prstom ili mišem</span><button type="button" onClick={clear} className="text-rose-600">Obriši potpis</button></div>
-      <canvas ref={canvasRef} width={700} height={220} onPointerDown={start} onPointerMove={draw} onPointerUp={stop} onPointerLeave={stop} className="h-36 w-full touch-none rounded-xl border-2 border-dashed border-slate-300 bg-white" />
+      <div className="mb-1 flex items-center justify-between text-xs font-semibold text-slate-500"><span>Potpis prstom ili mišem</span>{!disabled && <button type="button" onClick={clear} className="text-rose-600">Obriši potpis</button>}</div>
+      <canvas ref={canvasRef} width={700} height={220} onPointerDown={start} onPointerMove={draw} onPointerUp={stop} onPointerLeave={stop} className={`h-36 w-full touch-none rounded-xl border-2 border-dashed border-slate-300 ${disabled ? "bg-slate-100" : "bg-white"}`} />
     </div>
   );
 };

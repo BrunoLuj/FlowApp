@@ -5,10 +5,6 @@ import { addInspections } from "../controllers/inspectionsController.js";
 
 const router = express.Router();
 
-// Rute za inspekcije
-// router.get("/", authMiddleware, checkPermission('view_projects'), getProjects); // Prikaz svih projekata
-router.post("/", authMiddleware, addInspections); // Dodavanje novog projekta
-// router.put("/:id", authMiddleware, checkPermission('update_projects'), updateProjects); // Ažuriranje postojećeg projekta
-// router.delete("/:id", authMiddleware, checkPermission('delete_projects'), deleteProjects); // Brisanje projekta
+router.post("/", authMiddleware, checkPermission("create_inspections"), addInspections);
 
 export default router;

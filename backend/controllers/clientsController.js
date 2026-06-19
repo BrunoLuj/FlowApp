@@ -3,7 +3,7 @@ import multer from 'multer';
 
 export const getClients = async (req, res) => {
     try {
-        const clients = await clientsModel.getAllClients();  // Get all clients
+        const clients = await clientsModel.getAllClients(req.user.clientId);
         
         // Iterate over each client to check and convert the logo to base64 if it exists
         const clientsWithBase64Logo = clients.map(client => {
@@ -27,7 +27,7 @@ export const getClient = async (req, res) => {
 
     try {
         // Fetch the client data by ID from the model
-        const client = await clientsModel.getClientById(id);
+        const client = await clientsModel.getClientById(id, req.user.clientId);
 
         // If no client is found, return a 404 error
         if (!client) {

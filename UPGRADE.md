@@ -1,27 +1,11 @@
 # FlowApp servisni i mjeriteljski centar
 
-Ova grana uvodi prvu funkcionalnu fazu nadogradnje postojećeg FlowApp sustava.
-
-## Što je dodano
-
-- operativni dashboard sa stvarnim podacima
-- pregled benzinskih stanica i ukupne opreme
-- servisni zahtjevi / help desk s prioritetima i statusima
-- klijentsko ograničenje podataka preko `users.client_id`
-- temelj registra opreme po stanici
-- dokumenti s valjanošću i vidljivošću klijentu
-- rokovi umjeravanja, ovjera, pregleda i dokumentacije
-- audit log važnih korisničkih akcija
-- priprema veze između servisnog zahtjeva i radnog naloga
-- sigurniji dohvat korisnika bez vraćanja password hasha
-
-Postojeća tablica `projects` privremeno ostaje fizička tablica za benzinske stanice.
-Novi API i UI koriste poslovni naziv "benzinske stanice", tako da se postojeći podaci
-ne moraju seliti ili ručno prepisivati.
+FlowApp objedinjuje servisni centar, benzinske stanice, opremu, radne naloge,
+dokumentaciju, rokove, skladište, preventivno održavanje, komercijalu i klijentski portal.
 
 ## Pokretanje
 
-Backend koristi varijable iz `backend/.env`:
+Backend koristi `backend/.env`:
 
 ```env
 DATABASE_URI=postgresql://...
@@ -30,62 +14,45 @@ PORT=5000
 CORS_ORIGIN=http://localhost:3000
 ```
 
-Prije prvog pokretanja nove verzije napraviti backup PostgreSQL baze, zatim:
-
 ```powershell
 cd backend
 npm run migrate
 npm start
 ```
 
-Ako se baza nadograđuje ručno kroz pgAdmin ili drugi PostgreSQL alat, izvršiti cijelu
-skriptu:
+Za novu ili nenadograđenu bazu može se izvršiti objedinjena skripta:
 
 `backend/database/FLOWAPP_FULL_DATABASE_UPGRADE.sql`
 
-Ta skripta sadrži objedinjene naredbe iz svih dosadašnjih iteracija i namijenjena je
-bazi na kojoj prethodne migracije još nisu pokrenute.
-
-Frontend po potrebi može koristiti:
+Frontend po potrebi koristi:
 
 ```env
 REACT_APP_API_URL=http://localhost:5000/api-v1
 ```
-
-Zatim:
 
 ```powershell
 cd frontend
 npm start
 ```
 
-Nakon migracije korisnici se trebaju ponovno prijaviti kako bi JWT sadržavao nove
-dozvole i, za klijentske korisnike, `client_id`.
+## Role
 
-## Uloge
+- `admin` — puni pristup sustavu
+- `project_manager` — postojeća operativna upravljačka rola
+- `service_manager` — servisni zahtjevi, raspored, nalozi i dokumentacija
+- `technician` — izvršenje naloga, checkliste, materijal, potpis i zapisnik
+- `warehouse_manager` — artikli, skladišta i kretanje zaliha
+- `metrology` — oprema, rokovi, dokumenti, QR oznake i inspekcije
+- `client_admin` — pregled podataka vlastite tvrtke i servisnih zahtjeva
+- `client_user` — osnovni klijentski pregled i otvaranje zahtjeva
 
-- Interni korisnici bez `client_id` vide sve klijente i stanice dopuštene svojom ulogom.
-- Klijentski korisnik s postavljenim `users.client_id` vidi samo podatke svoje tvrtke.
-- Migracija nove read/create dozvole dodjeljuje ulogama koje već imaju
-  `view_dashboard` ili `view_clients`.
-- Manage dozvole dobivaju uloge koje već imaju `update_clients` ili
-  `update_work_orders`.
+Permisije se uređuju u aplikaciji kroz **Administracija → Role i permisije**.
+Backend svaku permisiju provjerava izravno u bazi, pa opoziv prava vrijedi odmah.
 
-## Predložene sljedeće faze
+## Važne napomene
 
-1. Detaljna kartica benzinske stanice: sva oprema, servisna povijest, dokumenti i rokovi.
-2. Radni nalog za servisera: mobilni prikaz, checklista, fotografije, utrošeni dijelovi,
-   potpis klijenta i završni PDF zapisnik.
-3. Dokumentni centar: upload, verzije, predlošci i generiranje certifikata/zapisnika.
-4. Automatske obavijesti 60/30/15/7 dana prije isteka.
-5. Raspored servisera i kalendar terenskih intervencija.
-6. Klijentski portal s downloadom dokumentacije i praćenjem statusa zahtjeva.
-7. Izvještaji rukovodstva: SLA, opterećenje servisera, troškovi, učestalost kvarova.
-8. Migracija frontenda s Create React Appa na Vite i code splitting.
-
-## Napomena o postojećoj opremi
-
-Stare tablice `sonda`, `volumeters`, `rezervoar` i `mjerna_letva` ostaju aktivne.
-Dashboard ih uključuje u ukupni broj opreme. Novi `equipment_assets` registar omogućuje
-vezanje uređaja direktno na stanicu; sljedeća faza treba sadržavati kontroliranu
-migraciju stare opreme u taj registar.
+- Tablica `projects` i dalje predstavlja benzinske stanice radi kompatibilnosti postojećih podataka.
+- Stare tablice `sonda`, `volumeters`, `rezervoar` i `mjerna_letva` ostaju aktivne.
+- Javno samostalno registriranje korisnika je isključeno. Korisnike kreira administrator.
+- Novi korisnik dobiva nasumičnu privremenu lozinku koja se prikazuje samo pri kreiranju.
+- Prije ručnih SQL nadogradnji uvijek napraviti backup PostgreSQL baze.

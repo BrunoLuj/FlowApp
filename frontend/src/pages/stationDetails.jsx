@@ -92,8 +92,11 @@ const StationDetails = () => {
   const [qrAsset, setQrAsset] = useState(null);
   const [qrImage, setQrImage] = useState("");
 
-  const canManageAssets = permissions.includes("update_clients");
-  const canManageDocuments = permissions.includes("manage_documents");
+  const canManageAssets = permissions.includes("manage_assets");
+  const canDeleteAssets = permissions.includes("delete_assets");
+  const canManageAssetQr = permissions.includes("manage_asset_qr");
+  const canManageDocuments = permissions.includes("create_documents");
+  const canDeleteDocuments = permissions.includes("delete_documents");
   const canManageDeadlines = permissions.includes("manage_deadlines");
 
   const load = useCallback(async () => {
@@ -370,7 +373,7 @@ const StationDetails = () => {
                     <th className="px-5 py-4">Sljedeći servis</th>
                     <th className="px-5 py-4">Ovjera / kalibracija</th>
                     <th className="px-5 py-4">Status</th>
-                    {canManageAssets && <th className="px-5 py-4">Akcije</th>}
+                    {(canManageAssets || canDeleteAssets || canManageAssetQr) && <th className="px-5 py-4">Akcije</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -394,10 +397,10 @@ const StationDetails = () => {
                           asset.status === "active" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"
                         }`}>{asset.status}</span>
                       </td>
-                      {canManageAssets && (
+                      {(canManageAssets || canDeleteAssets || canManageAssetQr) && (
                         <td className="flex gap-1 px-5 py-4">
-                          <button onClick={() => showQr(asset)} className="rounded-lg p-2 text-indigo-600 hover:bg-indigo-50" title="QR oznaka"><FaQrcode /></button>
-                          <button onClick={() => removeAsset(asset)} className="rounded-lg p-2 text-red-500 hover:bg-red-50"><FaTrash /></button>
+                          {canManageAssetQr && <button onClick={() => showQr(asset)} className="rounded-lg p-2 text-indigo-600 hover:bg-indigo-50" title="QR oznaka"><FaQrcode /></button>}
+                          {canDeleteAssets && <button onClick={() => removeAsset(asset)} className="rounded-lg p-2 text-red-500 hover:bg-red-50"><FaTrash /></button>}
                         </td>
                       )}
                     </tr>
@@ -442,13 +445,13 @@ const StationDetails = () => {
                       Vrijedi do {formatDate(item.valid_until)} · {item.visible_to_client ? "vidljivo klijentu" : "interno"}
                     </div>
                   </div>
-                  {canManageDocuments && (
+                  {canDeleteDocuments && (
                     <div className="flex gap-2">
                       <button onClick={() => downloadStoredDocument(item)} className="rounded-lg p-2 text-indigo-600 hover:bg-indigo-50" title="Preuzmi"><FaDownload /></button>
                       <button onClick={() => removeDocument(item)} className="rounded-lg p-2 text-red-500 hover:bg-red-50" title="Obriši"><FaTrash /></button>
                     </div>
                   )}
-                  {!canManageDocuments && (
+                  {!canDeleteDocuments && (
                     <button onClick={() => downloadStoredDocument(item)} className="self-start rounded-lg p-2 text-indigo-600 hover:bg-indigo-50" title="Preuzmi"><FaDownload /></button>
                   )}
                 </div>

@@ -18,8 +18,6 @@ export const addInspections = async (req, res) => {
         inspectionResult
     } = req.body;
 
-    console.log(req.body)
-
     try {
         const newInspections= await inspectionsModel.addInspections(
             projectId,
@@ -37,10 +35,9 @@ export const addInspections = async (req, res) => {
             integrityCheck,
             inspectionResult,
         );
-        console.log("New",newInspections);
         res.status(201).json(newInspections);
     } catch (error) {
-        console.log("Error", error)
+        console.error("Error adding inspection:", error);
         res.status(500).json({ error: 'Error adding inspections' });
     }
 };

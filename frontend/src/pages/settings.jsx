@@ -1,40 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { toast } from 'sonner';
 import useStore from '../store';
-import api from '../libs/apiCall';
 
 const Settings = () => {
     const { theme, setTheme, language, setLanguage } = useStore();
-    const [loading, setLoading] = useState(true);
-    const [defaultWorkOrderType, setDefaultWorkOrderType] = useState('');
-
-    useEffect(() => {
-        const fetchSettings = async () => {
-            try {
-                const res = await api.get('/settings');
-                const settings = res.data;
-                setDefaultWorkOrderType(settings.defaultWorkOrderType);
-            } catch (err) {
-                console.error(err);
-                toast.error("Error fetching settings");
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchSettings();
-    }, []);
+    const [defaultWorkOrderType, setDefaultWorkOrderType] = useState(
+        localStorage.getItem("defaultWorkOrderType") || "Service"
+    );
 
     const handleSave = async () => {
-        try {
-            await api.post('/settings', { defaultWorkOrderType });
-            toast.success("Settings saved!");
-        } catch (err) {
-            console.error(err);
-            toast.error("Error saving settings");
-        }
+        localStorage.setItem("theme", theme);
+        localStorage.setItem("defaultWorkOrderType", defaultWorkOrderType);
+        document.documentElement.classList.toggle("dark", theme === "dark");
+        toast.success("Postavke su spremljene.");
     };
-
-    if (loading) return <div className="p-6">Loading...</div>;
 
     return (
         <div className="bg-gray-100 min-h-screen p-6 mt-14 sm:ml-16">
