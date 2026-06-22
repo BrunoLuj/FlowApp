@@ -36,7 +36,7 @@ export const getOverview = async () => {
              ORDER BY r.due_date,r.record_type`
         ),
         pool.query(
-            `SELECT TO_CHAR(DATE_TRUNC('month',performed_at),'YYYY-MM') month,
+            `SELECT TO_CHAR(DATE_TRUNC('month',performed_at),'YYYY-MM') AS cost_month,
                     COALESCE(SUM(cost),0)::numeric total
              FROM fleet_vehicle_records
              WHERE performed_at>=DATE_TRUNC('month',CURRENT_DATE)-INTERVAL '5 months'

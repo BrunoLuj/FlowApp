@@ -118,7 +118,7 @@ const Navbar = () => {
 
       {/* SIDEBAR */}
       <aside
-        className={`fixed top-0 left-0 z-40 h-screen pt-20 bg-white border-r transition-all duration-300
+        className={`fixed top-0 left-0 z-40 flex h-screen flex-col bg-white border-r pt-20 transition-all duration-300
           ${isMobile
             ? isMobileMenuOpen
               ? "w-64"
@@ -130,7 +130,7 @@ const Navbar = () => {
         onMouseEnter={() => !isMobile && setSidebarExpanded(true)}
         onMouseLeave={() => !isMobile && setSidebarExpanded(false)}
       >
-        <div className="flex flex-col px-4 gap-3 relative">
+        <div className="sidebar-scroll flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overflow-x-hidden px-4 pb-8">
           {filteredMenu.map((group, i) => (
             <div key={i} className="w-full">
               {/* GROUP TITLE */}
