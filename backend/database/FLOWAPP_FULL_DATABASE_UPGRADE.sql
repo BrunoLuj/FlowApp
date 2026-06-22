@@ -1748,6 +1748,16 @@ ALTER TABLE loyalty_members ALTER COLUMN barcode_value SET NOT NULL;
 ALTER TABLE loyalty_members ALTER COLUMN barcode_value
     SET DEFAULT ('FL' || UPPER(SUBSTRING(md5(random()::text || clock_timestamp()::text) FROM 1 FOR 18)));
 CREATE UNIQUE INDEX IF NOT EXISTS loyalty_members_barcode_value_uidx ON loyalty_members(barcode_value);
+ALTER TABLE loyalty_programs
+    ADD COLUMN IF NOT EXISTS brand_name VARCHAR(120),
+    ADD COLUMN IF NOT EXISTS brand_tagline VARCHAR(200),
+    ADD COLUMN IF NOT EXISTS primary_color VARCHAR(7) NOT NULL DEFAULT '#7C3AED',
+    ADD COLUMN IF NOT EXISTS secondary_color VARCHAR(7) NOT NULL DEFAULT '#2563EB',
+    ADD COLUMN IF NOT EXISTS accent_color VARCHAR(7) NOT NULL DEFAULT '#FBBF24',
+    ADD COLUMN IF NOT EXISTS background_color VARCHAR(7) NOT NULL DEFAULT '#080B18',
+    ADD COLUMN IF NOT EXISTS surface_color VARCHAR(7) NOT NULL DEFAULT '#111827',
+    ADD COLUMN IF NOT EXISTS text_color VARCHAR(7) NOT NULL DEFAULT '#FFFFFF',
+    ADD COLUMN IF NOT EXISTS muted_text_color VARCHAR(7) NOT NULL DEFAULT '#CBD5E1';
 CREATE TABLE IF NOT EXISTS loyalty_tiers (
     id BIGSERIAL PRIMARY KEY, program_id BIGINT NOT NULL REFERENCES loyalty_programs(id) ON DELETE CASCADE,
     name VARCHAR(60) NOT NULL, min_lifetime_points NUMERIC(14,2) NOT NULL DEFAULT 0,
@@ -1802,9 +1812,17 @@ FOR EACH ROW EXECUTE FUNCTION prevent_loyalty_audit_mutation();
 INSERT INTO permissions(name,module,action,description)
 SELECT 'view_loyalty_audit','loyalty','audit','Pregled sigurnosnog audita promjena bodova'
 WHERE NOT EXISTS (SELECT 1 FROM permissions WHERE name='view_loyalty_audit');
+INSERT INTO permissions(name,module,action,description)
+SELECT 'manage_loyalty_branding','loyalty','manage_branding','Prilagodba boja, naziva i vizualnog identiteta Loyalty portala'
+WHERE NOT EXISTS (SELECT 1 FROM permissions WHERE name='manage_loyalty_branding');
 INSERT INTO role_permissions(role_id,permission_id)
 SELECT r.id,p.id FROM roles r CROSS JOIN permissions p
 WHERE r.name IN ('admin','project_manager','service_manager') AND p.name='view_loyalty_audit'
+AND NOT EXISTS (SELECT 1 FROM role_permissions rp WHERE rp.role_id=r.id AND rp.permission_id=p.id);
+INSERT INTO role_permissions(role_id,permission_id)
+SELECT r.id,p.id FROM roles r CROSS JOIN permissions p
+WHERE r.name IN ('admin','project_manager','service_manager','client_admin')
+AND p.name='manage_loyalty_branding'
 AND NOT EXISTS (SELECT 1 FROM role_permissions rp WHERE rp.role_id=r.id AND rp.permission_id=p.id);
 
 INSERT INTO schema_migrations(name)

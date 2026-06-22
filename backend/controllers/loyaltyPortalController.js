@@ -1,4 +1,6 @@
-import {getLocalPortalData,getPortalIdentity,redeemLocalReward} from "../models/loyaltyPortalModel.js";
+import {
+    getLocalPortalData,getPortalIdentity,portalBranding,redeemLocalReward,savePortalBranding,
+} from "../models/loyaltyPortalModel.js";
 
 const demoEnabled=()=>String(process.env.LOYALTY_DEMO_MODE||"").toLowerCase()==="true";
 const portalSource=()=>{
@@ -108,7 +110,7 @@ export const getMyLoyalty=async(req,res)=>{
     let source="local";
     try{
         const identity=await getPortalIdentity(req.user.userId);
-        if(!identity?.loyalty_portal_only){
+        if(!identity?.loyalty_portal_only&&!req.user.permissions?.includes("manage_loyalty_branding")){
             return res.status(403).json({error:"Korisnik nema pristup loyalty portalu."});
         }
         source=portalSource();
@@ -136,6 +138,7 @@ export const getMyLoyalty=async(req,res)=>{
                 last_name:identity.lastname,
                 company_name:identity.company_name,
             },
+            branding:portalBranding(identity),
             data:result.data,
         });
     }catch(error){
@@ -146,6 +149,30 @@ export const getMyLoyalty=async(req,res)=>{
                 ?"Loyalty podatke trenutno nije moguće učitati iz vanjskog sustava."
                 :"Loyalty podatke trenutno nije moguće učitati.",
         });
+    }
+};
+
+const hex=/^#[0-9A-F]{6}$/i;
+export const updateBranding=async(req,res)=>{
+    try{
+        const identity=await getPortalIdentity(req.user.userId);
+        if(!identity)return res.status(404).json({error:"Klijent nije pronađen."});
+        const colorFields=[
+            "primary_color","secondary_color","accent_color","background_color",
+            "surface_color","text_color","muted_text_color",
+        ];
+        if(colorFields.some(field=>!hex.test(String(req.body[field]||"")))){
+            return res.status(400).json({error:"Sve boje moraju biti u HEX formatu, primjerice #7C3AED."});
+        }
+        const branding=await savePortalBranding(identity,{
+            brand_name:String(req.body.brand_name||"").trim().slice(0,120),
+            brand_tagline:String(req.body.brand_tagline||"").trim().slice(0,200),
+            ...Object.fromEntries(colorFields.map(field=>[field,String(req.body[field]).toUpperCase()])),
+        });
+        res.json(branding);
+    }catch(error){
+        console.error("Loyalty branding update failed:",error);
+        res.status(500).json({error:"Izgled Loyalty portala nije moguće spremiti."});
     }
 };
 

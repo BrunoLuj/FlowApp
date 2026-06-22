@@ -3,14 +3,58 @@ import {pool} from "../libs/database.js";
 export const getPortalIdentity=async(userId)=>{
     const result=await pool.query(
         `SELECT u.id,u.email,u.firstname,u.lastname,u.loyalty_external_id,
-                c.id client_id,c.company_name,
+                c.id client_id,c.company_name,c.logo,
+                lp.id program_id,lp.brand_name,lp.brand_tagline,
+                lp.primary_color,lp.secondary_color,lp.accent_color,
+                lp.background_color,lp.surface_color,lp.text_color,lp.muted_text_color,
                 (r.name='client_user' OR c.loyalty_portal_only) loyalty_portal_only
          FROM users u JOIN clients c ON c.id=u.client_id
          JOIN roles r ON r.id=u.roles_id
+         LEFT JOIN loyalty_programs lp ON lp.client_id=c.id
          WHERE u.id=$1 AND COALESCE(u.status,TRUE)=TRUE`,
         [userId]
     );
     return result.rows[0];
+};
+
+const brandingDefaults={
+    primary_color:"#7C3AED",secondary_color:"#2563EB",accent_color:"#FBBF24",
+    background_color:"#080B18",surface_color:"#111827",text_color:"#FFFFFF",
+    muted_text_color:"#CBD5E1",
+};
+
+export const portalBranding=(identity)=>({
+    brand_name:identity.brand_name||identity.company_name||"FlowApp Loyalty",
+    brand_tagline:identity.brand_tagline||"Nagrađujemo vašu vjernost",
+    logo:identity.logo?`data:image/png;base64,${identity.logo.toString("base64")}`:null,
+    primary_color:identity.primary_color||brandingDefaults.primary_color,
+    secondary_color:identity.secondary_color||brandingDefaults.secondary_color,
+    accent_color:identity.accent_color||brandingDefaults.accent_color,
+    background_color:identity.background_color||brandingDefaults.background_color,
+    surface_color:identity.surface_color||brandingDefaults.surface_color,
+    text_color:identity.text_color||brandingDefaults.text_color,
+    muted_text_color:identity.muted_text_color||brandingDefaults.muted_text_color,
+});
+
+export const savePortalBranding=async(identity,data)=>{
+    const result=await pool.query(
+        `INSERT INTO loyalty_programs
+            (client_id,name,status,brand_name,brand_tagline,primary_color,secondary_color,
+             accent_color,background_color,surface_color,text_color,muted_text_color,created_by)
+         VALUES($1,$2,'active',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+         ON CONFLICT(client_id) DO UPDATE SET
+            brand_name=EXCLUDED.brand_name,brand_tagline=EXCLUDED.brand_tagline,
+            primary_color=EXCLUDED.primary_color,secondary_color=EXCLUDED.secondary_color,
+            accent_color=EXCLUDED.accent_color,background_color=EXCLUDED.background_color,
+            surface_color=EXCLUDED.surface_color,text_color=EXCLUDED.text_color,
+            muted_text_color=EXCLUDED.muted_text_color,updated_at=NOW()
+         RETURNING brand_name,brand_tagline,primary_color,secondary_color,accent_color,
+                   background_color,surface_color,text_color,muted_text_color`,
+        [identity.client_id,`${identity.company_name} Loyalty`,data.brand_name||identity.company_name,
+            data.brand_tagline||null,data.primary_color,data.secondary_color,data.accent_color,
+            data.background_color,data.surface_color,data.text_color,data.muted_text_color,identity.id]
+    );
+    return {...result.rows[0],logo:identity.logo?`data:image/png;base64,${identity.logo.toString("base64")}`:null};
 };
 
 export const getLocalPortalData=async(identity)=>{

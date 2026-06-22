@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FaBullhorn, FaCoins, FaGift, FaPlus, FaShieldAlt, FaTimes, FaUsers } from "react-icons/fa";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import useStore from "../store";
 import {
@@ -21,6 +22,7 @@ const Loyalty=()=>{
   const canProgram=permissions.includes("manage_loyalty_program");
   const canMembers=permissions.includes("manage_loyalty_members");
   const canCampaigns=permissions.includes("manage_loyalty_campaigns");
+  const canBrand=permissions.includes("manage_loyalty_branding");
   const [data,setData]=useState({programs:[],members:[],transactions:[],rewards:[],campaigns:[],clients:[],users:[],tiers:[],redemptions:[],receipts:[],audit:[],analytics:{},trend:[]});
   const [loading,setLoading]=useState(true);
   const [modal,setModal]=useState("");
@@ -48,7 +50,7 @@ const Loyalty=()=>{
   return <div className="min-h-screen bg-slate-100 px-4 pb-10 pt-24 sm:ml-16 sm:px-7"><div className="mx-auto max-w-7xl">
     <header className="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
       <div><p className="text-sm font-bold uppercase tracking-widest text-violet-600">Loyalty centar</p><h1 className="text-3xl font-bold">Bodovi, nagrade i promocije</h1><p className="mt-2 text-slate-500">Program pogodnosti koji klijenti i njihovi korisnici prate iz aplikacije.</p></div>
-      <div className="flex flex-wrap gap-2">{canProgram&&<Action onClick={()=>open("program")}>Novi program</Action>}{canProgram&&<Action onClick={()=>open("tier")}>Nova razina</Action>}{canMembers&&<Action onClick={()=>open("member")}>Novi član</Action>}{canCampaigns&&<Action onClick={()=>open("campaign")}>Nova promocija</Action>}</div>
+      <div className="flex flex-wrap gap-2">{canBrand&&<Link to="/my-loyalty" className="rounded-xl border border-violet-300 bg-white px-4 py-2.5 font-semibold text-violet-700">Pregled i branding</Link>}{canProgram&&<Action onClick={()=>open("program")}>Novi program</Action>}{canProgram&&<Action onClick={()=>open("tier")}>Nova razina</Action>}{canMembers&&<Action onClick={()=>open("member")}>Novi član</Action>}{canCampaigns&&<Action onClick={()=>open("campaign")}>Nova promocija</Action>}</div>
     </header>
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><Card icon={FaGift} label="Programa" value={data.programs.length}/><Card icon={FaUsers} label="Članova" value={totals.members}/><Card icon={FaCoins} label="Aktivnih bodova" value={totals.points.toFixed(0)}/><Card icon={FaBullhorn} label="Aktivnih promocija" value={totals.campaigns}/></div>
     <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><Card icon={FaCoins} label="Ukupno dodijeljeno" value={Number(data.analytics?.points_earned||0).toFixed(0)}/><Card icon={FaGift} label="Iskorišteno bodova" value={Number(data.analytics?.points_spent||0).toFixed(0)}/><Card icon={FaGift} label="Aktiviranih nagrada" value={data.analytics?.rewards_redeemed||0}/><Card icon={FaShieldAlt} label="Audit zapisa" value={data.audit.length}/></div>

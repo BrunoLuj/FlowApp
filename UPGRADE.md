@@ -116,6 +116,13 @@ Nakon nadogradnje pokrenuti `npm run migrate` u backend direktoriju. Postojeći
 programi automatski dobivaju četiri početne razine koje administrator može
 prilagoditi u Loyalty centru.
 
+Migracija `026_loyalty_portal_branding.sql` omogućuje zaseban vizualni identitet
+za svakog klijenta. `client_admin` preko gumba **Prilagodi izgled** može podesiti
+naziv i slogan brenda te primarnu, sekundarnu, naglasnu, pozadinsku, površinsku
+i tekstualne boje. Editor prikazuje pregled uživo, a logo se automatski preuzima
+iz podataka klijenta. Ovlast ne omogućuje mijenjanje bodova, nagrada ni pravila
+programa.
+
 ### Vanjski Loyalty sustav
 
 Za dohvat podataka od vanjskog dobavljača postaviti:
