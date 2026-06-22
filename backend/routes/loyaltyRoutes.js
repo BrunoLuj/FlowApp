@@ -1,7 +1,7 @@
 import express from "express";
 import authMiddleware from "../middleware/authMiddleware.js";
 import checkPermission from "../middleware/permissionsMiddleware.js";
-import {overview,saveProgram,createMember,addTransaction,createReward,createCampaign} from "../controllers/loyaltyController.js";
+import {overview,saveProgram,createMember,addTransaction,createReward,createCampaign,createTier} from "../controllers/loyaltyController.js";
 const router=express.Router();
 router.get("/",authMiddleware,checkPermission("view_loyalty"),overview);
 router.post("/programs",authMiddleware,checkPermission("manage_loyalty_program"),saveProgram);
@@ -9,4 +9,5 @@ router.post("/members",authMiddleware,checkPermission("manage_loyalty_members"),
 router.post("/transactions",authMiddleware,checkPermission("manage_loyalty_members"),addTransaction);
 router.post("/rewards",authMiddleware,checkPermission("manage_loyalty_campaigns"),createReward);
 router.post("/campaigns",authMiddleware,checkPermission("manage_loyalty_campaigns"),createCampaign);
+router.post("/tiers",authMiddleware,checkPermission("manage_loyalty_program"),createTier);
 export default router;

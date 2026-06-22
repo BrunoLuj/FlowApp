@@ -7,3 +7,4 @@ export const createLoyaltyMember = (data) => api.post("/loyalty/members", data);
 export const addLoyaltyTransaction = (data) => api.post("/loyalty/transactions", data);
 export const createLoyaltyReward = (data) => api.post("/loyalty/rewards", data);
 export const createLoyaltyCampaign = (data) => api.post("/loyalty/campaigns", data);
+export const saveLoyaltyTier = (data) => api.post("/loyalty/tiers", data);

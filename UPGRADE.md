@@ -99,6 +99,23 @@ LOYALTY_PORTAL_SOURCE=demo
 Postojeća postavka `LOYALTY_DEMO_MODE=true` ostaje podržana radi kompatibilnosti
 i ima prednost nad `LOYALTY_PORTAL_SOURCE`.
 
+### Napredni Loyalty paket
+
+Migracija `023_loyalty_experience_audit.sql` dodaje:
+
+- automatski portal-only pristup za sve korisnike role `client_user`
+- digitalnu člansku karticu s jedinstvenim QR kodom
+- konfigurabilne Bronze, Silver, Gold i Platinum razine s prikazom napretka
+- aktiviranje nagrada i generiranje kupona uz atomsko skidanje bodova
+- digitalne račune povezane s kupnjom i transakcijom bodova
+- promocije ciljane prema razini članstva
+- administratorsku analitiku članova, bodova, kupona i mjesečnog prometa
+- sigurnosni audit svake promjene bodova sa stanjem prije i poslije promjene
+
+Nakon nadogradnje pokrenuti `npm run migrate` u backend direktoriju. Postojeći
+programi automatski dobivaju četiri početne razine koje administrator može
+prilagoditi u Loyalty centru.
+
 ### Vanjski Loyalty sustav
 
 Za dohvat podataka od vanjskog dobavljača postaviti:
@@ -107,11 +124,12 @@ Za dohvat podataka od vanjskog dobavljača postaviti:
 LOYALTY_PORTAL_SOURCE=external
 LOYALTY_DEMO_MODE=false
 LOYALTY_EXTERNAL_API_URL=https://stvarna-domena-dobavljaca/api/customer-summary
+LOYALTY_EXTERNAL_REDEEM_URL=https://stvarna-domena-dobavljaca/api/rewards/redeem
 LOYALTY_EXTERNAL_API_KEY=stvarni-tajni-api-kljuc
 LOYALTY_EXTERNAL_API_TIMEOUT_MS=10000
 ```
 
-`LOYALTY_EXTERNAL_API_URL` i ključ daje dobavljač vanjskog Loyalty sustava.
+`LOYALTY_EXTERNAL_API_URL`, `LOYALTY_EXTERNAL_REDEEM_URL` i ključ daje dobavljač vanjskog Loyalty sustava.
 FlowApp šalje identifikatore kao query parametre `external_id`, `email` i
 `client_id`, a autentikaciju kao `Authorization: Bearer <API_KEY>`. Nakon
 dobivanja stvarnog primjera JSON odgovora adapter treba uskladiti s točnom
@@ -137,6 +155,7 @@ LOYALTY_PORTAL_SOURCE=local
 LOYALTY_DEMO_MODE=false
 # Vanjski sustav:
 # LOYALTY_EXTERNAL_API_URL=https://loyalty.example.com/api/customer-summary
+# LOYALTY_EXTERNAL_REDEEM_URL=https://loyalty.example.com/api/rewards/redeem
 # LOYALTY_EXTERNAL_API_KEY=secret-api-key
 LOYALTY_EXTERNAL_API_TIMEOUT_MS=10000
 ```

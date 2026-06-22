@@ -4,7 +4,7 @@ export const findUserByEmail = async (email) => {
   // Prvo dobij korisnika
   const userResult = await pool.query({
       text: `SELECT u.*,r.name AS role_name,
-                    COALESCE(c.loyalty_portal_only,FALSE) AS loyalty_portal_only
+                    (r.name='client_user' OR COALESCE(c.loyalty_portal_only,FALSE)) AS loyalty_portal_only
              FROM users u
              JOIN roles r ON r.id=u.roles_id
              LEFT JOIN clients c ON c.id=u.client_id
@@ -38,7 +38,7 @@ export const findUserById = async (id) => {
   const userResult = await pool.query(
     `SELECT u.id,u.email,u.firstname,u.lastname,u.contact,u.address,u.country,u.currency,
             u.roles_id,u.status,u.client_id,u.loyalty_external_id,r.name role_name,
-            COALESCE(c.loyalty_portal_only,FALSE) loyalty_portal_only
+            (r.name='client_user' OR COALESCE(c.loyalty_portal_only,FALSE)) loyalty_portal_only
      FROM users u JOIN roles r ON r.id=u.roles_id
      LEFT JOIN clients c ON c.id=u.client_id WHERE u.id = $1`,
     [id]
