@@ -64,6 +64,13 @@ izvještaj mjernih letvi sve odabrane letve. Svaki rezervoar dobiva zaseban
 
 Modul voznog parka vodi vozila, registracije, osiguranja, tehničke preglede,
 servise po datumu i kilometraži, PP aparate, gume, troškove i nadolazeće rokove.
+Svaka evidencija obavezno sadrži opis izvedenih radova i može imati priložen
+račun, zapisnik ili drugi dokument. Rokovi u idućih 30 dana automatski ulaze
+u e-mail centar za dodijeljenog korisnika i rukovodstvo.
+
+Loyalty centar vodi program za svakog klijenta, članove, stanje i promet bodova,
+nagrade te marketinške promocije u aplikaciji i/ili e-mail kanalu. Klijentske
+role vide samo vlastiti program i trenutno aktivne ili zakazane promocije.
 
 ## Pokretanje
 

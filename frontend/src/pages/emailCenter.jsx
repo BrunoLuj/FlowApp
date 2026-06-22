@@ -19,6 +19,7 @@ const eventLabels = {
   sla_escalation: "SLA eskalacija",
   service_report_generated: "Servisni PDF zapisnik",
   deadline_reminder: "Dokumenti, ovjere i kalibracije",
+  fleet_deadline_reminder: "Vozni park: registracije, servisi i PP aparati",
 };
 
 const statusStyle = {

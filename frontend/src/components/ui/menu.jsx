@@ -18,6 +18,7 @@ import {
   FaFlask,
   FaCar,
   FaUserFriends,
+  FaGift,
   FaUsers,
 } from "react-icons/fa";
 
@@ -57,6 +58,7 @@ export const menu = [
       { label: "Skladište", link: "/inventory", icon: <FaBoxes />, permission: "view_inventory" },
       { label: "Ugovori i ponude", link: "/commercial", icon: <FaFileInvoiceDollar />, permission: "view_commercial" },
       { label: "Vozni park", link: "/fleet", icon: <FaCar />, permission: "view_fleet" },
+      { label: "Loyalty i promocije", link: "/loyalty", icon: <FaGift />, permission: "view_loyalty" },
     ],
   },
   {

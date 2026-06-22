@@ -54,6 +54,11 @@ export const renderEmailTemplate = (eventType, data, appUrl) => {
             title: "Dokument ili ovjera uskoro istječe",
             content: `<table style="width:100%;background:#fffbeb;border-radius:10px">${row("Rok", data.title)}${row("Klijent", data.client_name)}${row("Stanica", data.station_name)}${row("Datum isteka", data.due_date)}${row("Preostalo dana", String(data.days_remaining))}</table>`,
         },
+        fleet_deadline_reminder: {
+            subject: `Vozilo ${data.registration_number}: uskoro istječe ${data.title}`,
+            title: "Podsjetnik na rok voznog parka",
+            content: `<table style="width:100%;background:#fffbeb;border-radius:10px">${row("Vozilo", `${data.registration_number} · ${data.make} ${data.model}`)}${row("Evidencija", data.title)}${row("Datum isteka", data.due_date)}${row("Preostalo dana", String(data.days_remaining))}</table>`,
+        },
     };
     const template = templates[eventType];
     if (!template) throw new Error(`Unknown email event type: ${eventType}`);

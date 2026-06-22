@@ -11,6 +11,7 @@ export const eventTypes = [
     "sla_escalation",
     "service_report_generated",
     "deadline_reminder",
+    "fleet_deadline_reminder",
 ];
 
 const appUrl = () => (process.env.APP_URL || process.env.CORS_ORIGIN || "http://localhost:3000")
@@ -168,7 +169,7 @@ export const processEmailQueue = async (limit = 20) => {
 };
 
 export const generateScheduledEmails = async () => {
-    const [orders, sla, deadlines] = await Promise.all([
+    const [orders, sla, deadlines, fleetDeadlines] = await Promise.all([
         pool.query(
             `SELECT wo.id, wo.work_order_number, wo.title, wo.assigned_to,
                     COALESCE(wo.scheduled_start_at, wo.planned_date::timestamp) AS scheduled_at,
@@ -195,6 +196,16 @@ export const generateScheduledEmails = async () => {
              JOIN clients c ON c.id=d.client_id
              LEFT JOIN projects p ON p.id=d.station_id
              WHERE d.status='active' AND d.due_date BETWEEN CURRENT_DATE AND CURRENT_DATE+30`
+        ),
+        pool.query(
+            `SELECT r.id,r.title,r.record_type,TO_CHAR(r.due_date,'YYYY-MM-DD') due_date,
+                    (r.due_date-CURRENT_DATE)::int days_remaining,
+                    v.registration_number,v.make,v.model,u.email assignee_email,
+                    CONCAT(u.firstname,' ',u.lastname) assignee_name
+             FROM fleet_vehicle_records r
+             JOIN fleet_vehicles v ON v.id=r.vehicle_id
+             LEFT JOIN users u ON u.id=v.assigned_user_id
+             WHERE r.status='active' AND r.due_date BETWEEN CURRENT_DATE AND CURRENT_DATE+30`
         ),
     ]);
     for (const order of orders.rows) {
@@ -241,7 +252,16 @@ export const generateScheduledEmails = async () => {
             },
         });
     }
-    return { orders: orders.rowCount, sla: sla.rowCount, deadlines: deadlines.rowCount };
+    for (const deadline of fleetDeadlines.rows) {
+        await queueEmailEvent({
+            eventType:"fleet_deadline_reminder",clientId:null,
+            entityType:"fleet_record",entityId:deadline.id,
+            notificationBase:`fleet-deadline:${deadline.id}:${deadline.days_remaining}`,
+            assigneeRecipients:deadline.assignee_email?[{email:deadline.assignee_email,name:deadline.assignee_name}]:[],
+            data:{...deadline,due_date:deadline.due_date.split("-").reverse().join("."),target_url:"/fleet"},
+        });
+    }
+    return { orders: orders.rowCount, sla: sla.rowCount, deadlines: deadlines.rowCount,fleetDeadlines:fleetDeadlines.rowCount };
 };
 
 export const getEmailCenter = async () => {

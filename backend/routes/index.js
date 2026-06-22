@@ -21,6 +21,7 @@ import emailNotificationRoutes from "./emailNotificationRoutes.js";
 import metrologyRoutes from "./metrologyRoutes.js";
 import metrologyCaseRoutes from "./metrologyCaseRoutes.js";
 import fleetRoutes from "./fleetRoutes.js";
+import loyaltyRoutes from "./loyaltyRoutes.js";
 
 const router = express.Router();
 
@@ -46,5 +47,6 @@ router.use("/email-center", emailNotificationRoutes);
 router.use("/metrology", metrologyRoutes);
 router.use("/metrology-cases", metrologyCaseRoutes);
 router.use("/fleet", fleetRoutes);
+router.use("/loyalty", loyaltyRoutes);
 
 export default router;

@@ -70,8 +70,11 @@ export const getVehicle = async (id) => {
     )).rows[0];
     if (!vehicle) return null;
     const records = await pool.query(
-        `SELECT r.*,(r.due_date-CURRENT_DATE)::int days_remaining
-         FROM fleet_vehicle_records r WHERE r.vehicle_id=$1
+        `SELECT r.*,(r.due_date-CURRENT_DATE)::int days_remaining,
+                a.id attachment_id,a.file_name attachment_file_name
+         FROM fleet_vehicle_records r
+         LEFT JOIN entity_attachments a ON a.fleet_record_id=r.id
+         WHERE r.vehicle_id=$1
          ORDER BY COALESCE(r.due_date,r.performed_at) DESC,r.created_at DESC`,
         [id]
     );
@@ -114,7 +117,7 @@ export const updateVehicle = async (id,data) => {
     return result.rows[0];
 };
 
-export const createRecord = async (vehicleId,data,userId) => {
+export const createRecord = async (vehicleId,data,userId,file = null) => {
     const connection = await pool.connect();
     try {
         await connection.query("BEGIN");
@@ -138,6 +141,21 @@ export const createRecord = async (vehicleId,data,userId) => {
                 data.currency || "BAM",data.status || "active",data.notes || null,userId,
             ]
         );
+        if (file) {
+            await connection.query(
+                `INSERT INTO entity_attachments (
+                    client_id,fleet_record_id,title,file_name,storage_key,mime_type,
+                    file_size,visible_to_client,uploaded_by
+                 ) VALUES (
+                    (SELECT client_id FROM users WHERE id=$1),
+                    $2,$3,$4,$5,$6,$7,FALSE,$1
+                 )`,
+                [
+                    userId,result.rows[0].id,data.document_title || file.originalname,
+                    file.originalname,file.filename,file.mimetype,file.size,
+                ]
+            );
+        }
         if (Number(data.odometer) > Number(vehicle.current_odometer)) {
             await connection.query(
                 "UPDATE fleet_vehicles SET current_odometer=$1,updated_at=NOW() WHERE id=$2",
