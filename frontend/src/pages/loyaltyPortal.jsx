@@ -29,7 +29,8 @@ const LoyaltyPortal=()=>{
   },[response]);
   if(loading)return <div className="min-h-screen bg-slate-950 pt-32 text-center text-white">Učitavanje vaših pogodnosti…</div>;
   if(!response)return <ErrorState onRetry={load}/>;
-  if(!response.configured)return <div className="min-h-screen bg-slate-950 px-5 pt-28 text-white"><div className="mx-auto max-w-xl rounded-3xl border border-white/10 bg-white/5 p-8 text-center"><FaBolt className="mx-auto text-4xl text-violet-400"/><h1 className="mt-4 text-2xl font-bold">Loyalty integracija je spremna</h1><p className="mt-3 text-slate-300">Potrebno je još unijeti adresu i API ključ vanjskog Loyalty sustava na serveru.</p></div></div>;
+  if(!response.configured)return <PortalNotice title="Loyalty integracija je spremna">Potrebno je još unijeti adresu i API ključ vanjskog Loyalty sustava na serveru.</PortalNotice>;
+  if(response.source==="local"&&!response.member_found)return <PortalNotice title="Članstvo još nije povezano">Administrator treba povezati vaš korisnički račun s članom lokalnog Loyalty programa. Nakon povezivanja ovdje će se prikazati bodovi, nagrade i aktivnosti.</PortalNotice>;
   const name=first(view.member,["full_name","name"],`${response.customer.first_name||""} ${response.customer.last_name||""}`.trim());
   return <main className="min-h-screen bg-[#080b18] px-4 pb-14 pt-24 text-white sm:px-7"><div className="mx-auto max-w-6xl">
     <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-violet-700 via-indigo-700 to-cyan-600 p-7 shadow-2xl sm:p-10">
@@ -45,5 +46,6 @@ const LoyaltyPortal=()=>{
 };
 const Title=({icon:Icon,children})=><h2 className="flex items-center gap-3 text-xl font-bold"><span className="rounded-xl bg-violet-500/20 p-2 text-violet-300"><Icon/></span>{children}</h2>;
 const Empty=({children})=><div className="p-10 text-center text-slate-500">{children}</div>;
+const PortalNotice=({title,children})=><div className="min-h-screen bg-slate-950 px-5 pt-28 text-white"><div className="mx-auto max-w-xl rounded-3xl border border-white/10 bg-white/5 p-8 text-center"><FaBolt className="mx-auto text-4xl text-violet-400"/><h1 className="mt-4 text-2xl font-bold">{title}</h1><p className="mt-3 text-slate-300">{children}</p></div></div>;
 const ErrorState=({onRetry})=><div className="min-h-screen bg-slate-950 px-5 pt-32 text-center text-white"><h1 className="text-2xl font-bold">Podaci trenutno nisu dostupni</h1><button onClick={onRetry} className="mt-5 rounded-xl bg-violet-600 px-5 py-3 font-bold"><FaRedo className="mr-2 inline"/>Pokušaj ponovno</button></div>;
 export default LoyaltyPortal;

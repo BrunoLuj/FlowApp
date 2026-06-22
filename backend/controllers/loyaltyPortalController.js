@@ -1,6 +1,12 @@
-import {getPortalIdentity} from "../models/loyaltyPortalModel.js";
+import {getLocalPortalData,getPortalIdentity} from "../models/loyaltyPortalModel.js";
 
 const demoEnabled=()=>String(process.env.LOYALTY_DEMO_MODE||"").toLowerCase()==="true";
+const portalSource=()=>{
+    if(demoEnabled())return "demo";
+    const configured=String(process.env.LOYALTY_PORTAL_SOURCE||"").trim().toLowerCase();
+    if(configured)return configured;
+    return process.env.LOYALTY_EXTERNAL_API_URL?.trim()?"external":"local";
+};
 const demoData=(identity)=>{
     const now=new Date();
     const daysAgo=(days)=>new Date(now.getTime()-days*86400000).toISOString();
@@ -33,9 +39,8 @@ const demoData=(identity)=>{
 };
 
 const externalRequest=async(identity)=>{
-    if(demoEnabled())return {configured:true,demo:true,data:demoData(identity)};
     const base=process.env.LOYALTY_EXTERNAL_API_URL?.trim();
-    if(!base)return {configured:false,demo:false,data:null};
+    if(!base)return {configured:false,data:null};
     const url=new URL(base);
     url.searchParams.set("external_id",identity.loyalty_external_id||"");
     url.searchParams.set("email",identity.email);
@@ -53,20 +58,35 @@ const externalRequest=async(identity)=>{
             error.status=response.status;
             throw error;
         }
-        return {configured:true,demo:false,data:await response.json()};
+        return {configured:true,data:await response.json()};
     }finally{clearTimeout(timeout);}
 };
 
 export const getMyLoyalty=async(req,res)=>{
+    let source="local";
     try{
         const identity=await getPortalIdentity(req.user.userId);
         if(!identity?.loyalty_portal_only){
             return res.status(403).json({error:"Korisnik nema pristup loyalty portalu."});
         }
-        const external=await externalRequest(identity);
+        source=portalSource();
+        let result;
+        if(source==="demo"){
+            result={configured:true,data:demoData(identity),memberFound:true};
+        }else if(source==="local"){
+            const data=await getLocalPortalData(identity);
+            result={configured:true,data,memberFound:Boolean(data)};
+        }else if(source==="external"){
+            const external=await externalRequest(identity);
+            result={...external,memberFound:Boolean(external.data)};
+        }else{
+            return res.status(500).json({error:"LOYALTY_PORTAL_SOURCE mora biti local, external ili demo."});
+        }
         res.json({
-            configured:external.configured,
-            demo:external.demo,
+            configured:result.configured,
+            source,
+            demo:source==="demo",
+            member_found:result.memberFound,
             customer:{
                 external_id:identity.loyalty_external_id,
                 email:identity.email,
@@ -74,10 +94,15 @@ export const getMyLoyalty=async(req,res)=>{
                 last_name:identity.lastname,
                 company_name:identity.company_name,
             },
-            data:external.data,
+            data:result.data,
         });
     }catch(error){
-        console.error("External loyalty portal failed:",error);
-        res.status(502).json({error:"Loyalty podatke trenutno nije moguće učitati iz vanjskog sustava."});
+        console.error(`Loyalty portal (${source}) failed:`,error);
+        const external=source==="external";
+        res.status(external?502:500).json({
+            error:external
+                ?"Loyalty podatke trenutno nije moguće učitati iz vanjskog sustava."
+                :"Loyalty podatke trenutno nije moguće učitati.",
+        });
     }
 };

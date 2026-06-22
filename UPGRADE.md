@@ -74,27 +74,37 @@ role vide samo vlastiti program i trenutno aktivne ili zakazane promocije.
 
 Za klijenta kojem je uključena opcija **samo Loyalty portal**, svi njegovi
 korisnici nakon prijave automatski se preusmjeravaju na osobni pregled bodova.
-Backend vanjskom JSON API-ju šalje `external_id`, `email` i `client_id`, dok
-API ključ ostaje zaštićen na serveru.
+Portal može koristiti lokalni FlowApp program, vanjski JSON API ili demo podatke.
 
 ### Loyalty portal lokalno
 
-Za pregled portala bez vanjskog sustava u `backend/.env` postaviti:
+Za prikaz stvarnih podataka iz FlowApp baze u `backend/.env` postaviti:
 
 ```env
-LOYALTY_DEMO_MODE=true
+LOYALTY_PORTAL_SOURCE=local
+LOYALTY_DEMO_MODE=false
 ```
 
-Zatim restartati backend, uključiti klijentu opciju **samo Loyalty portal**,
-povezati korisnika s tim klijentom i ponovno se prijaviti. Demo prikazuje
-primjerne bodove, transakcije, nagrade i promocije te je jasno označen oznakom
-`DEMO PODACI`.
+Korisnik mora biti povezan s aktivnim članom Loyalty programa. Povezivanje se
+radi odabirom korisničkog računa pri dodavanju člana u Loyalty centru. Portal
+zatim prikazuje stvarno stanje bodova, zadnjih 50 transakcija, trenutno važeće
+nagrade i aktivne promocije za razinu člana.
 
-### Loyalty portal u produkciji
-
-U produkcijskom `backend/.env` demo mora biti isključen:
+Za prezentacijski prikaz bez unosa članova može se koristiti:
 
 ```env
+LOYALTY_PORTAL_SOURCE=demo
+```
+
+Postojeća postavka `LOYALTY_DEMO_MODE=true` ostaje podržana radi kompatibilnosti
+i ima prednost nad `LOYALTY_PORTAL_SOURCE`.
+
+### Vanjski Loyalty sustav
+
+Za dohvat podataka od vanjskog dobavljača postaviti:
+
+```env
+LOYALTY_PORTAL_SOURCE=external
 LOYALTY_DEMO_MODE=false
 LOYALTY_EXTERNAL_API_URL=https://stvarna-domena-dobavljaca/api/customer-summary
 LOYALTY_EXTERNAL_API_KEY=stvarni-tajni-api-kljuc
@@ -123,8 +133,9 @@ SMTP_SECURE=false
 SMTP_USER=korisnik
 SMTP_PASS=lozinka
 SMTP_FROM="FlowApp servis <servis@example.com>"
-LOYALTY_DEMO_MODE=true
-# Produkcija:
+LOYALTY_PORTAL_SOURCE=local
+LOYALTY_DEMO_MODE=false
+# Vanjski sustav:
 # LOYALTY_EXTERNAL_API_URL=https://loyalty.example.com/api/customer-summary
 # LOYALTY_EXTERNAL_API_KEY=secret-api-key
 LOYALTY_EXTERNAL_API_TIMEOUT_MS=10000
