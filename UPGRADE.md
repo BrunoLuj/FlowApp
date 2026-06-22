@@ -104,7 +104,7 @@ i ima prednost nad `LOYALTY_PORTAL_SOURCE`.
 Migracija `023_loyalty_experience_audit.sql` dodaje:
 
 - automatski portal-only pristup za sve korisnike role `client_user`
-- digitalnu člansku karticu s jedinstvenim QR kodom
+- digitalnu člansku karticu s jedinstvenim QR i Code 128 barkodom
 - konfigurabilne Bronze, Silver, Gold i Platinum razine s prikazom napretka
 - aktiviranje nagrada i generiranje kupona uz atomsko skidanje bodova
 - digitalne račune povezane s kupnjom i transakcijom bodova

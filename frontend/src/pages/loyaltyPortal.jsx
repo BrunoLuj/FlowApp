@@ -1,5 +1,6 @@
-import React,{useCallback,useEffect,useMemo,useState} from "react";
+import React,{useCallback,useEffect,useMemo,useRef,useState} from "react";
 import QRCode from "qrcode";
+import JsBarcode from "jsbarcode";
 import {
   FaArrowUp,FaBolt,FaCoins,FaCrown,FaFileInvoice,FaGift,FaHistory,
   FaQrcode,FaRedo,FaTicketAlt,
@@ -18,6 +19,7 @@ const LoyaltyPortal=()=>{
   const [loading,setLoading]=useState(true);
   const [redeeming,setRedeeming]=useState(null);
   const [qr,setQr]=useState("");
+  const barcodeRef=useRef(null);
   const load=useCallback(async()=>{
     setLoading(true);
     try{setResponse((await getMyLoyalty()).data);}
@@ -37,6 +39,7 @@ const LoyaltyPortal=()=>{
       progress:number(first(member,["tier_progress","progress"],0)),
       pointsToNext:number(first(member,["points_to_next_tier"],0)),
       qrValue:first(member,["qr_value","card_token","member_number","external_id"],response?.customer?.external_id||response?.customer?.email),
+      barcodeValue:first(member,["barcode_value","barcode","member_number","external_id"],response?.customer?.external_id||response?.customer?.email),
       transactions:list(raw,["transactions","activity","history","point_transactions"]),
       rewards:list(raw,["rewards","available_rewards","benefits"]),
       promotions:list(raw,["promotions","campaigns","offers"]),
@@ -49,6 +52,15 @@ const LoyaltyPortal=()=>{
     QRCode.toDataURL(String(view.qrValue),{width:240,margin:1,color:{dark:"#111827",light:"#ffffff"}})
       .then(setQr).catch(()=>setQr(""));
   },[view.qrValue]);
+  useEffect(()=>{
+    if(!barcodeRef.current||!view.barcodeValue)return;
+    try{
+      JsBarcode(barcodeRef.current,String(view.barcodeValue),{
+        format:"CODE128",width:1.65,height:58,margin:0,displayValue:true,
+        fontSize:13,lineColor:"#111827",background:"#ffffff",
+      });
+    }catch{barcodeRef.current.innerHTML="";}
+  },[view.barcodeValue]);
   const redeem=async reward=>{
     if(view.balance<number(first(reward,["points_cost","points","cost"],0)))return toast.error("Nemate dovoljno bodova.");
     setRedeeming(reward.id);
@@ -90,9 +102,14 @@ const LoyaltyPortal=()=>{
             <div className="mt-1 flex items-baseline gap-2"><FaCoins className="text-2xl text-amber-300"/><b className="text-5xl">{view.balance.toLocaleString("hr-HR")}</b></div>
             <p className="mt-2 text-sm text-violet-100">Ukupno osvojeno: {view.lifetime.toLocaleString("hr-HR")}</p>
           </div>
-          <div className="flex min-w-52 items-center gap-4 rounded-3xl bg-white p-4 text-slate-950">
-            {qr?<img src={qr} alt="QR Loyalty kartica" className="h-28 w-28 rounded-xl"/>:<FaQrcode className="text-6xl"/>}
-            <div><b>Digitalna kartica</b><p className="mt-1 text-xs text-slate-500">{first(view.member,["member_number","external_id"],"Loyalty član")}</p></div>
+          <div className="min-w-72 rounded-3xl bg-white p-4 text-slate-950">
+            <div className="flex items-center gap-4">
+              {qr?<img src={qr} alt="QR Loyalty kartica" className="h-24 w-24 rounded-xl"/>:<FaQrcode className="text-6xl"/>}
+              <div><b>Digitalna kartica</b><p className="mt-1 text-xs text-slate-500">{first(view.member,["member_number","external_id"],"Loyalty član")}</p><p className="mt-2 text-xs text-slate-400">QR i barkod jedinstveni su za ovog člana.</p></div>
+            </div>
+            <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white p-3">
+              <svg ref={barcodeRef} className="mx-auto max-w-full" aria-label={`Barkod ${view.barcodeValue||""}`}/>
+            </div>
           </div>
         </div>
       </div>

@@ -22,6 +22,7 @@ const demoData=(identity)=>{
             points_to_next_tier:1650,
             tier_color:"#ca8a04",
             qr_value:`FLOWAPP-LOYALTY:DEMO-${identity.id}`,
+            barcode_value:`FLDEMO${String(identity.id).padStart(12,"0")}`,
         },
         transactions:[
             {id:"demo-1",description:"Kupnja goriva",points:185,created_at:daysAgo(1)},

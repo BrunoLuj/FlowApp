@@ -1740,6 +1740,14 @@ WHERE card_token IS NULL;
 ALTER TABLE loyalty_members ALTER COLUMN card_token SET NOT NULL;
 ALTER TABLE loyalty_members ALTER COLUMN card_token SET DEFAULT md5(random()::text || clock_timestamp()::text);
 CREATE UNIQUE INDEX IF NOT EXISTS loyalty_members_card_token_uidx ON loyalty_members(card_token);
+ALTER TABLE loyalty_members ADD COLUMN IF NOT EXISTS barcode_value VARCHAR(32);
+UPDATE loyalty_members
+SET barcode_value='FL' || UPPER(SUBSTRING(md5(card_token || id::text || clock_timestamp()::text) FROM 1 FOR 18))
+WHERE barcode_value IS NULL;
+ALTER TABLE loyalty_members ALTER COLUMN barcode_value SET NOT NULL;
+ALTER TABLE loyalty_members ALTER COLUMN barcode_value
+    SET DEFAULT ('FL' || UPPER(SUBSTRING(md5(random()::text || clock_timestamp()::text) FROM 1 FOR 18)));
+CREATE UNIQUE INDEX IF NOT EXISTS loyalty_members_barcode_value_uidx ON loyalty_members(barcode_value);
 CREATE TABLE IF NOT EXISTS loyalty_tiers (
     id BIGSERIAL PRIMARY KEY, program_id BIGINT NOT NULL REFERENCES loyalty_programs(id) ON DELETE CASCADE,
     name VARCHAR(60) NOT NULL, min_lifetime_points NUMERIC(14,2) NOT NULL DEFAULT 0,

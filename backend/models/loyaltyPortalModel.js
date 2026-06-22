@@ -118,6 +118,7 @@ export const getLocalPortalData=async(identity)=>{
         ((Number(member.lifetime_points)-currentFloor)/(nextTarget-currentFloor))*100));
     member.points_to_next_tier=nextTarget===null?0:Math.max(0,nextTarget-Number(member.lifetime_points));
     member.qr_value=`FLOWAPP-LOYALTY:${member.card_token}`;
+    member.barcode_value=member.barcode_value||member.member_number;
 
     return {
         member,
