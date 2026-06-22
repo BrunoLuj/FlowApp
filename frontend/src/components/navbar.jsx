@@ -19,6 +19,7 @@ const Navbar = () => {
   const userMenuRef = useRef(null);
   const { user, permissions } = useStore();
   const signOut = useStore((state) => state.signOut);
+  const portalOnly = Boolean(user?.loyalty_portal_only);
 
   // FAST PERMISSION CHECK
   const permissionSet = useMemo(() => new Set(permissions || []), [permissions]);
@@ -54,6 +55,13 @@ const Navbar = () => {
 
   // ACTIVE ROUTE CHECK
   const isActive = (path) => location.pathname.startsWith(path);
+
+  if (portalOnly) return (
+    <nav className="fixed top-0 z-50 flex w-full items-center justify-between border-b border-white/10 bg-slate-950/90 px-5 py-3 text-white shadow-lg backdrop-blur">
+      <Link to="/my-loyalty" className="flex items-center gap-3"><span className="rounded-xl bg-gradient-to-br from-violet-600 to-cyan-500 p-2"><RiBlazeLine className="text-2xl"/></span><span className="text-lg font-bold">FlowApp Loyalty</span></Link>
+      <div className="flex items-center gap-4"><span className="hidden text-sm text-slate-300 sm:block">{user.firstname} {user.lastname}</span><button onClick={signOut} className="rounded-xl border border-white/15 px-4 py-2 text-sm font-semibold hover:bg-white/10">{t("logout")}</button></div>
+    </nav>
+  );
 
   return (
     <div>

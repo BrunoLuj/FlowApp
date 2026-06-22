@@ -19,14 +19,15 @@ export const comparePassword = async(userPassword, password) =>{
     }
 };
 
-export const createJWT = (user_id, roles_id, user_permissions, client_id = null) =>{
+export const createJWT = (user_id, roles_id, user_permissions, client_id = null, loyalty_portal_only = false) =>{
     if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET is not configured");
     return JWT.sign(
         {
             userId: user_id,
             roles_id: roles_id,
             permissions: user_permissions,
-            client_id
+            client_id,
+            loyalty_portal_only: Boolean(loyalty_portal_only)
         },
         
         process.env.JWT_SECRET,

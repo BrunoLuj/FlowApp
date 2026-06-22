@@ -28,7 +28,7 @@ const SignIn = () => {
   });
 
   useEffect(() => {
-    if (user) navigate("/overview");
+    if (user) navigate(user.loyalty_portal_only ? "/my-loyalty" : "/overview");
   }, [user, navigate]);
 
   const onSubmit = useCallback(async (data) => {
@@ -40,7 +40,7 @@ const SignIn = () => {
         const userInfo = { ...res?.user, token: res.token };
         localStorage.setItem("user", JSON.stringify(userInfo));
         setCredentials(userInfo);
-        navigate("/overview");
+        navigate(userInfo.loyalty_portal_only ? "/my-loyalty" : "/overview");
       }
     } catch (error) {
       const errorMessage = error?.response?.data?.message || error.message;

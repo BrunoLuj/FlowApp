@@ -54,7 +54,7 @@ export const getUser = async(req, res) =>{
 };
 
 export const addUsers= async (req, res) => {
-  const { email, firstname, lastname, address, country, currency, contact, roles_id, status, client_id } = req.body;
+  const { email, firstname, lastname, address, country, currency, contact, roles_id, status, client_id,loyalty_external_id } = req.body;
   try {
       if (!email?.trim() || !firstname?.trim() || !roles_id) {
         return res.status(400).json({ error: "Email, first name and role are required" });
@@ -68,7 +68,7 @@ export const addUsers= async (req, res) => {
       const hashedPassword = await hashPassword(temporaryPassword);
       const newUser = await userModel.createUser(
         email.trim().toLowerCase(), firstname.trim(), lastname?.trim(), address,
-        country, currency, contact, roles_id, status, hashedPassword, client_id
+        country, currency, contact, roles_id, status, hashedPassword, client_id,loyalty_external_id
       );
       res.status(201).json({ ...newUser, temporary_password: temporaryPassword });
   } catch (error) {
@@ -132,7 +132,7 @@ export const changePassword = async (req, res) => {
 
 export const updateUser = async (req, res) => {
   const { id } = req.params;
-  const { firstname, lastname, address, country, currency, contact, roles_id, status, client_id  } = req.body;
+  const { firstname, lastname, address, country, currency, contact, roles_id, status, client_id,loyalty_external_id  } = req.body;
 
   const user = await userModel.getUserById(id);
   
@@ -148,7 +148,7 @@ export const updateUser = async (req, res) => {
       if (role.name.startsWith("client_") && !client_id) {
         return res.status(400).json({ error: "Client role must be linked to a client" });
       }
-      const updatedUser = await userModel.updateUserById(id, firstname, lastname, address, country, currency, contact, roles_id, status, client_id);
+      const updatedUser = await userModel.updateUserById(id, firstname, lastname, address, country, currency, contact, roles_id, status, client_id,loyalty_external_id);
       updatedUser.password = undefined; 
       if (updatedUser) {
           // res.json(updatedUser);

@@ -1725,6 +1725,14 @@ WHERE NOT EXISTS (
     WHERE client_id IS NULL AND event_type='fleet_deadline_reminder'
 );
 
+-- Odvojeni klijentski Loyalty portal povezan s vanjskim JSON API sustavom
+ALTER TABLE clients
+    ADD COLUMN IF NOT EXISTS loyalty_portal_only BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS loyalty_external_id VARCHAR(150);
+CREATE INDEX IF NOT EXISTS users_loyalty_external_id_idx
+    ON users(loyalty_external_id) WHERE loyalty_external_id IS NOT NULL;
+
 INSERT INTO schema_migrations(name)
 VALUES ('FLOWAPP_FULL_DATABASE_UPGRADE')
 ON CONFLICT (name) DO NOTHING;

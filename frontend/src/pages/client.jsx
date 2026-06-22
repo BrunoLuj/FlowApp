@@ -22,13 +22,18 @@ const ClientForm = () => {
     pdvbroj: client.pdvbroj || '',
     status: client.status,
     description: client.description || '',
+    loyalty_portal_only: Boolean(client.loyalty_portal_only),
     logo: null,
   });
 
   const [logoPreview, setLogoPreview] = useState(null);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
+    if (type === 'checkbox') {
+      setFormData({ ...formData, [name]: checked });
+      return;
+    }
     if (name === 'status') {
       setFormData({ ...formData, [name]: value === 'Active' });
     } else if (name === 'logo') {
@@ -184,6 +189,10 @@ const ClientForm = () => {
               <label className="block text-gray-700 font-medium mb-2">Description</label>
               <textarea name="description" value={formData.description} onChange={handleChange} readOnly={!permissions.includes('create_clients')} rows="4" className={`w-full p-3 rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 ${!permissions.includes('create_clients') ? 'bg-gray-200' : ''}`} />
             </div>
+            <label className="md:col-span-2 flex items-start gap-3 rounded-xl border border-violet-200 bg-violet-50 p-4">
+              <input type="checkbox" name="loyalty_portal_only" checked={formData.loyalty_portal_only} onChange={handleChange} disabled={!permissions.includes('create_clients')} className="mt-1 h-5 w-5"/>
+              <span><b className="block text-violet-900">Klijent koristi samo Loyalty portal</b><span className="text-sm text-violet-700">Njegovi korisnici nakon prijave vide isključivo svoj pregled bodova, aktivnosti, nagrada i promocija.</span></span>
+            </label>
           </div>
 
           {/* Buttons */}

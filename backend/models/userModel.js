@@ -4,7 +4,7 @@ import { hashPassword} from "../libs/index.js";
 export const getAllUsers = async () => {
   const result = await pool.query(`
     SELECT u.id, u.email, u.firstname, u.lastname, u.address, u.country, u.currency,
-           u.contact, u.roles_id, u.status, u.client_id, u.createdat, u.updatedat,
+           u.contact, u.roles_id, u.status, u.client_id,u.loyalty_external_id,u.createdat,u.updatedat,
            c.company_name AS client_name
     FROM users u
     LEFT JOIN clients c ON c.id = u.client_id
@@ -26,7 +26,7 @@ export const getRoleById = async (id) => {
 export const getUserById = async (userId) => {
   const result = await pool.query({
     text: `SELECT id, email, firstname, lastname, address, country, currency,
-                  contact, roles_id, status, client_id, createdat, updatedat
+                  contact, roles_id, status, client_id,loyalty_external_id,createdat, updatedat
            FROM users WHERE id = $1`,
     values: [userId],
   });
@@ -41,10 +41,10 @@ export const getUserCredentialsById = async (userId) => {
   return result.rows[0];
 };
 
-export const createUser = async (email, firstname, lastname, address, country, currency, contact, roles_id, status, password, client_id ) => {
+export const createUser = async (email, firstname, lastname, address, country, currency, contact, roles_id, status, password, client_id, loyalty_external_id ) => {
   const result = await pool.query(
-      'INSERT INTO users (email, firstname, lastname, address, country, currency, contact, roles_id, status, password, client_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
-      [email, firstname, lastname, address, country, currency, contact, roles_id, status, password, client_id || null]
+      'INSERT INTO users (email, firstname, lastname, address, country, currency, contact, roles_id, status, password, client_id,loyalty_external_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *',
+      [email, firstname, lastname, address, country, currency, contact, roles_id, status, password, client_id || null,loyalty_external_id||null]
   );
   const user = result.rows[0];
   delete user.password;
@@ -61,11 +61,11 @@ export const createUser = async (email, firstname, lastname, address, country, c
 //   return result.rows[0];
 // };
 
-export const updateUserById = async (id, firstname, lastname, address, country, currency, contact, roles_id, status, client_id ) => {
+export const updateUserById = async (id, firstname, lastname, address, country, currency, contact, roles_id, status, client_id,loyalty_external_id ) => {
   try {
     const result = await pool.query({
-          text: `UPDATE users SET firstname = $1, lastname = $2, address = $3, country = $4, currency = $5, contact = $6, roles_id = $7, status = $8, client_id = $9, updatedat = CURRENT_TIMESTAMP WHERE id = $10 RETURNING *`,
-          values: [firstname, lastname, address, country, currency, contact, roles_id, status, client_id || null, id],
+          text: `UPDATE users SET firstname=$1,lastname=$2,address=$3,country=$4,currency=$5,contact=$6,roles_id=$7,status=$8,client_id=$9,loyalty_external_id=$10,updatedat=CURRENT_TIMESTAMP WHERE id=$11 RETURNING *`,
+          values: [firstname, lastname, address, country, currency, contact, roles_id, status, client_id || null,loyalty_external_id||null,id],
         });
       return result.rows[0];
   } catch (error) {

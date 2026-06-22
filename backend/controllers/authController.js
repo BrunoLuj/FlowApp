@@ -27,7 +27,7 @@ export const signinUser = async(req, res) =>{
             });
         }
 
-        const token = createJWT(user.id, user.roles_id, user.permissions, user.client_id);
+        const token = createJWT(user.id, user.roles_id, user.permissions, user.client_id,user.loyalty_portal_only);
      
         user.password = undefined;
         user.permissions = undefined;
@@ -54,7 +54,7 @@ export const getSession = async (req, res) => {
         if (!user || user.status === false) {
             return res.status(401).json({ status: "auth_failed", message: "Authentication failed" });
         }
-        const token = createJWT(user.id, user.roles_id, user.permissions, user.client_id);
+        const token = createJWT(user.id, user.roles_id, user.permissions, user.client_id,user.loyalty_portal_only);
         delete user.permissions;
         res.json({ user, token });
     } catch (error) {

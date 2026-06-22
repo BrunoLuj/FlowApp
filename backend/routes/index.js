@@ -22,10 +22,14 @@ import metrologyRoutes from "./metrologyRoutes.js";
 import metrologyCaseRoutes from "./metrologyCaseRoutes.js";
 import fleetRoutes from "./fleetRoutes.js";
 import loyaltyRoutes from "./loyaltyRoutes.js";
+import loyaltyPortalRoutes from "./loyaltyPortalRoutes.js";
+import loyaltyPortalOnlyMiddleware from "../middleware/loyaltyPortalOnlyMiddleware.js";
 
 const router = express.Router();
 
 router.use("/auth", authRoutes);
+router.use("/loyalty-portal", loyaltyPortalRoutes);
+router.use(loyaltyPortalOnlyMiddleware);
 router.use("/user", userRoutes);
 router.use("/projects", projectsRoutes);
 router.use("/clients", clientsRoutes);

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Navigate, Outlet, Route, Routes } from "react-router-dom";
+import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 import SignIn from "./pages/auth/sign-in";
 import Dashboard from "./pages/dashboard";
 import Settings from "./pages/settings";
@@ -42,6 +42,7 @@ import Metrology from "./pages/metrology";
 import MetrologyCases from "./pages/metrologyCases";
 import Fleet from "./pages/fleet";
 import Loyalty from "./pages/loyalty";
+import LoyaltyPortal from "./pages/loyaltyPortal";
 
 const secured = (permission, element) => (
     <RequirePermission permission={permission}>{element}</RequirePermission>
@@ -49,6 +50,7 @@ const secured = (permission, element) => (
 
 const RootLayout = () => {
     const { user, setCredentials, signOut } = useStore((state) => state);
+    const location = useLocation();
     const initialToken = useRef(user?.token);
     const [checkingSession, setCheckingSession] = useState(Boolean(initialToken.current));
     setAuthToken(user?.token ?? "");
@@ -66,6 +68,9 @@ const RootLayout = () => {
 
     if (checkingSession) {
         return <div className="min-h-screen bg-slate-100 pt-28 text-center text-slate-500">Provjera sesije…</div>;
+    }
+    if (user?.loyalty_portal_only && location.pathname !== "/my-loyalty") {
+        return <Navigate to="/my-loyalty" replace />;
     }
 
     return !user ? (
@@ -118,6 +123,7 @@ function App() {
                         <Route path="/metrology-cases" element={secured("view_metrology_cases", <MetrologyCases />)} />
                         <Route path="/fleet" element={secured("view_fleet", <Fleet />)} />
                         <Route path="/loyalty" element={secured("view_loyalty", <Loyalty />)} />
+                        <Route path="/my-loyalty" element={<LoyaltyPortal />} />
                         <Route path="/commercial" element={secured("view_commercial", <Commercial />)} />
                         <Route path="/forbidden" element={<Forbidden />} />
                     </Route>

@@ -3,7 +3,12 @@ import { pool } from "../libs/database.js";
 export const findUserByEmail = async (email) => {
   // Prvo dobij korisnika
   const userResult = await pool.query({
-      text: `SELECT * FROM users WHERE LOWER(email) = LOWER($1)`,
+      text: `SELECT u.*,r.name AS role_name,
+                    COALESCE(c.loyalty_portal_only,FALSE) AS loyalty_portal_only
+             FROM users u
+             JOIN roles r ON r.id=u.roles_id
+             LEFT JOIN clients c ON c.id=u.client_id
+             WHERE LOWER(u.email) = LOWER($1)`,
       values: [email],
   });
 
@@ -31,9 +36,11 @@ export const findUserByEmail = async (email) => {
 
 export const findUserById = async (id) => {
   const userResult = await pool.query(
-    `SELECT id, email, firstname, lastname, contact, address, country, currency,
-            roles_id, status, client_id
-     FROM users WHERE id = $1`,
+    `SELECT u.id,u.email,u.firstname,u.lastname,u.contact,u.address,u.country,u.currency,
+            u.roles_id,u.status,u.client_id,u.loyalty_external_id,r.name role_name,
+            COALESCE(c.loyalty_portal_only,FALSE) loyalty_portal_only
+     FROM users u JOIN roles r ON r.id=u.roles_id
+     LEFT JOIN clients c ON c.id=u.client_id WHERE u.id = $1`,
     [id]
   );
   const user = userResult.rows[0];

@@ -28,6 +28,7 @@ const UserForm = () => {
     currency: user.currency || '',
     roles_id: user.roles_id || '',
     client_id: user.client_id || '',
+    loyalty_external_id: user.loyalty_external_id || '',
     status: user.status || false,
     description: user.description || '',
   });
@@ -391,6 +392,11 @@ const UserForm = () => {
                 ))}
               </select>
               <p className="mt-1 text-xs text-gray-500">Za client_admin i client_user obavezno odaberite tvrtku.</p>
+            </div>
+            <div>
+              <label className="block text-gray-700 mb-2">Vanjski Loyalty ID</label>
+              <input type="text" name="loyalty_external_id" value={formData.loyalty_external_id} onChange={handleChange} readOnly={!canEdit} placeholder="ID korisnika u vanjskom API sustavu" className={`w-full border p-3 rounded-xl focus:ring focus:ring-violet-400 ${!canEdit ? 'bg-gray-200' : 'bg-white'}`}/>
+              <p className="mt-1 text-xs text-gray-500">Ako nije unesen, vanjski API može pronaći korisnika prema e-mail adresi.</p>
             </div>
 
             {/* Country */}

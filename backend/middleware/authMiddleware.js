@@ -20,6 +20,7 @@ const authMiddleware = async(req, res, next)=>{
             rolesId: userToken.roles_id,
             clientId: userToken.client_id ?? null,
             permissions: userToken.permissions ?? [],
+            loyaltyPortalOnly: Boolean(userToken.loyalty_portal_only),
         };
         next();
         

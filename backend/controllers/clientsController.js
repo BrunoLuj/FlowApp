@@ -56,7 +56,7 @@ export const getClient = async (req, res) => {
 
 
 export const addClients = async (req, res) => {
-    const { company_name, contact_person, email, phone, address, idbroj, pdvbroj, sttn_broj, status, description, logo } = req.body;
+    const { company_name, contact_person, email, phone, address, idbroj, pdvbroj, sttn_broj, status, description, logo, loyalty_portal_only } = req.body;
 
     // Ako je logo prisutan, pretvorite ga iz Base64 u Buffer
     let logoBuffer = null;
@@ -67,7 +67,7 @@ export const addClients = async (req, res) => {
     }
 
     try {
-        const newClient = await clientsModel.createClient(company_name, contact_person, email, phone, address, idbroj, pdvbroj, sttn_broj, status, description, logoBuffer);
+        const newClient = await clientsModel.createClient(company_name, contact_person, email, phone, address, idbroj, pdvbroj, sttn_broj, status, description, logoBuffer, loyalty_portal_only);
         res.status(201).json(newClient); // Vratite podatke o novom klijentu
     } catch (error) {
         console.error('Error creating client:', error);
@@ -77,7 +77,7 @@ export const addClients = async (req, res) => {
 
 export const updateClients = async (req, res) => {
     const { id } = req.params;
-    const { company_name, contact_person, email, phone, address, idbroj, pdvbroj, sttn_broj, status, description, logo } = req.body;
+    const { company_name, contact_person, email, phone, address, idbroj, pdvbroj, sttn_broj, status, description, logo, loyalty_portal_only } = req.body;
 
     // Ako je logo prisutan, pretvorite ga iz Base64 u Buffer
     let logoBuffer = null;
@@ -100,7 +100,7 @@ export const updateClients = async (req, res) => {
         const finalLogo = logoBuffer !== null ? logoBuffer : existingClient.logo;
 
         // Ažurirajte klijenta koristeći finalLogo
-        const updatedClient = await clientsModel.updateClient(id, company_name, contact_person, email, phone, address, idbroj, pdvbroj, sttn_broj, status, description, finalLogo);
+        const updatedClient = await clientsModel.updateClient(id, company_name, contact_person, email, phone, address, idbroj, pdvbroj, sttn_broj, status, description, finalLogo, loyalty_portal_only);
         res.json(updatedClient);
     } catch (error) {
         console.error('Error updating client:', error);

@@ -16,11 +16,11 @@ export const getClientById = async (id, clientId = null) => {
     return result.rows[0]; // Vraća prvi red (klijenta) ili undefined ako ne postoji
 };
 
-export const createClient = async (company_name, contact_person, email, phone, address, idbroj, pdvbroj, sttn_broj, status, description, logo) => {
+export const createClient = async (company_name, contact_person, email, phone, address, idbroj, pdvbroj, sttn_broj, status, description, logo, loyalty_portal_only) => {
     try {
         const result = await pool.query(
-            'INSERT INTO clients (company_name, contact_person, email, phone, address, idbroj, pdvbroj, sttn_broj, status, description, logo) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
-            [company_name, contact_person, email, phone, address, idbroj, pdvbroj, sttn_broj, status, description, logo]
+            'INSERT INTO clients (company_name, contact_person, email, phone, address, idbroj, pdvbroj, sttn_broj, status, description, logo, loyalty_portal_only) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *',
+            [company_name, contact_person, email, phone, address, idbroj, pdvbroj, sttn_broj, status, description, logo, Boolean(loyalty_portal_only)]
         );
         return result.rows[0];
     } catch (error) {
@@ -29,9 +29,9 @@ export const createClient = async (company_name, contact_person, email, phone, a
     }
 };
 
-export const updateClient = async (id, company_name, contact_person, email, phone, address, idbroj, pdvbroj, sttn_broj, status, description, logo ) => {
+export const updateClient = async (id, company_name, contact_person, email, phone, address, idbroj, pdvbroj, sttn_broj, status, description, logo, loyalty_portal_only ) => {
     try {
-        const result = await pool.query('UPDATE clients SET company_name = $1, contact_person = $2, email = $3, phone = $4, address = $5, idbroj = $6, pdvbroj = $7, sttn_broj = $8, status = $9, description = $10, logo = $11 WHERE id = $12 RETURNING *', [company_name, contact_person, email, phone, address, idbroj, pdvbroj, sttn_broj, status, description, logo, id]);
+        const result = await pool.query('UPDATE clients SET company_name=$1,contact_person=$2,email=$3,phone=$4,address=$5,idbroj=$6,pdvbroj=$7,sttn_broj=$8,status=$9,description=$10,logo=$11,loyalty_portal_only=$12 WHERE id=$13 RETURNING *', [company_name, contact_person, email, phone, address, idbroj, pdvbroj, sttn_broj, status, description, logo, Boolean(loyalty_portal_only), id]);
         return result.rows[0];
     } catch (error) {
         console.error('Error updating client:', error);

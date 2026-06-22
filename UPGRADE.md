@@ -72,6 +72,11 @@ Loyalty centar vodi program za svakog klijenta, članove, stanje i promet bodova
 nagrade te marketinške promocije u aplikaciji i/ili e-mail kanalu. Klijentske
 role vide samo vlastiti program i trenutno aktivne ili zakazane promocije.
 
+Za klijenta kojem je uključena opcija **samo Loyalty portal**, svi njegovi
+korisnici nakon prijave automatski se preusmjeravaju na osobni pregled bodova.
+Backend vanjskom JSON API-ju šalje `external_id`, `email` i `client_id`, dok
+API ključ ostaje zaštićen na serveru.
+
 ## Pokretanje
 
 Backend koristi `backend/.env`:
@@ -88,6 +93,9 @@ SMTP_SECURE=false
 SMTP_USER=korisnik
 SMTP_PASS=lozinka
 SMTP_FROM="FlowApp servis <servis@example.com>"
+LOYALTY_EXTERNAL_API_URL=https://loyalty.example.com/api/customer-summary
+LOYALTY_EXTERNAL_API_KEY=secret-api-key
+LOYALTY_EXTERNAL_API_TIMEOUT_MS=10000
 ```
 
 ```powershell
