@@ -136,6 +136,29 @@ LOYALTY_EXTERNAL_API_KEY=stvarni-tajni-api-kljuc
 LOYALTY_EXTERNAL_API_TIMEOUT_MS=10000
 ```
 
+### Sigurnosne postavke API-ja
+
+Backend dodaje request ID, sigurnosne HTTP headere, strogu obradu JSON grešaka,
+opće ograničenje API zahtjeva i strože ograničenje pokušaja prijave. Produkcijski
+reverse proxy treba imati `TRUST_PROXY=true`; lokalno ostaje `false`.
+
+```env
+TRUST_PROXY=false
+JSON_BODY_LIMIT=2mb
+FORM_BODY_LIMIT=1mb
+API_RATE_LIMIT_WINDOW_MS=60000
+API_RATE_LIMIT_MAX=300
+AUTH_RATE_LIMIT_WINDOW_MS=900000
+AUTH_RATE_LIMIT_MAX=30
+AUTH_ACCOUNT_RATE_LIMIT_MAX=10
+```
+
+Zaštita prijave primjenjuje odvojene limite po IP adresi i po računu. Migracija
+`027_auth_security_audit.sql` bilježi uspješne i neuspješne prijave, request ID,
+IP i user-agent. E-mail se sprema isključivo kao SHA-256 sažetak.
+
+Sigurnosni testovi pokreću se iz `backend` direktorija naredbom `npm test`.
+
 `LOYALTY_EXTERNAL_API_URL`, `LOYALTY_EXTERNAL_REDEEM_URL` i ključ daje dobavljač vanjskog Loyalty sustava.
 FlowApp šalje identifikatore kao query parametre `external_id`, `email` i
 `client_id`, a autentikaciju kao `Authorization: Bearer <API_KEY>`. Nakon

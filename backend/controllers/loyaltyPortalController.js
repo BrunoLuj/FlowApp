@@ -1,6 +1,7 @@
 import {
     getLocalPortalData,getPortalIdentity,portalBranding,redeemLocalReward,savePortalBranding,
 } from "../models/loyaltyPortalModel.js";
+import { cleanText,isPlainObject,positiveId,validHex } from "../libs/validation.js";
 
 const demoEnabled=()=>String(process.env.LOYALTY_DEMO_MODE||"").toLowerCase()==="true";
 const portalSource=()=>{
@@ -152,21 +153,21 @@ export const getMyLoyalty=async(req,res)=>{
     }
 };
 
-const hex=/^#[0-9A-F]{6}$/i;
 export const updateBranding=async(req,res)=>{
     try{
+        if(!isPlainObject(req.body))return res.status(400).json({error:"Neispravan zahtjev."});
         const identity=await getPortalIdentity(req.user.userId);
         if(!identity)return res.status(404).json({error:"Klijent nije pronađen."});
         const colorFields=[
             "primary_color","secondary_color","accent_color","background_color",
             "surface_color","text_color","muted_text_color",
         ];
-        if(colorFields.some(field=>!hex.test(String(req.body[field]||"")))){
+        if(colorFields.some(field=>!validHex(req.body[field]))){
             return res.status(400).json({error:"Sve boje moraju biti u HEX formatu, primjerice #7C3AED."});
         }
         const branding=await savePortalBranding(identity,{
-            brand_name:String(req.body.brand_name||"").trim().slice(0,120),
-            brand_tagline:String(req.body.brand_tagline||"").trim().slice(0,200),
+            brand_name:cleanText(req.body.brand_name,120),
+            brand_tagline:cleanText(req.body.brand_tagline,200),
             ...Object.fromEntries(colorFields.map(field=>[field,String(req.body[field]).toUpperCase()])),
         });
         res.json(branding);
@@ -178,6 +179,9 @@ export const updateBranding=async(req,res)=>{
 
 export const redeemReward=async(req,res)=>{
     try{
+        if(!isPlainObject(req.body)||!positiveId(req.body.reward_id)){
+            return res.status(400).json({error:"Nagrada nije ispravno odabrana."});
+        }
         const source=portalSource();
         const identity=await getPortalIdentity(req.user.userId);
         if(!identity?.loyalty_portal_only){

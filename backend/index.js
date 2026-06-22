@@ -1,7 +1,5 @@
-import cors from "cors";
-import express from "express";
-import dotenv from  "dotenv";
-import routes from "./routes/index.js"
+import "dotenv/config";
+import app from "./app.js";
 import {
     generateScheduledEmails,
     processEmailQueue,
@@ -9,46 +7,13 @@ import {
 import { generateDuePlans } from "./models/maintenanceModel.js";
 import { generateDueMetrologyOrders } from "./models/metrologyModel.js";
 
-dotenv.config();
-
-const app = express();
 const PORT = process.env.PORT || 5000;
-const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000")
-    .split(",")
-    .map((origin) => origin.trim())
-    .filter(Boolean);
-
-app.use(cors({
-    origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-        callback(new Error("Origin is not allowed by CORS"));
-    },
-    credentials: true,
-}));
-app.disable("x-powered-by");
-app.use((_req, res, next) => {
-    res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("X-Frame-Options", "DENY");
-    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-    next();
-});
-app.use(express.json({limit: "10mb"}));
-app.use(express.urlencoded({extended: true, limit: "2mb"}));
-
-app.use("/api-v1", routes);
-
-app.use("*", (req, res) =>{
-    res.status(404).json({
-        status: "404 Not found",
-        message: "Route not exist",
-    });
-});
-
-app.use((error, _req, res, _next) => {
-    console.error("Unhandled request error:", error);
-    res.status(500).json({ status: "error", message: "Internal server error" });
-});
-
+if(!process.env.JWT_SECRET){
+    throw new Error("JWT_SECRET is required");
+}
+if(process.env.NODE_ENV==="production"&&process.env.JWT_SECRET.length<32){
+    throw new Error("JWT_SECRET must contain at least 32 characters in production");
+}
 app.listen(PORT, () =>{
     console.log(`Server running on ${PORT}`);
 });

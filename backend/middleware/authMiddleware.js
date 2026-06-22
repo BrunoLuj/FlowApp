@@ -3,17 +3,18 @@ import JWT from "jsonwebtoken";
 const authMiddleware = async(req, res, next)=>{
     const authHeader = req?.headers?.authorization;
 
-    if(!authHeader || !authHeader?.startsWith("Bearer")){
+    if(typeof authHeader!=="string"||!/^Bearer [A-Za-z0-9\-._~+/]+=*$/.test(authHeader)){
         return res.status(401).json({
             status: "auth_failed",
             message: "Authentication failed",
+            request_id:req.requestId,
         });
     }
 
     const token = authHeader?.split(" ")[1];
 
     try {
-        const userToken = JWT.verify(token, process.env.JWT_SECRET);
+        const userToken=JWT.verify(token,process.env.JWT_SECRET,{algorithms:["HS256"]});
 
         req.user = {
             userId: userToken.userId,
@@ -28,6 +29,7 @@ const authMiddleware = async(req, res, next)=>{
         return res.status(401).json({
             status: "auth_failed",
             message: "Authentication failed",
+            request_id:req.requestId,
         });    
     }
 };

@@ -33,6 +33,7 @@ export const createJWT = (user_id, roles_id, user_permissions, client_id = null,
         process.env.JWT_SECRET,
         {
             expiresIn: "1h",
+            algorithm:"HS256",
         }
     )
 };

@@ -1809,6 +1809,22 @@ DROP TRIGGER IF EXISTS loyalty_points_audit_immutable ON loyalty_points_audit;
 CREATE TRIGGER loyalty_points_audit_immutable
 BEFORE UPDATE OR DELETE ON loyalty_points_audit
 FOR EACH ROW EXECUTE FUNCTION prevent_loyalty_audit_mutation();
+
+CREATE TABLE IF NOT EXISTS auth_security_events (
+    id BIGSERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    email_hash VARCHAR(64),
+    event_type VARCHAR(40) NOT NULL,
+    success BOOLEAN NOT NULL DEFAULT FALSE,
+    reason VARCHAR(80),
+    ip_address VARCHAR(80),
+    user_agent VARCHAR(500),
+    request_id VARCHAR(100),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS auth_security_events_created_idx ON auth_security_events(created_at DESC);
+CREATE INDEX IF NOT EXISTS auth_security_events_user_idx ON auth_security_events(user_id,created_at DESC);
+CREATE INDEX IF NOT EXISTS auth_security_events_email_idx ON auth_security_events(email_hash,created_at DESC);
 INSERT INTO permissions(name,module,action,description)
 SELECT 'view_loyalty_audit','loyalty','audit','Pregled sigurnosnog audita promjena bodova'
 WHERE NOT EXISTS (SELECT 1 FROM permissions WHERE name='view_loyalty_audit');
