@@ -77,6 +77,36 @@ korisnici nakon prijave automatski se preusmjeravaju na osobni pregled bodova.
 Backend vanjskom JSON API-ju šalje `external_id`, `email` i `client_id`, dok
 API ključ ostaje zaštićen na serveru.
 
+### Loyalty portal lokalno
+
+Za pregled portala bez vanjskog sustava u `backend/.env` postaviti:
+
+```env
+LOYALTY_DEMO_MODE=true
+```
+
+Zatim restartati backend, uključiti klijentu opciju **samo Loyalty portal**,
+povezati korisnika s tim klijentom i ponovno se prijaviti. Demo prikazuje
+primjerne bodove, transakcije, nagrade i promocije te je jasno označen oznakom
+`DEMO PODACI`.
+
+### Loyalty portal u produkciji
+
+U produkcijskom `backend/.env` demo mora biti isključen:
+
+```env
+LOYALTY_DEMO_MODE=false
+LOYALTY_EXTERNAL_API_URL=https://stvarna-domena-dobavljaca/api/customer-summary
+LOYALTY_EXTERNAL_API_KEY=stvarni-tajni-api-kljuc
+LOYALTY_EXTERNAL_API_TIMEOUT_MS=10000
+```
+
+`LOYALTY_EXTERNAL_API_URL` i ključ daje dobavljač vanjskog Loyalty sustava.
+FlowApp šalje identifikatore kao query parametre `external_id`, `email` i
+`client_id`, a autentikaciju kao `Authorization: Bearer <API_KEY>`. Nakon
+dobivanja stvarnog primjera JSON odgovora adapter treba uskladiti s točnom
+strukturom dobavljača. API ključ se nikada ne unosi u frontend.
+
 ## Pokretanje
 
 Backend koristi `backend/.env`:
@@ -93,8 +123,10 @@ SMTP_SECURE=false
 SMTP_USER=korisnik
 SMTP_PASS=lozinka
 SMTP_FROM="FlowApp servis <servis@example.com>"
-LOYALTY_EXTERNAL_API_URL=https://loyalty.example.com/api/customer-summary
-LOYALTY_EXTERNAL_API_KEY=secret-api-key
+LOYALTY_DEMO_MODE=true
+# Produkcija:
+# LOYALTY_EXTERNAL_API_URL=https://loyalty.example.com/api/customer-summary
+# LOYALTY_EXTERNAL_API_KEY=secret-api-key
 LOYALTY_EXTERNAL_API_TIMEOUT_MS=10000
 ```
 
