@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   FaCheckCircle, FaMapMarkerAlt, FaPause,
-  FaPlay, FaRoute, FaSave, FaTools, FaWifi,
+  FaPlay, FaRoute, FaSave, FaTools, FaWifi, FaFlask,
 } from "react-icons/fa";
 import { toast } from "sonner";
 import {
@@ -173,6 +173,7 @@ const OrderGroup = ({ title, orders, notes, setNotes, saveEvent }) => {
             <a href={mapsUrl(order)} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 p-3 font-semibold text-slate-700"><FaRoute className="text-indigo-600" /> Navigacija</a>
             <Link to={`/work-orders/${order.id}`} className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 p-3 font-semibold text-slate-700"><FaTools className="text-indigo-600" /> Detalji i slike</Link>
           </div>
+          {Number(order.metrology_count)>0&&<Link to={`/mobile-work-orders/${order.id}/measurements`} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-orange-600 p-3 font-black text-white shadow-sm"><FaFlask/>Unos mjerenja · {order.metrology_count} stavki</Link>}
 
           <div className="mt-3 flex items-start gap-2 rounded-xl bg-slate-50 p-3 text-sm text-slate-600"><FaMapMarkerAlt className="mt-1 shrink-0 text-slate-400" /> {[order.address, order.city].filter(Boolean).join(", ") || "Adresa nije unesena"}</div>
 

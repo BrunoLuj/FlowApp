@@ -1,10 +1,20 @@
-import {pool} from "../libs/database.js";
+import {pool,mysqlMode} from "../libs/database.js";
 
 const clientScope=(user,requested)=>user.clientId||requested||null;
 export const getOverview=async(user,requestedClientId=null)=>{
     const clientId=clientScope(user,requestedClientId);
     const values=clientId?[clientId]:[];
     const where=clientId?"WHERE lp.client_id=$1":"";
+    if(mysqlMode){
+        const values=clientId?[clientId]:[];
+        const [programs,members,transactions,rewards,campaigns,clients,users,tiers,redemptions,receipts,audit,analytics,trend]=await Promise.all([
+            pool.query(`SELECT lp.*,c.company_name,(SELECT COUNT(*) FROM loyalty_members lm WHERE lm.program_id=lp.id) member_count,(SELECT COALESCE(SUM(points_balance),0) FROM loyalty_members lm WHERE lm.program_id=lp.id) points_outstanding FROM loyalty_programs lp JOIN clients c ON c.id=lp.client_id ${where} ORDER BY lp.created_at DESC`,values),
+            pool.query(`SELECT lm.*,lp.name program_name FROM loyalty_members lm JOIN loyalty_programs lp ON lp.id=lm.program_id ${clientId?"WHERE lm.client_id=$1":""} ORDER BY lm.joined_at DESC LIMIT 300`,values),
+            pool.query(`SELECT lt.*,lm.member_number,lm.full_name FROM loyalty_transactions lt JOIN loyalty_members lm ON lm.id=lt.member_id ${clientId?"WHERE lm.client_id=$1":""} ORDER BY lt.created_at DESC LIMIT 100`,values),
+            pool.query(`SELECT lr.* FROM loyalty_rewards lr JOIN loyalty_programs lp ON lp.id=lr.program_id ${clientId?"WHERE lp.client_id=$1":""} ORDER BY lr.created_at DESC`,values),
+            pool.query(`SELECT * FROM loyalty_campaigns ${clientId?"WHERE client_id=$1":""} ORDER BY created_at DESC`,values),pool.query(`SELECT id,company_name FROM clients ${clientId?"WHERE id=$1":""} ORDER BY company_name`,values),pool.query(`SELECT id,client_id,email,firstname,lastname FROM users WHERE status=TRUE ${clientId?"AND client_id=$1":""} ORDER BY firstname,lastname`,values),pool.query(`SELECT lt.*,lp.name program_name FROM loyalty_tiers lt JOIN loyalty_programs lp ON lp.id=lt.program_id ${clientId?"WHERE lp.client_id=$1":""} ORDER BY lt.program_id,lt.min_lifetime_points`,values),pool.query(`SELECT * FROM loyalty_redemptions ORDER BY redeemed_at DESC LIMIT 100`),pool.query(`SELECT * FROM loyalty_receipts ORDER BY purchased_at DESC LIMIT 100`),pool.query(`SELECT * FROM loyalty_points_audit ORDER BY created_at DESC LIMIT 200`),pool.query(`SELECT COUNT(*) total_members,SUM(status='active') active_members,COALESCE(SUM(points_balance),0) points_outstanding FROM loyalty_members ${clientId?"WHERE client_id=$1":""}`,values),pool.query(`SELECT DATE_FORMAT(lt.created_at,'%Y-%m') month_key,SUM(CASE WHEN lt.points>0 THEN lt.points ELSE 0 END) earned,ABS(SUM(CASE WHEN lt.points<0 THEN lt.points ELSE 0 END)) spent FROM loyalty_transactions lt JOIN loyalty_members lm ON lm.id=lt.member_id WHERE lt.created_at>=DATE_SUB(CURRENT_DATE,INTERVAL 11 MONTH) ${clientId?"AND lm.client_id=$1":""} GROUP BY DATE_FORMAT(lt.created_at,'%Y-%m') ORDER BY month_key`,values)]);
+        return {programs:programs.rows,members:members.rows,transactions:transactions.rows,rewards:rewards.rows,campaigns:campaigns.rows,clients:clients.rows,users:users.rows,tiers:tiers.rows,redemptions:redemptions.rows,receipts:receipts.rows,audit:(user.permissions||[]).includes("view_loyalty_audit")?audit.rows:[],analytics:analytics.rows[0]||{},trend:trend.rows};
+    }
     const [programs,members,transactions,rewards,campaigns,clients,users,tiers,
         redemptions,receipts,audit,analytics,trend]=await Promise.all([
         pool.query(`SELECT lp.*,c.company_name,

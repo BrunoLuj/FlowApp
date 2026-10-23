@@ -3,12 +3,13 @@ import authMiddleware from "../middleware/authMiddleware.js";
 import checkPermission from "../middleware/permissionsMiddleware.js";
 import {
     addInspection, completeInspection, configureAsset, generateCertificate,
-    getAssets, getInspection, getOverview, saveInspection,
+    getAssets, getInspection, getOverview, getWorkOrderInspections, saveInspection,
 } from "../controllers/metrologyController.js";
 
 const router=express.Router();
 router.get("/overview",authMiddleware,checkPermission("view_metrology_center"),getOverview);
 router.get("/assets",authMiddleware,checkPermission("view_metrology_center"),getAssets);
+router.get("/work-orders/:workOrderId/inspections",authMiddleware,checkPermission("view_metrology_center"),getWorkOrderInspections);
 router.put("/assets/:id",authMiddleware,checkPermission("manage_metrology_inspections"),configureAsset);
 router.get("/inspections/:id",authMiddleware,checkPermission("view_metrology_center"),getInspection);
 router.post("/inspections",authMiddleware,checkPermission("manage_metrology_inspections"),addInspection);

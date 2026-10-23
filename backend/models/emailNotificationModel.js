@@ -1,5 +1,5 @@
 import path from "path";
-import { pool } from "../libs/database.js";
+import { pool, mysqlMode } from "../libs/database.js";
 import { resolveUploadedFile } from "../middleware/uploadMiddleware.js";
 import { renderEmailTemplate } from "../libs/emailTemplates.js";
 import { isEmailConfigured, sendEmail } from "../libs/mailer.js";
@@ -265,6 +265,14 @@ export const generateScheduledEmails = async () => {
 };
 
 export const getEmailCenter = async () => {
+    if (mysqlMode) {
+        const [summary,queue,settings]=await Promise.all([
+            pool.query(`SELECT SUM(status='pending') pending,SUM(status='sent') sent,SUM(status='failed') failed,SUM(status='processing') processing FROM email_queue`),
+            pool.query(`SELECT id,event_type,entity_type,entity_id,recipient_email,recipient_name,subject,status,attempts,max_attempts,next_attempt_at,sent_at,last_error,created_at FROM email_queue ORDER BY created_at DESC LIMIT 200`),
+            pool.query(`SELECT * FROM email_notification_settings WHERE client_id IS NULL ORDER BY event_type`),
+        ]);
+        return {configured:isEmailConfigured(),summary:summary.rows[0],queue:queue.rows,settings:settings.rows};
+    }
     const [summary, queue, settings] = await Promise.all([
         pool.query(
             `SELECT COUNT(*) FILTER (WHERE status='pending')::int pending,

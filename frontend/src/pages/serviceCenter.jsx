@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { FaClock, FaDownload, FaExclamationTriangle, FaGasPump, FaHeadset, FaMapMarkerAlt, FaPaperclip, FaPlus, FaTimes } from "react-icons/fa";
+import { FaClock, FaDownload, FaExclamationTriangle, FaGasPump, FaHeadset, FaMapMarkerAlt, FaPaperclip, FaPlus, FaSearch, FaTimes } from "react-icons/fa";
 import { toast } from "sonner";
 import useStore from "../store/index.js";
 import { getClients } from "../services/clientsServices.js";
@@ -62,6 +62,8 @@ const ServiceCenter = () => {
   const { user, permissions } = useStore();
   const [tab, setTab] = useState("requests");
   const [requests, setRequests] = useState([]);
+  const [requestSearch, setRequestSearch] = useState("");
+  const [requestView, setRequestView] = useState("open");
   const [stations, setStations] = useState([]);
   const [clients, setClients] = useState([]);
   const [form, setForm] = useState(initialForm);
@@ -81,6 +83,32 @@ const ServiceCenter = () => {
   const [requestManagement, setRequestManagement] = useState({
     status: "new", priority: "normal", assigned_to: "",
   });
+
+  const requestCounts = useMemo(() => ({
+    open: requests.filter((request) => !["resolved", "cancelled"].includes(request.status)).length,
+    risk: requests.filter((request) => ["response_breached", "resolution_breached", "at_risk"].includes(request.sla_status)).length,
+    resolved: requests.filter((request) => request.status === "resolved").length,
+    all: requests.length,
+  }), [requests]);
+
+  const visibleRequests = useMemo(() => {
+    const query = requestSearch.trim().toLocaleLowerCase("hr");
+    return requests.filter((request) => {
+      const matchesView = requestView === "all"
+        || (requestView === "open" && !["resolved", "cancelled"].includes(request.status))
+        || (requestView === "risk" && ["response_breached", "resolution_breached", "at_risk"].includes(request.sla_status))
+        || (requestView === "resolved" && request.status === "resolved");
+      if (!matchesView) return false;
+      if (!query) return true;
+      return [
+        request.request_number,
+        request.subject,
+        request.description,
+        request.client_name,
+        request.station_name,
+      ].some((value) => String(value || "").toLocaleLowerCase("hr").includes(query));
+    });
+  }, [requestSearch, requestView, requests]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -269,7 +297,36 @@ const ServiceCenter = () => {
         {loading ? (
           <div className="rounded-2xl bg-white p-12 text-center text-slate-500">Učitavanje…</div>
         ) : tab === "requests" ? (
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="space-y-4">
+            <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:grid-cols-[minmax(240px,1fr)_auto]">
+              <label className="relative block">
+                <FaSearch className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  value={requestSearch}
+                  onChange={(event) => setRequestSearch(event.target.value)}
+                  placeholder="Pretraži broj, klijenta, stanicu ili opis..."
+                  className="w-full rounded-xl border border-slate-200 py-3 pl-11 pr-4 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                />
+              </label>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {[
+                  ["open", "Otvoreni"],
+                  ["risk", "SLA rizik"],
+                  ["resolved", "Riješeni"],
+                  ["all", "Svi"],
+                ].map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setRequestView(value)}
+                    className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${requestView === value ? "border-orange-500 bg-orange-500 text-white" : "border-slate-200 bg-white text-slate-600 hover:border-orange-300"}`}
+                  >
+                    {label} <span className="ml-1 opacity-80">{requestCounts[value]}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="overflow-x-auto">
               <table className="min-w-full">
                 <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
@@ -284,7 +341,7 @@ const ServiceCenter = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {requests.map((request) => (
+                  {visibleRequests.map((request) => (
                     <tr
                       key={request.id}
                       onClick={() => openRequest(request.id)}
@@ -296,11 +353,6 @@ const ServiceCenter = () => {
                         <div className="mt-1 max-w-md truncate text-sm text-slate-500">{request.description}</div>
                       </td>
                       <td className="px-5 py-4">
-                        <span className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold ${slaColor[request.sla_status]}`}>
-                          {slaLabel[request.sla_status] || request.sla_status}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4 text-sm text-slate-600">
                         <div>{request.client_name}</div>
                         <div className="text-slate-400">{request.station_name || "Sve lokacije"}</div>
                       </td>
@@ -312,6 +364,11 @@ const ServiceCenter = () => {
                           {statusLabel[request.status] || request.status}
                         </span>
                       </td>
+                      <td className="px-5 py-4">
+                        <span className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold ${slaColor[request.sla_status]}`}>
+                          {slaLabel[request.sla_status] || request.sla_status}
+                        </span>
+                      </td>
                       <td className="whitespace-nowrap px-5 py-4 text-sm text-slate-500">
                         {new Intl.DateTimeFormat("hr-HR").format(new Date(request.created_at))}
                       </td>
@@ -319,8 +376,9 @@ const ServiceCenter = () => {
                   ))}
                 </tbody>
               </table>
-              {!requests.length && <div className="p-12 text-center text-slate-400">Nema servisnih zahtjeva.</div>}
+              {!visibleRequests.length && <div className="p-12 text-center text-slate-400">Nema zahtjeva koji odgovaraju odabranom pregledu.</div>}
             </div>
+          </div>
           </div>
         ) : (
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">

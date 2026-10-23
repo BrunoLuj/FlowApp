@@ -64,22 +64,21 @@ const Profile = () => {
         }
     };
 
-    if (loading) return <div className="p-6">Loading...</div>;
+    if (loading) return <div className="min-h-screen bg-slate-100 pt-28 text-center text-slate-500">Učitavanje profila…</div>;
 
     return (
-        <div className="bg-gray-100 min-h-screen p-6 mt-14 sm:ml-16">
-            <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-6">
-                <h2 className="text-3xl font-bold text-center mb-6">
+        <div className="min-h-screen bg-slate-100 px-4 pb-10 pt-24 sm:px-7">
+            <div className="mx-auto max-w-4xl"><header className="mb-6"><p className="text-sm font-black uppercase tracking-widest text-orange-600">Korisnički račun</p><h2 className="text-3xl font-black text-slate-900">
                     {formData.firstname || formData.lastname ? `${formData.firstname} ${formData.lastname}` : 'Profil'}
-                </h2>
+                </h2><p className="mt-2 text-slate-500">Osobni podaci, kontakt i sigurnost računa.</p></header><div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
 
                 <div className="flex justify-end mb-6">
                     <button
                         type="button"
                         onClick={() => navigate('/change-password')}
-                        className="bg-gradient-to-r from-green-500 to-green-700 text-white px-5 py-3 rounded-lg hover:from-green-600 hover:to-green-800 transition"
+                        className="rounded-xl border border-slate-300 bg-white px-5 py-3 font-bold text-slate-700 hover:bg-slate-50"
                     >
-                        Change Password
+                        Promijeni lozinku
                     </button>
                 </div>
 
@@ -144,14 +143,14 @@ const Profile = () => {
                         {permissions.includes('update_profile') && (
                             <button
                                 type="submit"
-                                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold shadow hover:scale-105 transition"
+                                className="w-full rounded-xl bg-orange-500 px-6 py-3 font-bold text-white shadow-lg shadow-orange-200 hover:bg-orange-600 sm:w-auto"
                             >
-                                Update
+                                Spremi promjene
                             </button>
                         )}
                     </div>
                 </form>
-            </div>
+            </div></div>
         </div>
     );
 };

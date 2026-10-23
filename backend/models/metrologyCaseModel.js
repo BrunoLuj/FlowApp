@@ -1,4 +1,6 @@
-import { pool } from "../libs/database.js";
+import crypto from 'node:crypto';
+import {readWorkflow} from './metrologyWorkflowStore.js';
+import { pool, mysqlMode } from "../libs/database.js";
 
 export const SERVICE_RULES = {
     volumeter: {
@@ -116,22 +118,23 @@ export const createCase = async (data, user) => {
             case_number,client_id,station_id,service_type,inspection_kind,
             requested_by_name,contact_phone,request_description,
             attachments_description,location_text,method_reference,
-            verification_period_months,created_by
-         ) VALUES (NULL,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+            verification_period_months,created_by,status,request_date,procedure_reference,result,created_at,updated_at
+         ) VALUES ($13,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'request',CURRENT_DATE,'PR-19','pending',NOW(),NOW())
          RETURNING *`,
         [
             clientId,data.station_id || null,data.service_type,
             data.inspection_kind || "regular",data.requested_by_name || null,
             data.contact_phone || null,data.request_description || null,
             data.attachments_description || null,data.location_text || null,
-            rules.method,rules.intervalMonths,user.userId,
+            rules.method,rules.intervalMonths,user.userId,mysqlMode?`PENDING-${crypto.randomUUID()}`:null,
         ]
     );
+    if(mysqlMode){const id=result.rows[0].id;return (await pool.query('UPDATE metrology_cases SET case_number=$1 WHERE id=$2 RETURNING *',[`MI-${new Date().getFullYear()}-W${String(id).padStart(5,'0')}`,id])).rows[0];}
     return result.rows[0];
 };
 
 const normalizeLegacyMeasurement = (serviceType, measurement) => {
-    const values = { ...(measurement.values || {}) };
+    const values = { ...(typeof measurement.values==='string'?JSON.parse(measurement.values):measurement.values || {}) };
     if (serviceType === "volumeter" && values.error_percent !== undefined && values.error_qmid_percent === undefined) {
         Object.assign(values, {
             qmid_l_min: values.flow,
@@ -339,6 +342,8 @@ export const saveCase = async (id, data, user) => {
                 seals.set(key, seal);
             }
         }
+        await connection.query('DELETE FROM metrology_case_measurements WHERE case_item_id IN (SELECT id FROM metrology_case_items WHERE case_id=$1)',[id]);
+        await connection.query('DELETE FROM metrology_case_checks WHERE case_item_id IN (SELECT id FROM metrology_case_items WHERE case_id=$1)',[id]);
         await connection.query("DELETE FROM metrology_case_items WHERE case_id=$1", [id]);
         for (let index = 0; index < items.length; index += 1) {
             const item = items[index];
@@ -347,9 +352,9 @@ export const saveCase = async (id, data, user) => {
                     case_id,item_type,source_table,source_id,name,manufacturer,model,
                     serial_number,official_mark,apparatus_serial_number,tank_reference,
                     fuel_type,nominal_capacity,measurement_range,verification_mark,
-                    seal_number,status,notes,sort_order
+                    seal_number,status,notes,sort_order,created_at
                  ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,
-                           'pending',$17,$18) RETURNING id`,
+                           'pending',$17,$18,NOW()) RETURNING *`,
                 [
                     id,item.item_type,item.source_table || null,item.source_id || null,
                     item.name || null,item.manufacturer || null,item.model || null,
@@ -364,8 +369,8 @@ export const saveCase = async (id, data, user) => {
                 const measurement = item.measurements[measurementIndex];
                 await connection.query(
                     `INSERT INTO metrology_case_measurements (
-                        case_item_id,measurement_group,sequence_no,values,passed,notes
-                     ) VALUES ($1,$2,$3,$4::jsonb,$5,$6)`,
+                        case_item_id,measurement_group,sequence_no,${mysqlMode?"`values`":"\"values\""},passed,notes,created_at
+                     ) VALUES ($1,$2,$3,$4,$5,$6,NOW())`,
                     [
                         inserted.id,measurement.measurement_group || "measurement",
                         measurementIndex + 1,JSON.stringify(measurement.values || {}),
@@ -394,7 +399,7 @@ export const saveCase = async (id, data, user) => {
                 [
                     id,standard.equipment_name,standard.manufacturer || null,
                     standard.serial_number || null,standard.calibration_certificate || null,
-                    standard.valid_until || null,index,
+                    standard.valid_until ? new Date(standard.valid_until).toISOString().slice(0,10) : null,index,
                 ]
             );
         }
@@ -410,8 +415,8 @@ export const saveCase = async (id, data, user) => {
                 inspection_date=$4,location_text=$5,request_description=$6,
                 technical_manager_id=$7,updated_at=NOW() WHERE id=$8 RETURNING *`,
             [
-                data.status || current.status,data.work_started_at || null,
-                data.work_finished_at || null,data.inspection_date || null,
+                data.status || current.status,data.work_started_at ? new Date(data.work_started_at) : null,
+                data.work_finished_at ? new Date(data.work_finished_at) : null,data.inspection_date ? new Date(data.inspection_date).toISOString().slice(0,10) : null,
                 data.location_text || null,data.request_description || null,
                 data.technical_manager_id || null,id,
             ]
@@ -444,44 +449,25 @@ export const completeCase = async (id, user) => {
             await connection.query("ROLLBACK");
             return null;
         }
-        const items = (await connection.query(
-            `SELECT i.id,COUNT(DISTINCT m.id)::int measurement_count,
-                    BOOL_AND(COALESCE(m.passed,TRUE)) measurements_passed,
-                    BOOL_AND(COALESCE(ch.passed,TRUE)) checks_passed
-             FROM metrology_case_items i
-             LEFT JOIN metrology_case_measurements m ON m.case_item_id=i.id
-             LEFT JOIN metrology_case_checks ch ON ch.case_item_id=i.id
-             WHERE i.case_id=$1 GROUP BY i.id`,
-            [id]
-        )).rows;
-        if (!items.length) {
-            const error = new Error("Items required");
-            error.code = "CASE_ITEMS_REQUIRED";
-            throw error;
+        if(current.status!=='completed')throw Object.assign(new Error('Predmet mora biti predan na provjeru prije odobravanja.'),{status:409});
+        const items=(await connection.query('SELECT id FROM metrology_case_items WHERE case_id=$1',[id])).rows;
+        if(!items.length)throw Object.assign(new Error('Predmet mora sadržavati mjerila.'),{status:409});
+        let passed=true;
+        for(const item of items){
+            const measurements=(await connection.query('SELECT passed FROM metrology_case_measurements WHERE case_item_id=$1',[item.id])).rows;
+            const checks=(await connection.query('SELECT passed FROM metrology_case_checks WHERE case_item_id=$1',[item.id])).rows;
+            if(!measurements.length)throw Object.assign(new Error('Nedostaju mjerenja.'),{status:409});
+            const itemPassed=[...measurements,...checks].every(row=>row.passed===true||row.passed===1);
+            passed=passed&&itemPassed;
+            await connection.query('UPDATE metrology_case_items SET status=$1 WHERE id=$2',[itemPassed?'passed':'failed',item.id]);
         }
-        if (items.some((item) => item.measurement_count < 1)) {
-            const error = new Error("Measurements required");
-            error.code = "CASE_MEASUREMENTS_REQUIRED";
-            throw error;
+        let nextDate=null;
+        if(passed){
+            const date=current.inspection_date instanceof Date?current.inspection_date:new Date(String(current.inspection_date).slice(0,10)+'T12:00:00Z');
+            const targetMonth=date.getUTCMonth()+Number(current.verification_period_months);
+            const lastDay=new Date(Date.UTC(date.getUTCFullYear(),targetMonth+1,0)).getUTCDate();
+            nextDate=new Date(Date.UTC(date.getUTCFullYear(),targetMonth,Math.min(date.getUTCDate(),lastDay))).toISOString().slice(0,10);
         }
-        const passed = items.every((item) => item.measurements_passed && item.checks_passed);
-        const nextDate = passed
-            ? (await connection.query(
-                "SELECT (COALESCE($1::date,CURRENT_DATE)+($2 || ' months')::interval)::date next_date",
-                [current.inspection_date,current.verification_period_months]
-            )).rows[0].next_date
-            : null;
-        await connection.query(
-            `UPDATE metrology_case_items i SET status=CASE WHEN result.passed THEN 'passed' ELSE 'failed' END
-             FROM (
-                SELECT item.id,BOOL_AND(COALESCE(m.passed,TRUE)) AND BOOL_AND(COALESCE(ch.passed,TRUE)) passed
-                FROM metrology_case_items item
-                LEFT JOIN metrology_case_measurements m ON m.case_item_id=item.id
-                LEFT JOIN metrology_case_checks ch ON ch.case_item_id=item.id
-                WHERE item.case_id=$1 GROUP BY item.id
-             ) result WHERE i.id=result.id`,
-            [id]
-        );
         const completed = (await connection.query(
             `UPDATE metrology_cases SET status='approved',result=$1,
                 approval_date=CURRENT_DATE,approved_by=$2,next_verification_date=$3,
@@ -516,6 +502,7 @@ export const registerDocument = async (caseId, type, file, user) => {
             await connection.query("ROLLBACK");
             return null;
         }
+        if((await readWorkflow(caseId)).closed_at)throw Object.assign(new Error('Predmet je zaključen.'),{status:409});
         const version = (await connection.query(
             `SELECT COALESCE(MAX(version_no),0)+1 version
              FROM metrology_case_documents WHERE case_id=$1 AND document_type=$2`,
@@ -525,8 +512,8 @@ export const registerDocument = async (caseId, type, file, user) => {
         const attachment = (await connection.query(
             `INSERT INTO entity_attachments (
                 client_id,station_id,metrology_case_id,title,file_name,storage_key,mime_type,file_size,
-                visible_to_client,uploaded_by,document_type,version_no,system_generated
-             ) VALUES ($1,$2,$3,$4,$5,$6,'application/pdf',$7,TRUE,$8,$9,$10,TRUE)
+                visible_to_client,uploaded_by,document_type,version_no,system_generated,created_at
+             ) VALUES ($1,$2,$3,$4,$5,$6,'application/pdf',$7,TRUE,$8,$9,$10,TRUE,NOW())
              RETURNING *`,
             [
                 record.client_id,record.station_id,caseId,documentNumber,file.fileName,
@@ -535,8 +522,8 @@ export const registerDocument = async (caseId, type, file, user) => {
         )).rows[0];
         await connection.query(
             `INSERT INTO metrology_case_documents (
-                case_id,document_type,document_number,version_no,attachment_id,generated_by
-             ) VALUES ($1,$2,$3,$4,$5,$6)`,
+                case_id,document_type,document_number,version_no,attachment_id,generated_by,generated_at
+             ) VALUES ($1,$2,$3,$4,$5,$6,NOW())`,
             [caseId,type,documentNumber,version,attachment.id,user.userId]
         );
         await connection.query("COMMIT");

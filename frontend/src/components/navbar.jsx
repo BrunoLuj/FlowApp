@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import { RiBlazeLine } from "react-icons/ri";
+import { FaBell, FaClipboardList, FaUser } from "react-icons/fa";
 import { Avatar } from "../assets";
 import { MdMenu, MdClose } from "react-icons/md";
 import { Link, useLocation } from "react-router-dom";
@@ -13,13 +14,14 @@ const Navbar = () => {
 
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setUserMenuOpen] = useState(false);
-  const [isSidebarExpanded, setSidebarExpanded] = useState(false);
+  const [isSidebarExpanded] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
 
   const userMenuRef = useRef(null);
   const { user, permissions } = useStore();
   const signOut = useStore((state) => state.signOut);
   const portalOnly = Boolean(user?.loyalty_portal_only);
+  const technicianMobile = location.pathname.startsWith("/mobile-work-orders");
 
   // FAST PERMISSION CHECK
   const permissionSet = useMemo(() => new Set(permissions || []), [permissions]);
@@ -36,7 +38,7 @@ const Navbar = () => {
 
   // RESPONSIVE FIX
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -54,7 +56,7 @@ const Navbar = () => {
   }, []);
 
   // ACTIVE ROUTE CHECK
-  const isActive = (path) => location.pathname.startsWith(path);
+  const isActive = (path) => location.pathname === path || location.pathname.startsWith(`${path}/`);
 
   if (portalOnly) return (
     <nav className="fixed top-0 z-50 flex w-full items-center justify-between border-b border-white/10 bg-slate-950/90 px-5 py-3 text-white shadow-lg backdrop-blur">
@@ -63,24 +65,42 @@ const Navbar = () => {
     </nav>
   );
 
+  if (technicianMobile) return (
+    <>
+      <nav className="fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between border-b border-slate-800 bg-slate-950 px-4 text-white shadow-lg">
+        <Link to="/mobile-work-orders" className="flex min-w-0 items-center gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-orange-500"><RiBlazeLine className="text-2xl" /></span>
+          <span className="min-w-0"><span className="block truncate text-sm font-black">FlowApp teren</span><span className="block truncate text-[11px] text-slate-400">{user.firstname} {user.lastname}</span></span>
+        </Link>
+        <span className="rounded-full bg-emerald-500/15 px-3 py-1.5 text-xs font-bold text-emerald-300">Terenski rad</span>
+      </nav>
+      <nav className="fixed inset-x-0 bottom-0 z-50 grid h-[68px] grid-cols-3 border-t border-slate-200 bg-white/95 px-3 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_30px_rgba(15,23,42,.12)] backdrop-blur">
+        <MobileNavLink to="/mobile-work-orders" active={location.pathname.startsWith("/mobile-work-orders")} icon={FaClipboardList} label="Nalozi" />
+        <MobileNavLink to="/notifications" active={location.pathname==="/notifications"} icon={FaBell} label="Obavijesti" />
+        <MobileNavLink to="/profile" active={location.pathname==="/profile"} icon={FaUser} label="Profil" />
+      </nav>
+    </>
+  );
+
   return (
     <div>
       {/* TOP NAVBAR */}
-      <nav className="fixed top-0 z-50 w-full bg-white border-b shadow-md flex justify-between items-center px-4 py-3">
+      <nav className="fixed top-0 z-50 flex h-16 w-full items-center justify-between border-b border-slate-800 bg-slate-950 px-4 text-white shadow-lg lg:left-64 lg:w-[calc(100%-16rem)] lg:px-6">
         <div className="flex items-center">
           {/* MOBILE BUTTON */}
           <button
             onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
-            className="sm:hidden p-2"
+            className="rounded-xl p-2 hover:bg-white/10 lg:hidden"
           >
             {isMobileMenuOpen ? <MdClose size={24} /> : <MdMenu size={24} />}
           </button>
 
           {/* LOGO */}
-          <div className="flex items-center ml-2 bg-blue-700 rounded-xl p-1">
+          <div className="ml-2 flex items-center rounded-xl bg-orange-500 p-1.5 lg:hidden">
             <RiBlazeLine className="text-white text-3xl" />
           </div>
-          <span className="ml-2 text-xl font-semibold">FlowApp</span>
+          <span className="ml-2 text-xl font-black lg:hidden">FlowApp</span>
+          <div className="hidden lg:block"><p className="text-[10px] font-black uppercase tracking-[.22em] text-orange-400">Operativni sistem</p><p className="text-sm font-bold text-slate-200">Upravljanje servisom i mjeriteljstvom</p></div>
         </div>
 
         {/* USER */}
@@ -91,11 +111,11 @@ const Navbar = () => {
 
           <div className="relative" ref={userMenuRef}>
             <button onClick={() => setUserMenuOpen(!isUserMenuOpen)}>
-              <img src={Avatar} alt={`${user.firstname || ""} ${user.lastname || ""}`.trim() || "Korisnik"} className="w-10 h-10 rounded-full" />
+              <img src={Avatar} alt={`${user.firstname || ""} ${user.lastname || ""}`.trim() || "Korisnik"} className="h-10 w-10 rounded-xl border border-white/15 bg-slate-800 object-cover" />
             </button>
 
             {isUserMenuOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white shadow rounded">
+              <div className="absolute right-0 mt-3 w-52 overflow-hidden rounded-2xl border border-slate-200 bg-white py-2 text-slate-800 shadow-2xl">
                 <Link to="/profile" className="block px-4 py-2 hover:bg-gray-100">
                   {t("profile")}
                 </Link>
@@ -126,24 +146,21 @@ const Navbar = () => {
 
       {/* SIDEBAR */}
       <aside
-        className={`fixed top-0 left-0 z-40 flex h-screen flex-col bg-white border-r pt-20 transition-all duration-300
+        className={`fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-slate-800 bg-slate-950 pt-16 text-slate-300 shadow-xl transition-all duration-300
           ${isMobile
             ? isMobileMenuOpen
               ? "w-64"
               : "w-0 overflow-hidden"
-            : isSidebarExpanded
-            ? "w-64"
-            : "w-16"
+            : "w-64"
           }`}
-        onMouseEnter={() => !isMobile && setSidebarExpanded(true)}
-        onMouseLeave={() => !isMobile && setSidebarExpanded(false)}
       >
-        <div className="sidebar-scroll flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overflow-x-hidden px-4 pb-8">
+        <Link to="/overview" className="absolute inset-x-0 top-0 flex h-16 items-center gap-3 border-b border-slate-800 px-5"><span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-orange-500 text-white"><RiBlazeLine className="text-2xl"/></span><span><span className="block text-lg font-black text-white">FlowApp</span><span className="block text-[10px] font-bold uppercase tracking-widest text-slate-500">Business workflow</span></span></Link>
+        <div className="sidebar-scroll flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden px-3 pb-8 pt-3">
           {filteredMenu.map((group, i) => (
             <div key={i} className="w-full">
               {/* GROUP TITLE */}
               {(isSidebarExpanded || isMobileMenuOpen || isMobile) && (
-                <p className="text-xs text-gray-400 uppercase px-3 mt-3">
+                <p className="mb-1 mt-4 px-3 text-[10px] font-black uppercase tracking-[.18em] text-slate-600">
                   {group.title}
                 </p>
               )}
@@ -154,10 +171,10 @@ const Navbar = () => {
                   key={index}
                   to={item.link}
                   onClick={() => isMobile && setMobileMenuOpen(false)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition group
-                    ${isActive(item.link) ? "bg-blue-600 text-white" : "hover:bg-gray-100"}`}
+                  className={`group flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-bold transition
+                    ${isActive(item.link) ? "bg-orange-500 text-white shadow-lg shadow-orange-950/20" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}
                 >
-                  <span className="text-lg">{item.icon}</span>
+                  <span className="flex w-5 justify-center text-base">{item.icon}</span>
                   {(isSidebarExpanded || isMobileMenuOpen || isMobile) && <span>{t(item.label)}</span>}
 
                   {/* TOOLTIP */}
@@ -175,5 +192,12 @@ const Navbar = () => {
     </div>
   );
 };
+
+const MobileNavLink = ({ to, active, icon: Icon, label }) => (
+  <Link to={to} className={`flex flex-col items-center justify-center gap-1 text-[11px] font-black ${active ? "text-orange-600" : "text-slate-400"}`}>
+    <Icon className="text-lg" />
+    <span>{label}</span>
+  </Link>
+);
 
 export default Navbar;

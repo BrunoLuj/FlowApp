@@ -1,6 +1,16 @@
-import { pool } from "../libs/database.js";
+import { pool, mysqlMode } from "../libs/database.js";
 
 export const getRolesWithPermissions = async () => {
+    if (mysqlMode) {
+        const [roles, permissions] = await Promise.all([
+            pool.query(`SELECT r.id,r.name,r.description,r.system_role,r.active,
+                COALESCE((SELECT JSON_ARRAYAGG(JSON_OBJECT('id',p.id,'name',p.name,'module',p.module,'action',p.action,'description',p.description))
+                    FROM role_permissions rp JOIN permissions p ON p.id=rp.permission_id WHERE rp.role_id=r.id),JSON_ARRAY()) permissions
+                FROM roles r ORDER BY r.system_role DESC,r.name`),
+            pool.query("SELECT id,name,module,action,description FROM permissions ORDER BY module,name"),
+        ]);
+        return { roles: roles.rows, permissions: permissions.rows };
+    }
     const [roles, permissions] = await Promise.all([
         pool.query(`
             SELECT r.id, r.name, r.description, r.system_role, r.active,

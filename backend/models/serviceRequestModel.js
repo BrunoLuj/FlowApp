@@ -1,8 +1,11 @@
-import { pool } from "../libs/database.js";
+import { pool, mysqlMode } from "../libs/database.js";
 
 export const refreshSlaEscalations = async (clientId = null) => {
     const values = clientId ? [clientId] : [];
     const scope = clientId ? "AND client_id = $1" : "";
+    if (mysqlMode) {
+        await pool.query(`UPDATE service_requests SET response_breached_at=CASE WHEN responded_at IS NULL AND response_due_at<COALESCE(sla_paused_at,NOW()) THEN COALESCE(response_breached_at,response_due_at) ELSE response_breached_at END,resolution_breached_at=CASE WHEN resolution_due_at<COALESCE(sla_paused_at,NOW()) THEN COALESCE(resolution_breached_at,resolution_due_at) ELSE resolution_breached_at END,escalation_level=GREATEST(escalation_level,CASE WHEN resolution_due_at<DATE_SUB(COALESCE(sla_paused_at,NOW()),INTERVAL 4 HOUR) THEN 2 WHEN (responded_at IS NULL AND response_due_at<COALESCE(sla_paused_at,NOW())) OR resolution_due_at<COALESCE(sla_paused_at,NOW()) THEN 1 ELSE 0 END),escalated_at=CASE WHEN escalated_at IS NULL AND ((responded_at IS NULL AND response_due_at<COALESCE(sla_paused_at,NOW())) OR resolution_due_at<COALESCE(sla_paused_at,NOW())) THEN NOW() ELSE escalated_at END WHERE status NOT IN ('resolved','cancelled') ${scope}`,values);return;
+    }
     await pool.query(
         `UPDATE service_requests
          SET response_breached_at = CASE
@@ -62,6 +65,13 @@ const slaColumns = `
 
 export const getServiceRequests = async ({ clientId, status, priority, stationId }) => {
     await refreshSlaEscalations(clientId);
+    if (mysqlMode) {
+        const conditions=[];const values=[];const add=(sql,v)=>{values.push(v);conditions.push(sql.replace("?",`$${values.length}`));};
+        if(clientId)add("sr.client_id = ?",clientId);if(status)add("sr.status = ?",status);if(priority)add("sr.priority = ?",priority);if(stationId)add("sr.station_id = ?",stationId);
+        const where=conditions.length?`WHERE ${conditions.join(" AND ")}`:"";
+        const result=await pool.query(`SELECT sr.*,CASE WHEN sr.status='waiting_client' THEN 'paused' WHEN sr.responded_at IS NULL AND sr.response_due_at<NOW() THEN 'response_breached' WHEN sr.resolution_due_at<NOW() THEN 'resolution_breached' WHEN sr.resolution_due_at<=DATE_ADD(NOW(),INTERVAL 8 HOUR) THEN 'at_risk' WHEN sr.resolution_due_at IS NOT NULL THEN 'on_track' ELSE 'not_defined' END sla_status,TIMESTAMPDIFF(SECOND,NOW(),sr.response_due_at) response_seconds_remaining,TIMESTAMPDIFF(SECOND,NOW(),sr.resolution_due_at) resolution_seconds_remaining,c.company_name client_name,p.name station_name,CONCAT(u.firstname,' ',u.lastname) assigned_to_name FROM service_requests sr JOIN clients c ON c.id=sr.client_id LEFT JOIN projects p ON p.id=sr.station_id LEFT JOIN users u ON u.id=sr.assigned_to ${where} ORDER BY CASE sr.priority WHEN 'urgent' THEN 1 WHEN 'high' THEN 2 WHEN 'normal' THEN 3 ELSE 4 END,sr.created_at DESC`,values);
+        return result.rows;
+    }
     const conditions = [];
     const values = [];
 
@@ -284,7 +294,7 @@ export const getServiceRequestById = async (id, clientId = null) => {
     }
 
     const requestResult = await pool.query(
-        `SELECT sr.*, ${slaColumns}, c.company_name AS client_name, p.name AS station_name,
+        `SELECT sr.*, ${mysqlMode ? `CASE WHEN sr.status='waiting_client' THEN 'paused' WHEN sr.responded_at IS NULL AND sr.response_due_at<NOW() THEN 'response_breached' WHEN sr.resolution_due_at<NOW() THEN 'resolution_breached' WHEN sr.resolution_due_at<=DATE_ADD(NOW(),INTERVAL 8 HOUR) THEN 'at_risk' WHEN sr.resolution_due_at IS NOT NULL THEN 'on_track' ELSE 'not_defined' END sla_status,TIMESTAMPDIFF(SECOND,NOW(),sr.response_due_at) response_seconds_remaining,TIMESTAMPDIFF(SECOND,NOW(),sr.resolution_due_at) resolution_seconds_remaining` : slaColumns}, c.company_name AS client_name, p.name AS station_name,
                 ea.name AS asset_name, ea.asset_code, c.email AS client_email,
                 CONCAT(assignee.firstname, ' ', assignee.lastname) AS assigned_to_name,
                 CONCAT(requester.firstname, ' ', requester.lastname) AS requested_by_name

@@ -36,7 +36,8 @@ import RequirePermission from "./components/RequirePermission";
 import { getSession } from "./services/authServices";
 import DocumentCenter from "./pages/documentCenter";
 import Dispatch from "./pages/dispatch";
-import MobileWorkOrders from "./pages/mobileWorkOrders";
+import MobileWorkOrders from "./pages/mobileWorkOrdersFluid";
+import MobileMetrologyWorkOrder from "./pages/mobileMetrologyWorkOrder";
 import EmailCenter from "./pages/emailCenter";
 import Metrology from "./pages/metrology";
 import MetrologyCases from "./pages/metrologyCases";
@@ -78,7 +79,7 @@ const RootLayout = () => {
     ) : (
         <>
             <Navbar />
-            <div className="min-h-[cal(h-screen-100px)]">
+            <div className="app-content min-h-screen">
                 <Outlet />
             </div>
         </>
@@ -108,6 +109,7 @@ function App() {
                         <Route path="/equipmentmanagement" element={secured("view_stations", <EquipmentManagement/>)} />
                         <Route path="/work-order" element={secured("view_work_orders", <WorkOrdersList/>)} />
                         <Route path="/mobile-work-orders" element={secured("use_mobile_work_orders", <MobileWorkOrders />)} />
+                        <Route path="/mobile-work-orders/:id/measurements" element={secured("view_metrology_center", <MobileMetrologyWorkOrder />)} />
                         <Route path="/work-orders/create" element={secured("create_work_orders", <CreateWorkOrder/>)} />
                         <Route path="/work-orders/:id" element={secured("view_work_orders", <WorkOrderDetails />)} />
                         <Route path="/notifications" element={secured("view_dashboard", <Notifications />)} />

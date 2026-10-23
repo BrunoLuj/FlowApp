@@ -16,36 +16,33 @@ const Settings = () => {
     };
 
     return (
-        <div className="bg-gray-100 min-h-screen p-6 mt-14 sm:ml-16">
-            <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-6">
-                <h1 className="text-2xl font-semibold mb-6 text-center">Admin Settings</h1>
+        <div className="min-h-screen bg-slate-100 px-4 pb-10 pt-24 sm:px-7">
+            <div className="mx-auto max-w-3xl"><header className="mb-6"><p className="text-sm font-black uppercase tracking-widest text-orange-600">Administracija</p><h1 className="text-3xl font-black text-slate-900">Postavke aplikacije</h1><p className="mt-2 text-slate-500">Prilagodite izgled, jezik i zadane vrijednosti.</p></header><div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
 
                 <div className="mb-6">
-                    <label className="block text-gray-700 mb-2">Theme</label>
+                    <label className="mb-2 block font-bold text-slate-700">Tema</label>
                     <select
                         value={theme}
                         onChange={(e) => setTheme(e.target.value)}
                         className="w-full border p-3 rounded-lg bg-white focus:outline-none focus:ring focus:ring-blue-300"
                     >
-                        <option value="light">Light</option>
-                        <option value="dark">Dark</option>
+                        <option value="light">Svijetla</option><option value="dark">Tamna</option>
                     </select>
                 </div>
 
                 <div className="mb-6">
-                    <label className="block text-gray-700 mb-2">Language</label>
+                    <label className="mb-2 block font-bold text-slate-700">Jezik</label>
                     <select
                         value={language}
                         onChange={(e) => setLanguage(e.target.value)}
                         className="w-full border p-3 rounded-lg bg-white focus:outline-none focus:ring focus:ring-blue-300"
                     >
-                        <option value="en">English</option>
-                        <option value="hr">Hrvatski</option>
+                        <option value="hr">Hrvatski / Bosanski</option><option value="en">English</option>
                     </select>
                 </div>
 
                 <div className="mb-6">
-                    <label className="block text-gray-700 mb-2">Default Work Order Type</label>
+                    <label className="mb-2 block font-bold text-slate-700">Zadana vrsta radnog naloga</label>
                     <input
                         type="text"
                         value={defaultWorkOrderType}
@@ -57,12 +54,12 @@ const Settings = () => {
                 <div className="flex justify-end mt-4">
                     <button
                         onClick={handleSave}
-                        className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold shadow hover:scale-105 transition"
+                        className="w-full rounded-xl bg-orange-500 px-6 py-3 font-bold text-white shadow-lg shadow-orange-200 hover:bg-orange-600 sm:w-auto"
                     >
-                        Save Settings
+                        Spremi postavke
                     </button>
                 </div>
-            </div>
+            </div></div>
         </div>
     );
 };

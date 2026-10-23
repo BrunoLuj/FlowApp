@@ -1,3 +1,4 @@
+import MetrologyNavigation from '../components/MetrologyNavigation';
 import React,{useCallback,useEffect,useState} from "react";
 import {useSearchParams} from "react-router-dom";
 import {FaCertificate,FaCheckCircle,FaClock,FaExclamationTriangle,FaFlask,FaPlus,FaSave} from "react-icons/fa";
@@ -101,6 +102,7 @@ const Metrology=()=>{
   if(selected)return <Editor inspection={selected} form={form} setForm={setForm} onBack={()=>setSelected(null)} onSave={save} onFinish={finish} onCertificate={certificate} canManage={canManage} canApprove={canApprove} canCertificate={canCertificate}/>;
   const summary=overview.summary||{};
   return <div className="min-h-screen bg-slate-100 px-4 pb-10 pt-24 sm:ml-16 sm:px-7"><div className="mx-auto max-w-7xl">
+    <MetrologyNavigation/>
     <header className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
       <div><p className="text-sm font-bold uppercase tracking-widest text-indigo-600">Mjeriteljstvo</p><h1 className="text-3xl font-bold text-slate-900">Centar ovjera i kalibracija</h1><p className="mt-2 text-slate-500">Rokovi, digitalna mjerenja, prolaz/pad i certifikati.</p></div>
       {canManage&&<button onClick={()=>{setForm(emptyInspection);setShowNew(true);}} className="rounded-xl bg-indigo-600 px-5 py-3 font-bold text-white"><FaPlus className="mr-2 inline"/>Novi pregled</button>}

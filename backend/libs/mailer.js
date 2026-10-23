@@ -9,6 +9,9 @@ const getTransporter = () => {
     if (!isEmailConfigured()) return null;
     if (!transporter) {
         transporter = nodemailer.createTransport({
+            connectionTimeout: 20000,
+            greetingTimeout: 20000,
+            socketTimeout: 60000,
             host: process.env.SMTP_HOST,
             port: Number(process.env.SMTP_PORT),
             secure: String(process.env.SMTP_SECURE).toLowerCase() === "true",

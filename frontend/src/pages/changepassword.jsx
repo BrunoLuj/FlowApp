@@ -40,7 +40,7 @@ const ChangePassword = () => {
         setError(null);
 
         if (formData.newPassword !== formData.confirmPassword) {
-            setError("New password and confirmation do not match.");
+            setError("Nova lozinka i potvrda nisu jednake.");
             return;
         }
 
@@ -56,21 +56,21 @@ const ChangePassword = () => {
                 newPassword: formData.newPassword,
                 confirmPassword: formData.confirmPassword,
             });
-            toast.success("Password changed successfully!");
+            toast.success("Lozinka je uspješno promijenjena.");
             navigate('/profile');
         } catch (error) {
-            toast.error(error.response?.data?.message || "An error occurred. Please try again.");
+            toast.error(error.response?.data?.message || "Došlo je do greške. Pokušajte ponovo.");
         }
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-100 p-6">
-            <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-6">
-                <h2 className="text-2xl font-semibold mb-6 text-center">Change Password</h2>
+        <div className="flex min-h-screen items-center justify-center bg-slate-100 p-6 pt-24">
+            <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 className="mb-2 text-2xl font-black text-slate-900">Promjena lozinke</h2><p className="mb-6 text-sm text-slate-500">Nova lozinka mora imati najmanje 10 znakova, veliko i malo slovo, broj i poseban znak.</p>
                 {error && <div className="mb-4 text-red-600">{error}</div>}
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label className="block text-gray-700 font-medium mb-2" htmlFor="currentPassword">Current Password:</label>
+                        <label className="mb-2 block font-bold text-slate-700" htmlFor="currentPassword">Trenutna lozinka</label>
                         <div className="relative">
                             <input 
                                 type={showCurrentPassword ? 'text' : 'password'} 
@@ -86,7 +86,7 @@ const ChangePassword = () => {
                         </div>
                     </div>
                     <div>
-                        <label className="block text-gray-700 font-medium mb-2" htmlFor="newPassword">New Password:</label>
+                        <label className="mb-2 block font-bold text-slate-700" htmlFor="newPassword">Nova lozinka</label>
                         <div className="relative">
                             <input 
                                 type={showNewPassword ? 'text' : 'password'} 
@@ -102,7 +102,7 @@ const ChangePassword = () => {
                         </div>
                     </div>
                     <div>
-                        <label className="block text-gray-700 font-medium mb-2" htmlFor="confirmPassword">Confirm New Password:</label>
+                        <label className="mb-2 block font-bold text-slate-700" htmlFor="confirmPassword">Potvrda nove lozinke</label>
                         <div className="relative">
                             <input 
                                 type={showConfirmPassword ? 'text' : 'password'} 
@@ -120,9 +120,9 @@ const ChangePassword = () => {
                     <div className="flex justify-end mt-4">
                         <button 
                             type="submit" 
-                            className="w-full bg-gradient-to-r from-blue-500 to-blue-700 text-white px-6 py-3 rounded-lg hover:from-blue-600 hover:to-blue-800 transition duration-200"
+                            className="w-full rounded-xl bg-orange-500 px-6 py-3 font-black text-white shadow-lg shadow-orange-200 hover:bg-orange-600"
                         >
-                            Change Password
+                            Promijeni lozinku
                         </button>
                     </div>
                 </form>

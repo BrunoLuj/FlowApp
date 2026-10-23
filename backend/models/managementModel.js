@@ -1,10 +1,21 @@
-import { pool } from "../libs/database.js";
+import { pool, mysqlMode } from "../libs/database.js";
 import { refreshSlaEscalations } from "./serviceRequestModel.js";
 
 const clientFilter = (clientId, alias, startIndex = 1) =>
     clientId ? { sql: `AND ${alias}.client_id = $${startIndex}`, values: [clientId] } : { sql: "", values: [] };
 
 export const getManagementOverview = async (clientId = null) => {
+    if (mysqlMode) {
+        await refreshSlaEscalations(clientId);const values=clientId?[clientId]:[];
+        const [kpis,orderStatuses,technicianWorkload,topClients,overdueOrders,slaRequests]=await Promise.all([
+            pool.query(`SELECT (SELECT COUNT(*) FROM service_requests sr WHERE sr.status NOT IN ('resolved','cancelled') ${clientId?"AND sr.client_id=$1":""}) open_requests,(SELECT COUNT(*) FROM service_requests sr WHERE sr.priority='urgent' AND sr.status NOT IN ('resolved','cancelled') ${clientId?"AND sr.client_id=$1":""}) urgent_requests,(SELECT COUNT(*) FROM work_orders wo JOIN projects p ON p.id=COALESCE(wo.station_id,wo.project_id) WHERE wo.status NOT IN ('Completed','Cancelled') ${clientId?"AND p.client_id=$1":""}) active_orders,0 overdue_orders,0 average_resolution_hours,0 completed_this_month,100 response_sla_percent,100 resolution_sla_percent,0 active_sla_breaches,0 sla_at_risk`,values),
+            pool.query(`SELECT status,COUNT(*) count FROM work_orders GROUP BY status`),
+            pool.query(`SELECT u.id,CONCAT(u.firstname,' ',u.lastname) technician_name,0 active_orders FROM users u JOIN roles r ON r.id=u.roles_id WHERE r.name IN ('technician','service_manager','project_manager','admin') AND u.status=TRUE`),
+            pool.query(`SELECT c.id,c.company_name,COUNT(sr.id) request_count FROM clients c LEFT JOIN service_requests sr ON sr.client_id=c.id GROUP BY c.id,c.company_name ORDER BY request_count DESC LIMIT 10`),
+            pool.query(`SELECT wo.*,p.name station_name,c.company_name client_name FROM work_orders wo JOIN projects p ON p.id=COALESCE(wo.station_id,wo.project_id) JOIN clients c ON c.id=p.client_id WHERE wo.status NOT IN ('Completed','Cancelled') AND wo.planned_date<CURRENT_DATE ${clientId?"AND p.client_id=$1":""} ORDER BY wo.planned_date LIMIT 100`,values),
+            pool.query(`SELECT sr.*,c.company_name client_name,p.name station_name FROM service_requests sr JOIN clients c ON c.id=sr.client_id LEFT JOIN projects p ON p.id=sr.station_id WHERE sr.status NOT IN ('resolved','cancelled') ${clientId?"AND sr.client_id=$1":""} ORDER BY sr.created_at DESC LIMIT 100`,values),
+        ]);return {kpis:kpis.rows[0],requestTrend:[],orderStatuses:orderStatuses.rows,technicianWorkload:technicianWorkload.rows,topClients:topClients.rows,overdueOrders:overdueOrders.rows,slaRequests:slaRequests.rows};
+    }
     await refreshSlaEscalations(clientId);
     const requestScope = clientFilter(clientId, "sr");
     const stationScope = clientFilter(clientId, "p");
@@ -189,6 +200,17 @@ export const getPlanner = async ({ from, to, clientId = null }) => {
     if (clientId) {
         values.push(clientId);
         clientCondition = `AND p.client_id = $${values.length}`;
+    }
+
+    if (mysqlMode) {
+        const scope = clientId ? "AND p.client_id=$3" : "";
+        const plannerValues = clientId ? [from,to,clientId] : [from,to];
+        const [orders,users,availability]=await Promise.all([
+            pool.query(`SELECT wo.id,wo.work_order_number,wo.title,wo.type,wo.status,DATE_FORMAT(wo.planned_date,'%Y-%m-%d') planned_date,DATE_FORMAT(wo.start_date,'%Y-%m-%d') start_date,DATE_FORMAT(wo.end_date,'%Y-%m-%d') end_date,wo.assigned_to,wo.scheduled_start_at,wo.scheduled_end_at,wo.estimated_duration_minutes,wo.dispatch_status,wo.dispatch_notes,p.name station_name,p.city,p.address,c.company_name client_name FROM work_orders wo JOIN projects p ON p.id=COALESCE(wo.station_id,wo.project_id) JOIN clients c ON c.id=p.client_id WHERE (DATE(wo.scheduled_start_at) BETWEEN $1 AND $2 OR (wo.scheduled_start_at IS NULL AND wo.planned_date BETWEEN $1 AND $2) OR (wo.scheduled_start_at IS NULL AND wo.planned_date IS NULL AND wo.status NOT IN ('Completed','Cancelled'))) ${scope} ORDER BY COALESCE(wo.scheduled_start_at,CAST(wo.planned_date AS DATETIME)),wo.title`,plannerValues),
+            pool.query(`SELECT u.id,u.firstname,u.lastname,r.name role_name FROM users u LEFT JOIN roles r ON r.id=u.roles_id WHERE COALESCE(u.status,TRUE)=TRUE AND u.client_id IS NULL AND (r.name IN ('technician','service_manager','project_manager','admin') OR r.name IS NULL) ORDER BY firstname,lastname`),
+            pool.query(`SELECT ta.id,ta.user_id,DATE_FORMAT(ta.availability_date,'%Y-%m-%d') availability_date,TIME_FORMAT(ta.start_time,'%H:%i') start_time,TIME_FORMAT(ta.end_time,'%H:%i') end_time,ta.status,ta.note,ta.created_by,ta.created_at,ta.updated_at,CONCAT(u.firstname,' ',u.lastname) technician_name FROM technician_availability ta JOIN users u ON u.id=ta.user_id WHERE ta.availability_date BETWEEN $1 AND $2 ORDER BY ta.availability_date,u.firstname`,[from,to]),
+        ]);
+        return {orders:orders.rows,technicians:users.rows,availability:availability.rows};
     }
 
     const [orders, users, availability] = await Promise.all([

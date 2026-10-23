@@ -22,7 +22,7 @@ const Users = () => {
         setRoles(rolesResponse.data);
       } catch (err) {
         setError(err);
-        toast.error("Failed to load users or roles");
+        toast.error("Korisnike ili role nije moguće učitati.");
       } finally {
         setLoading(false);
       }
@@ -30,25 +30,27 @@ const Users = () => {
     fetchData();
   }, []);
 
-  if (loading) return <div className="text-center py-6 text-gray-500">Loading...</div>;
+  if (loading) return <div className="min-h-screen bg-slate-100 pt-28 text-center text-slate-500">Učitavanje korisnika…</div>;
   if (error) return <div className="text-center py-6 text-red-500">{error.message}</div>;
 
   const roleMap = Object.fromEntries(roles.map(r => [r.id, r.name]));
 
+  const normalizedSearchTerm = searchTerm.toLowerCase();
+
   const filteredUsers = users.filter(user =>
-    user.firstname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.lastname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    (user.firstname ?? '').toLowerCase().includes(normalizedSearchTerm) ||
+    (user.lastname ?? '').toLowerCase().includes(normalizedSearchTerm) ||
+    (user.email ?? '').toLowerCase().includes(normalizedSearchTerm)
   );
 
   const removeUser = async (user) => {
-    if (!window.confirm(`Are you sure you want to remove ${user.firstname}?`)) return;
+    if (!window.confirm(`Želite li izbrisati korisnika ${user.firstname}?`)) return;
     try {
       await deleteUser(user.id);
       setUsers(prev => prev.filter(u => u.id !== user.id));
-      toast.success(`${user.firstname} removed successfully`);
+      toast.success(`Korisnik ${user.firstname} je izbrisan.`);
     } catch {
-      toast.error("Failed to remove user");
+      toast.error("Korisnika nije moguće izbrisati.");
     }
   };
 
@@ -56,40 +58,39 @@ const Users = () => {
   const openUser = (user) => navigate('/user', { state: { user } });
 
   const getStatusClass = (active) => active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
-  const getStatusText = (active) => active ? 'Active' : 'Inactive';
+  const getStatusText = (active) => active ? 'Aktivan' : 'Neaktivan';
 
   return (
-    <div className="bg-gray-100 min-h-screen p-4 mt-14 sm:ml-16">
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-        <h1 className="text-3xl font-bold text-gray-800">Users</h1>
+    <div className="min-h-screen bg-slate-100 px-4 pb-10 pt-24 sm:px-7"><div className="mx-auto max-w-7xl">
+      <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        <div><p className="text-sm font-black uppercase tracking-widest text-orange-600">Administracija</p><h1 className="text-3xl font-black text-slate-900">Korisnici</h1><p className="mt-2 text-slate-500">Korisnički računi, pristup i pripadajuće role.</p></div>
         {permissions.includes('create_users') && (
           <button
             onClick={() => navigate('/user')}
-            className="px-6 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold shadow-lg hover:scale-105 transition transform"
+            className="rounded-xl bg-orange-500 px-5 py-3 font-bold text-white shadow-lg shadow-orange-200 hover:bg-orange-600"
           >
-            Add User
+            + Novi korisnik
           </button>
         )}
       </div>
 
       {/* Search */}
-      <div className="relative mb-6 w-full sm:w-96">
+      <div className="relative mb-6 w-full rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:max-w-xl">
         <input
           type="text"
-          placeholder="Search by name or email"
+          placeholder="Pretraži ime, prezime ili e-mail…"
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
-          className="w-full p-3 rounded-xl border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 pl-10 transition"
+          className="w-full rounded-xl border border-slate-300 py-3 pl-10 pr-3"
         />
         <FaSearch className="absolute left-3 top-3 text-gray-400"/>
       </div>
 
       {/* Users Table */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white rounded-2xl shadow-xl overflow-hidden">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="overflow-x-auto"><table className="min-w-full">
           <thead className="bg-gray-50">
             <tr>
-              {['First Name','Last Name','Email','Role','Klijent','Contact','Address','Country','Currency','Status','Actions'].map(h => (
+              {['Korisnik','Pristup','Kontakt i lokacija','Status','Akcije'].map(h => (
                 <th key={h} className="p-3 text-left text-gray-600">{h}</th>
               ))}
             </tr>
@@ -97,19 +98,13 @@ const Users = () => {
           <tbody>
             {filteredUsers.length === 0 ? (
               <tr>
-                <td colSpan={11} className="text-center py-6 text-gray-500">No users found</td>
+                <td colSpan={5} className="py-12 text-center text-slate-400">Nema pronađenih korisnika.</td>
               </tr>
             ) : filteredUsers.map(user => (
               <tr key={user.id} className="hover:bg-gray-50 cursor-pointer transition" onClick={() => openUser(user)}>
-                <td className="p-3 border-b">{user.firstname}</td>
-                <td className="p-3 border-b">{user.lastname}</td>
-                <td className="p-3 border-b">{user.email}</td>
-                <td className="p-3 border-b">{roleMap[user.roles_id] || 'Unknown'}</td>
-                <td className="p-3 border-b">{user.client_name || 'Interni'}</td>
-                <td className="p-3 border-b">{user.contact}</td>
-                <td className="p-3 border-b">{user.address}</td>
-                <td className="p-3 border-b">{user.country}</td>
-                <td className="p-3 border-b">{user.currency}</td>
+                <td><div className="font-black text-slate-900">{user.firstname} {user.lastname}</div><div className="mt-1 text-xs text-slate-500">{user.email}</div></td>
+                <td><div className="font-bold text-slate-700">{roleMap[user.roles_id] || 'Nije dodijeljena'}</div><div className="mt-1 text-xs text-slate-400">{user.client_name || 'Interni korisnik'}</div></td>
+                <td><div>{user.contact || "—"}</div><div className="mt-1 text-xs text-slate-500">{[user.address,user.country].filter(Boolean).join(", ") || "Lokacija nije unesena"}{user.currency ? ` · ${user.currency}` : ""}</div></td>
                 <td className="p-3 border-b text-center">
                   <span className={`px-3 py-1 rounded-full font-semibold ${getStatusClass(user.status)}`}>
                     {getStatusText(user.status)}
@@ -119,13 +114,13 @@ const Users = () => {
                   {permissions.includes('update_users') && (
                     <button onClick={e => { e.stopPropagation(); startEditing(user); }}
                       className="bg-yellow-400 text-white px-4 py-1 rounded-lg shadow hover:bg-yellow-500 transition">
-                      Edit
+                      Uredi
                     </button>
                   )}
                   {permissions.includes('delete_users') && (
                     <button onClick={e => { e.stopPropagation(); removeUser(user); }}
                       className="bg-red-500 text-white px-4 py-1 rounded-lg shadow hover:bg-red-600 transition">
-                      Remove
+                      Izbriši
                     </button>
                   )}
                 </td>
@@ -133,8 +128,7 @@ const Users = () => {
             ))}
           </tbody>
         </table>
-      </div>
-    </div>
+      </div></div></div></div>
   );
 };
 

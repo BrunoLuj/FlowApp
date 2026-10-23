@@ -24,9 +24,13 @@ import fleetRoutes from "./fleetRoutes.js";
 import loyaltyRoutes from "./loyaltyRoutes.js";
 import loyaltyPortalRoutes from "./loyaltyPortalRoutes.js";
 import loyaltyPortalOnlyMiddleware from "../middleware/loyaltyPortalOnlyMiddleware.js";
+import systemRoutes from "./systemRoutes.js";
+import desktopWorkflowRoutes from "./desktopWorkflowRoutes.js";
 
 const router = express.Router();
 
+router.use("/system", systemRoutes);
+router.use("/desktop-workflows", desktopWorkflowRoutes);
 router.use("/auth", authRoutes);
 router.use("/loyalty-portal", loyaltyPortalRoutes);
 router.use(loyaltyPortalOnlyMiddleware);

@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import useStore from "../../store";
 import { signIn } from "../../services/authServices.js";
 import { useTranslation } from "react-i18next";
+import { RiBlazeLine } from "react-icons/ri";
 
 const SignIn = () => {
   const { t } = useTranslation();
@@ -19,7 +20,7 @@ const SignIn = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const LoginSchema = z.object({
-    email: z.string({ required_error: t("Email is required!") }).email({ message: t("Invalid Email address!") }),
+    email: z.string({ required_error: "Korisničko ime je obavezno" }).min(2, "Unesite korisničko ime ili e-mail"),
     password: z.string({ required_error: t("Password is required!") }).min(1, t("Password is required!")),
   });
 
@@ -34,7 +35,8 @@ const SignIn = () => {
   const onSubmit = useCallback(async (data) => {
     setLoading(true);
     try {
-      const { data: res } = await signIn(data);
+      const identifier=data.email.includes("@")?data.email:`${data.email}@flow.local`;
+      const { data: res } = await signIn({...data,email:identifier});
       if (res?.user) {
         toast.success(res?.message);
         const userInfo = { ...res?.user, token: res.token };
@@ -52,52 +54,47 @@ const SignIn = () => {
   }, [navigate, setCredentials, setError]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600">
-      <div className="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-8 animate-fadeIn">
-        <h1 className="text-3xl font-bold text-center text-gray-800 dark:text-white mb-8">Sign In</h1>
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 p-4"><div className="absolute -right-40 -top-40 h-96 w-96 rounded-full bg-orange-500/15 blur-3xl"/><div className="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl"/>
+      <div className="relative w-full max-w-md rounded-[28px] border border-white/10 bg-white p-7 shadow-2xl sm:p-9">
+        <div className="mb-8 text-center"><span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-500 text-3xl text-white shadow-lg shadow-orange-500/30"><RiBlazeLine/></span><h1 className="mt-5 text-3xl font-black text-slate-900">Prijava u FlowApp</h1><p className="mt-2 text-sm text-slate-500">Servis, mjeriteljstvo i terenski rad na jednom mjestu.</p></div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="relative">
+          <div>
+            <label className="mb-2 block text-sm font-bold text-slate-700">Korisničko ime ili e-mail</label><div className="relative">
             <input
-              type="email"
-              placeholder=" "
+              type="text"
+              placeholder="Unesite korisničko ime"
               {...register("email")}
               disabled={loading}
-              className="peer w-full border-b-2 border-gray-300 dark:border-gray-700 bg-transparent py-2 text-gray-900 dark:text-gray-200 placeholder-transparent focus:border-violet-600 focus:outline-none transition"
+              className="w-full rounded-xl border border-slate-300 bg-slate-50 p-3.5 text-slate-900"
             />
-            <label className="absolute left-0 top-2 text-gray-500 text-sm peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:text-base peer-focus:-top-3 peer-focus:text-violet-600 peer-focus:text-sm transition">
-              Email
-            </label>
             {errors.email && <p className="text-red-600 text-sm mt-1">{errors.email.message}</p>}
-          </div>
+          </div></div>
 
-          <div className="relative">
+          <div><label className="mb-2 block text-sm font-bold text-slate-700">Lozinka</label><div className="relative">
             <input
               type={showPassword ? "text" : "password"}
-              placeholder=" "
+              placeholder="Unesite lozinku"
               {...register("password")}
               disabled={loading}
-              className="peer w-full border-b-2 border-gray-300 dark:border-gray-700 bg-transparent py-2 text-gray-900 dark:text-gray-200 placeholder-transparent focus:border-violet-600 focus:outline-none transition"
+              className="w-full rounded-xl border border-slate-300 bg-slate-50 p-3.5 pr-12 text-slate-900"
             />
-            <label className="absolute left-0 top-2 text-gray-500 text-sm peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:text-base peer-focus:-top-3 peer-focus:text-violet-600 peer-focus:text-sm transition">
-              Password
-            </label>
             <button
               type="button"
-              className="absolute right-0 top-2 text-gray-500"
+              className="absolute right-4 top-4 text-slate-500"
               onClick={() => setShowPassword(!showPassword)}
             >
               {showPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
             </button>
             {errors.password && <p className="text-red-600 text-sm mt-1">{errors.password.message}</p>}
-          </div>
+          </div></div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-semibold py-2 px-4 rounded-xl transition flex justify-center items-center"
+            className="flex min-h-12 w-full items-center justify-center rounded-xl bg-orange-500 px-4 font-black text-white shadow-lg shadow-orange-200 hover:bg-orange-600"
           >
-            {loading ? <BiLoader className="animate-spin text-2xl" /> : "Sign In"}
+            {loading ? <BiLoader className="animate-spin text-2xl" /> : "Prijavi se"}
           </button>
         </form>
 

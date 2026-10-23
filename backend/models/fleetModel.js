@@ -1,6 +1,15 @@
-import { pool } from "../libs/database.js";
+import { pool, mysqlMode } from "../libs/database.js";
 
 export const getOverview = async () => {
+    if (mysqlMode) {
+        const [stats,vehicles,dueRecords,costs]=await Promise.all([
+            pool.query(`SELECT SUM(status='active') active_vehicles,SUM(status='in_service') vehicles_in_service,(SELECT COUNT(*) FROM fleet_vehicle_records WHERE status='active' AND due_date<CURRENT_DATE) overdue_records,(SELECT COUNT(*) FROM fleet_vehicle_records WHERE status='active' AND due_date BETWEEN CURRENT_DATE AND DATE_ADD(CURRENT_DATE,INTERVAL 30 DAY)) due_next_30_days FROM fleet_vehicles`),
+            pool.query(`SELECT v.*,CONCAT(u.firstname,' ',u.lastname) assigned_user_name,(SELECT r.title FROM fleet_vehicle_records r WHERE r.vehicle_id=v.id AND r.status='active' AND r.due_date IS NOT NULL ORDER BY r.due_date LIMIT 1) next_deadline_title,(SELECT r.record_type FROM fleet_vehicle_records r WHERE r.vehicle_id=v.id AND r.status='active' AND r.due_date IS NOT NULL ORDER BY r.due_date LIMIT 1) next_deadline_type,(SELECT r.due_date FROM fleet_vehicle_records r WHERE r.vehicle_id=v.id AND r.status='active' AND r.due_date IS NOT NULL ORDER BY r.due_date LIMIT 1) next_due_date FROM fleet_vehicles v LEFT JOIN users u ON u.id=v.assigned_user_id ORDER BY v.status,v.registration_number`),
+            pool.query(`SELECT r.*,v.registration_number,v.make,v.model,DATEDIFF(r.due_date,CURRENT_DATE) days_remaining FROM fleet_vehicle_records r JOIN fleet_vehicles v ON v.id=r.vehicle_id WHERE r.status='active' AND r.due_date<=DATE_ADD(CURRENT_DATE,INTERVAL 60 DAY) ORDER BY r.due_date,r.record_type`),
+            pool.query(`SELECT DATE_FORMAT(performed_at,'%Y-%m') cost_month,COALESCE(SUM(cost),0) total FROM fleet_vehicle_records WHERE performed_at>=DATE_SUB(DATE_FORMAT(CURRENT_DATE,'%Y-%m-01'),INTERVAL 5 MONTH) AND cost IS NOT NULL GROUP BY DATE_FORMAT(performed_at,'%Y-%m') ORDER BY cost_month`),
+        ]);
+        return {stats:stats.rows[0],vehicles:vehicles.rows,dueRecords:dueRecords.rows,monthlyCosts:costs.rows};
+    }
     const [stats, vehicles, dueRecords, costs] = await Promise.all([
         pool.query(
             `SELECT

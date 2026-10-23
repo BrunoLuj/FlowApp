@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { pool } from "../libs/database.js";
+import { pool, mysqlMode } from "../libs/database.js";
 
 const nextDateExpression = (unit) => {
     const units = {
@@ -45,6 +45,9 @@ export const getPublicAsset = async (token) => {
 };
 
 export const getPlans = async (clientId = null) => {
+    if (mysqlMode) {
+        const values=clientId?[clientId]:[];const result=await pool.query(`SELECT mp.*,DATE_FORMAT(mp.next_due_date,'%Y-%m-%d') next_due_date,ea.name asset_name,ea.asset_code,ea.meter_value,ea.meter_unit,p.name station_name,c.company_name client_name,DATEDIFF(mp.next_due_date,CURRENT_DATE) days_remaining,CASE WHEN mp.next_due_meter IS NULL OR ea.meter_value IS NULL THEN NULL ELSE mp.next_due_meter-ea.meter_value END meter_remaining,(SELECT COUNT(*) FROM maintenance_occurrences mo WHERE mo.maintenance_plan_id=mp.id AND mo.status='completed') completed_cycles,(SELECT wo.id FROM work_orders wo WHERE wo.maintenance_plan_id=mp.id AND wo.status NOT IN ('Completed','Cancelled') ORDER BY wo.created_at DESC LIMIT 1) active_work_order_id FROM maintenance_plans mp JOIN equipment_assets ea ON ea.id=mp.asset_id JOIN projects p ON p.id=mp.station_id JOIN clients c ON c.id=mp.client_id ${clientId?"WHERE mp.client_id=$1":""} ORDER BY mp.active DESC,mp.next_due_date`,values);return result.rows;
+    }
     const values = [];
     let clientCondition = "";
     if (clientId) {
@@ -392,6 +395,15 @@ export const recordAssetMeter = async (assetId, data, user) => {
 };
 
 export const getMaintenanceOverview = async (clientId = null) => {
+    if (mysqlMode) {
+        const values=clientId?[clientId]:[];const scope=clientId?"AND mp.client_id=$1":"";
+        const [summary,calendar,readings,history]=await Promise.all([
+            pool.query(`SELECT SUM(mp.active) active_plans,SUM(mp.active AND mp.next_due_date<CURRENT_DATE) overdue,SUM(mp.active AND mp.next_due_date BETWEEN CURRENT_DATE AND DATE_ADD(CURRENT_DATE,INTERVAL 30 DAY)) due_30_days,SUM(mp.active AND mp.next_due_meter IS NOT NULL AND ea.meter_value>=mp.next_due_meter-mp.meter_lead) meter_due FROM maintenance_plans mp JOIN equipment_assets ea ON ea.id=mp.asset_id WHERE 1=1 ${scope}`,values),
+            pool.query(`SELECT mp.id,mp.name,DATE_FORMAT(mp.next_due_date,'%Y-%m-%d') due_date,mp.next_due_meter,mp.trigger_type,ea.name asset_name,ea.meter_value,ea.meter_unit,p.name station_name,c.company_name client_name FROM maintenance_plans mp JOIN equipment_assets ea ON ea.id=mp.asset_id JOIN projects p ON p.id=mp.station_id JOIN clients c ON c.id=mp.client_id WHERE mp.active ${scope} ORDER BY mp.next_due_date`,values),
+            pool.query(`SELECT r.*,ea.name asset_name,ea.asset_code,CONCAT(u.firstname,' ',u.lastname) recorded_by_name FROM asset_meter_readings r JOIN equipment_assets ea ON ea.id=r.asset_id LEFT JOIN users u ON u.id=r.recorded_by WHERE 1=1 ${clientId?"AND ea.client_id=$1":""} ORDER BY r.reading_at DESC LIMIT 50`,values),
+            pool.query(`SELECT mo.*,mp.name plan_name,ea.name asset_name,wo.work_order_number,wo.title work_order_title FROM maintenance_occurrences mo JOIN maintenance_plans mp ON mp.id=mo.maintenance_plan_id JOIN equipment_assets ea ON ea.id=mp.asset_id LEFT JOIN work_orders wo ON wo.id=mo.work_order_id WHERE 1=1 ${scope} ORDER BY mo.created_at DESC LIMIT 100`,values),
+        ]);return {summary:summary.rows[0],calendar:calendar.rows,readings:readings.rows,history:history.rows};
+    }
     const values = clientId ? [clientId] : [];
     const scope = clientId ? "AND mp.client_id=$1" : "";
     const [summary, calendar, readings, history] = await Promise.all([

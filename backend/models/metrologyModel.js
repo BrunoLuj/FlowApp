@@ -1,9 +1,17 @@
-import { pool } from "../libs/database.js";
+import { pool, mysqlMode } from "../libs/database.js";
 
 const scopeClause = (clientId, alias = "mi", startIndex = 1) =>
     clientId ? { sql: `AND ${alias}.client_id=$${startIndex}`, values: [clientId] } : { sql: "", values: [] };
 
 export const getOverview = async (clientId = null) => {
+    if (mysqlMode) {
+        const values=clientId?[clientId]:[];const scope=clientId?"AND ea.client_id=$1":"";
+        const [summary,dueAssets,recent]=await Promise.all([
+            pool.query(`SELECT SUM(ea.metrology_required AND ea.metrology_enabled) required_assets,SUM(ea.metrology_required AND ea.metrology_enabled AND ea.calibration_expires_at<CURRENT_DATE) expired,SUM(ea.metrology_required AND ea.metrology_enabled AND ea.calibration_expires_at BETWEEN CURRENT_DATE AND DATE_ADD(CURRENT_DATE,INTERVAL 30 DAY)) due_30_days,(SELECT COUNT(*) FROM metrology_inspections WHERE status IN ('draft','in_progress')) open_inspections,(SELECT COUNT(*) FROM metrology_inspections WHERE result='failed' AND status IN ('completed','approved')) failed FROM equipment_assets ea WHERE 1=1 ${scope}`,values),
+            pool.query(`SELECT ea.*,p.name station_name,c.company_name client_name,DATEDIFF(ea.calibration_expires_at,CURRENT_DATE) days_remaining FROM equipment_assets ea LEFT JOIN projects p ON p.id=ea.station_id JOIN clients c ON c.id=ea.client_id WHERE ea.metrology_required AND ea.metrology_enabled ${scope} ORDER BY ea.calibration_expires_at,c.company_name,p.name,ea.name`,values),
+            pool.query(`SELECT mi.*,ea.name asset_name,ea.asset_code,p.name station_name,c.company_name client_name,CONCAT(u.firstname,' ',u.lastname) inspector_name,(SELECT COUNT(*) FROM metrology_measurements mm WHERE mm.inspection_id=mi.id) measurement_count,(SELECT COUNT(*) FROM metrology_measurements mm WHERE mm.inspection_id=mi.id AND NOT mm.passed) failed_measurements FROM metrology_inspections mi JOIN equipment_assets ea ON ea.id=mi.asset_id LEFT JOIN projects p ON p.id=mi.station_id JOIN clients c ON c.id=mi.client_id LEFT JOIN users u ON u.id=mi.inspector_id WHERE 1=1 ${clientId?"AND mi.client_id=$1":""} ORDER BY mi.created_at DESC LIMIT 100`,values),
+        ]);return {summary:summary.rows[0],dueAssets:dueAssets.rows,inspections:recent.rows};
+    }
     const scope = scopeClause(clientId);
     const [summary, dueAssets, recent] = await Promise.all([
         pool.query(
@@ -250,10 +258,30 @@ export const getInspection = async (id, clientId = null) => {
     return inspection;
 };
 
+export const getWorkOrderInspections = async (workOrderId, user) => {
+    const values=[workOrderId];
+    let scope="";
+    if(user.clientId){values.push(user.clientId);scope=`AND mi.client_id=$${values.length}`;}
+    const result=await pool.query(
+        `SELECT mi.id,mi.inspection_number,mi.status,mi.result,mi.inspected_at,mi.updated_at,
+                mi.asset_id,ea.name asset_name,ea.asset_code,ea.category,ea.metrology_type,
+                ea.serial_number,ea.fuel_type,ea.metadata,parent.name parent_asset_name,
+                parent.serial_number parent_serial_number,
+                (SELECT COUNT(*) FROM metrology_measurements mm WHERE mm.inspection_id=mi.id) measurement_count
+         FROM metrology_inspections mi
+         JOIN equipment_assets ea ON ea.id=mi.asset_id
+         LEFT JOIN equipment_assets parent ON parent.id=ea.parent_asset_id
+         WHERE mi.work_order_id=$1 ${scope}
+         ORDER BY COALESCE(parent.name,ea.name),ea.name,mi.id`,values);
+    return result.rows;
+};
+
 const normalizeMeasurement = (item, index) => {
     const reference = Number(item.reference_value);
     const measured = Number(item.measured_value);
-    const error = measured - reference;
+    const suppliedError = Number(item.error_value);
+    const error = item.error_value === "" || item.error_value == null || !Number.isFinite(suppliedError)
+        ? measured - reference : suppliedError;
     const min = item.tolerance_min === "" || item.tolerance_min == null ? null : Number(item.tolerance_min);
     const max = item.tolerance_max === "" || item.tolerance_max == null ? null : Number(item.tolerance_max);
     if (![reference, measured].every(Number.isFinite) || (min !== null && !Number.isFinite(min)) || (max !== null && !Number.isFinite(max))) {
@@ -300,8 +328,8 @@ export const saveInspection = async (id, data, user) => {
             await connection.query(
                 `INSERT INTO metrology_measurements (
                     inspection_id,sequence_no,measurement_point,reference_value,
-                    measured_value,error_value,tolerance_min,tolerance_max,unit,passed,note
-                 ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+                    measured_value,error_value,tolerance_min,tolerance_max,unit,passed,note,created_at
+                 ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,NOW())`,
                 [id,item.sequence,item.point,item.reference,item.measured,item.error,item.min,item.max,item.unit,item.passed,item.note]
             );
         }
@@ -309,14 +337,14 @@ export const saveInspection = async (id, data, user) => {
             `UPDATE metrology_inspections SET
                 status='in_progress',standard_reference=$1,procedure_reference=$2,
                 temperature=$3,humidity=$4,installation_check=$5,label_check=$6,
-                integrity_check=$7,notes=$8,corrective_action=$9,updated_at=NOW()
-             WHERE id=$10 RETURNING *`,
+                integrity_check=$7,notes=$8,corrective_action=$9,field_data=$10,updated_at=NOW()
+             WHERE id=$11 RETURNING *`,
             [
                 data.standard_reference || null,data.procedure_reference || null,
                 data.temperature || null,data.humidity || null,
                 Boolean(data.installation_check),Boolean(data.label_check),
                 Boolean(data.integrity_check),data.notes || null,
-                data.corrective_action || null,id,
+                data.corrective_action || null,JSON.stringify(data.field_data || {}),id,
             ]
         );
         await connection.query("COMMIT");
@@ -342,7 +370,7 @@ export const completeInspection = async (id, data, user) => {
         const inspection = (await connection.query(
             `SELECT mi.*,ea.verification_interval_months FROM metrology_inspections mi
              JOIN equipment_assets ea ON ea.id=mi.asset_id
-             WHERE mi.id=$1 ${scope} FOR UPDATE OF mi`,
+             WHERE mi.id=$1 ${scope} ${mysqlMode ? "FOR UPDATE" : "FOR UPDATE OF mi"}`,
             values
         )).rows[0];
         if (!inspection) {
@@ -350,7 +378,9 @@ export const completeInspection = async (id, data, user) => {
             return null;
         }
         const measurement = (await connection.query(
-            `SELECT COUNT(*)::int total,COUNT(*) FILTER (WHERE NOT passed)::int failed
+            mysqlMode
+            ? `SELECT COUNT(*) total,SUM(NOT passed) failed FROM metrology_measurements WHERE inspection_id=$1`
+            : `SELECT COUNT(*)::int total,COUNT(*) FILTER (WHERE NOT passed)::int failed
              FROM metrology_measurements WHERE inspection_id=$1`,
             [id]
         )).rows[0];
@@ -361,21 +391,39 @@ export const completeInspection = async (id, data, user) => {
         }
         const checksPassed = Boolean(inspection.installation_check && inspection.label_check && inspection.integrity_check);
         const resultValue = measurement.failed === 0 && checksPassed ? "passed" : "failed";
-        const inspectedAt = data.inspected_at || new Date();
+        const inspectedAt = mysqlMode
+            ? new Date(data.inspected_at || Date.now())
+            : (data.inspected_at || new Date());
+        if (mysqlMode && Number.isNaN(inspectedAt.getTime())) {
+            const problem = new Error("Invalid inspection date");
+            problem.code = "INVALID_INSPECTION_DATE";
+            throw problem;
+        }
         const nextDue = resultValue === "passed"
             ? (await connection.query(
-                "SELECT ($1::date + ($2 || ' months')::interval)::date next_due",
+                mysqlMode
+                ? "SELECT DATE_ADD(CAST($1 AS DATE),INTERVAL $2 MONTH) next_due"
+                : "SELECT ($1::date + ($2 || ' months')::interval)::date next_due",
                 [inspectedAt,inspection.verification_interval_months || 12]
             )).rows[0].next_due
             : null;
         const completed = (await connection.query(
-            `UPDATE metrology_inspections SET status=$1::varchar,result=$2::varchar,inspected_at=$3::timestamptz,
+            mysqlMode
+            ? `UPDATE metrology_inspections SET status=$1,result=$2,inspected_at=$3,
+                next_due_date=$4,approved_by=$5,approved_at=CASE WHEN $1='approved' THEN NOW() ELSE NULL END,
+                updated_at=NOW() WHERE id=$6 RETURNING *`
+            : `UPDATE metrology_inspections SET status=$1::varchar,result=$2::varchar,inspected_at=$3::timestamptz,
                 next_due_date=$4::date,approved_by=$5,approved_at=CASE WHEN $1::varchar='approved' THEN NOW() ELSE NULL END,
                 updated_at=NOW() WHERE id=$6 RETURNING *`,
             [data.approve ? "approved" : "completed",resultValue,inspectedAt,nextDue,data.approve ? user.userId : null,id]
         )).rows[0];
         await connection.query(
-            `UPDATE equipment_assets SET last_calibration_at=$1::date,
+            mysqlMode
+            ? `UPDATE equipment_assets SET last_calibration_at=CAST($1 AS DATE),
+                calibration_expires_at=CASE WHEN $2='passed' THEN CAST($3 AS DATE) ELSE calibration_expires_at END,
+                status=CASE WHEN $2='failed' THEN 'out_of_service' ELSE status END,
+                updated_at=NOW() WHERE id=$4`
+            : `UPDATE equipment_assets SET last_calibration_at=$1::date,
                 calibration_expires_at=CASE WHEN $2::varchar='passed' THEN $3::date ELSE calibration_expires_at END,
                 status=CASE WHEN $2::varchar='failed' THEN 'out_of_service' ELSE status END,
                 updated_at=NOW() WHERE id=$4`,
@@ -392,6 +440,8 @@ export const completeInspection = async (id, data, user) => {
 };
 
 export const assertWorkOrderMetrologyComplete = async (connection, order) => {
+    const linked=(await connection.query(`SELECT COUNT(*) total,SUM(status NOT IN ('completed','approved','cancelled')) incomplete FROM metrology_inspections WHERE work_order_id=$1`,[order.id])).rows[0];
+    if(Number(linked?.total)>0){if(Number(linked.incomplete)>0){const problem=new Error("Metrology inspection incomplete");problem.code="METROLOGY_INCOMPLETE";throw problem;}return;}
     if (!order.asset_id || !["Calibration","Inspection"].includes(order.type)) return;
     const asset = (await connection.query(
         "SELECT metrology_required FROM equipment_assets WHERE id=$1",
@@ -519,3 +569,4 @@ export const registerCertificate = async (id, file, user) => {
         connection.release();
     }
 };
+

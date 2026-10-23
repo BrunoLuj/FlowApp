@@ -1,4 +1,4 @@
-import { pool } from "../libs/database.js";
+import { pool, mysqlMode } from "../libs/database.js";
 
 const calculateQuotation = (items, discountPercent = 0, taxPercent = 0) => {
     const normalized = items.map((item, index) => {
@@ -29,6 +29,17 @@ const calculateQuotation = (items, discountPercent = 0, taxPercent = 0) => {
 };
 
 export const getCommercialOverview = async (clientId = null) => {
+    if (mysqlMode) {
+        const values=clientId?[clientId]:[];const c=clientId?"AND sc.client_id=$1":"";const q=clientId?"AND q.client_id=$1":"";
+        const [contracts,quotations,clients,stations,workOrders,summary]=await Promise.all([
+            pool.query(`SELECT sc.*,cl.company_name,(SELECT COUNT(*) FROM contract_stations cs WHERE cs.contract_id=sc.id) covered_stations FROM service_contracts sc JOIN clients cl ON cl.id=sc.client_id WHERE 1=1 ${c} ORDER BY (sc.status='active') DESC,sc.end_date`,values),
+            pool.query(`SELECT q.*,cl.company_name,p.name station_name FROM quotations q JOIN clients cl ON cl.id=q.client_id LEFT JOIN projects p ON p.id=q.station_id WHERE 1=1 ${q} ORDER BY q.created_at DESC`,values),
+            pool.query(`SELECT id,company_name FROM clients ${clientId?"WHERE id=$1":""} ORDER BY company_name`,values),
+            pool.query(`SELECT p.id,p.client_id,p.name,cl.company_name FROM projects p JOIN clients cl ON cl.id=p.client_id ${clientId?"WHERE p.client_id=$1":""} ORDER BY cl.company_name,p.name`,values),
+            pool.query(`SELECT wo.id,wo.title,p.client_id,cl.company_name,COALESCE(wo.station_id,wo.project_id) station_id FROM work_orders wo JOIN projects p ON p.id=COALESCE(wo.station_id,wo.project_id) JOIN clients cl ON cl.id=p.client_id ${clientId?"WHERE p.client_id=$1":""} ORDER BY wo.created_at DESC LIMIT 100`,values),
+            pool.query(`SELECT (SELECT COUNT(*) FROM service_contracts sc WHERE sc.status='active' ${c}) active_contracts,(SELECT COUNT(*) FROM service_contracts sc WHERE sc.status='active' AND sc.end_date BETWEEN CURRENT_DATE AND DATE_ADD(CURRENT_DATE,INTERVAL 60 DAY) ${c}) expiring_contracts,(SELECT COUNT(*) FROM quotations q WHERE q.status='sent' ${q}) awaiting_approval,(SELECT COALESCE(SUM(q.total),0) FROM quotations q WHERE q.status='accepted' AND q.accepted_at>=DATE_FORMAT(CURRENT_DATE,'%Y-%m-01') ${q}) accepted_this_month`,values),
+        ]);return {contracts:contracts.rows,quotations:quotations.rows,clients:clients.rows,stations:stations.rows,workOrders:workOrders.rows,summary:summary.rows[0]};
+    }
     const values = clientId ? [clientId] : [];
     const clientCondition = clientId ? "WHERE c.id = $1" : "";
     const quoteClientCondition = clientId ? "AND q.client_id = $1" : "";
@@ -424,3 +435,4 @@ export const decideQuotation = async (token, data) => {
     );
     return result.rows[0];
 };
+

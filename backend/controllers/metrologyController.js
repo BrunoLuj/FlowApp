@@ -67,6 +67,11 @@ export const getInspection = async (req, res) => {
     }
 };
 
+export const getWorkOrderInspections = async (req,res) => {
+    try { res.json(await metrologyModel.getWorkOrderInspections(req.params.workOrderId,req.user)); }
+    catch(error){ handleError(res,error,"Mjeriteljsku opremu naloga nije moguće učitati."); }
+};
+
 export const saveInspection = async (req, res) => {
     try {
         const inspection = await metrologyModel.saveInspection(req.params.id,req.body,req.user);

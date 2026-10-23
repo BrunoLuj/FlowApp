@@ -1,4 +1,4 @@
-import { pool } from "../libs/database.js";
+import { pool, mysqlMode } from "../libs/database.js";
 import { completeMaintenanceCycle } from "./maintenanceModel.js";
 import { assertWorkOrderMetrologyComplete } from "./metrologyModel.js";
 
@@ -75,6 +75,30 @@ export const getActiveWorkOrders = async (clientId = null) => {
 };
 
 export const getMyMobileWorkOrders = async (userId) => {
+    if (mysqlMode) {
+        const result = await pool.query(
+            `SELECT wo.id,wo.work_order_number,wo.title,wo.type,wo.status,
+                    DATE_FORMAT(wo.planned_date,'%Y-%m-%d') planned_date,
+                    wo.scheduled_start_at,wo.scheduled_end_at,wo.arrival_at,wo.departure_at,wo.field_notes,
+                    p.name station_name,p.address,p.city,c.company_name client_name,c.email client_email,
+                    ea.name asset_name,
+                    (SELECT COUNT(*) FROM metrology_inspections mi WHERE mi.work_order_id=wo.id AND mi.status<>'cancelled') metrology_count,
+                    (SELECT event.event_type FROM work_order_mobile_events event
+                     WHERE event.work_order_id=wo.id AND event.user_id=$1
+                     ORDER BY event.event_at DESC,event.id DESC LIMIT 1) last_mobile_event
+             FROM work_orders wo
+             JOIN projects p ON p.id=COALESCE(wo.station_id,wo.project_id)
+             JOIN clients c ON c.id=p.client_id
+             LEFT JOIN equipment_assets ea ON ea.id=wo.asset_id
+             WHERE JSON_CONTAINS(COALESCE(wo.assigned_to,JSON_ARRAY()),CAST($1 AS JSON),'$')
+               AND wo.status NOT IN ('Completed','Cancelled')
+             ORDER BY CASE WHEN COALESCE(DATE(wo.scheduled_start_at),wo.planned_date)=CURRENT_DATE THEN 0
+                           WHEN COALESCE(DATE(wo.scheduled_start_at),wo.planned_date)<CURRENT_DATE THEN 1 ELSE 2 END,
+                      COALESCE(wo.scheduled_start_at,CAST(wo.planned_date AS DATETIME),wo.created_at)`,
+            [userId]
+        );
+        return result.rows;
+    }
     const result = await pool.query(
         `SELECT wo.id, wo.work_order_number, wo.title, wo.type, wo.status,
                 TO_CHAR(wo.planned_date, 'YYYY-MM-DD') AS planned_date,
@@ -108,6 +132,30 @@ export const getMyMobileWorkOrders = async (userId) => {
 };
 
 export const applyMobileWorkOrderEvent = async (workOrderId, data, userId) => {
+    if(mysqlMode){
+        const connection=await pool.connect();
+        try{
+            await connection.query("BEGIN");
+            const order=(await connection.query(`SELECT wo.*,p.client_id FROM work_orders wo JOIN projects p ON p.id=COALESCE(wo.station_id,wo.project_id) WHERE wo.id=$1 AND JSON_CONTAINS(COALESCE(wo.assigned_to,JSON_ARRAY()),CAST($2 AS JSON),'$') FOR UPDATE`,[workOrderId,userId])).rows[0];
+            if(!order){await connection.query("ROLLBACK");return null;}
+            const eventAt=data.event_at?new Date(data.event_at):new Date();
+            if(Number.isNaN(eventAt.getTime())){const error=new Error("Invalid event time");error.code="INVALID_EVENT_TIME";throw error;}
+            await connection.query(`INSERT IGNORE INTO work_order_mobile_events(event_key,work_order_id,user_id,event_type,event_at,payload,created_at) VALUES($1,$2,$3,$4,$5,$6,NOW())`,[data.event_key,workOrderId,userId,data.event_type,eventAt,JSON.stringify(data.payload||{})]);
+            const event=(await connection.query(`SELECT * FROM work_order_mobile_events WHERE event_key=$1 AND work_order_id=$2 AND user_id=$3`,[data.event_key,workOrderId,userId])).rows[0];
+            if(!event){const error=new Error("Event key already belongs to another event");error.code="EVENT_KEY_CONFLICT";throw error;}
+            let summary="Mobilni događaj je evidentiran";
+            if(data.event_type==="arrive"){await connection.query(`UPDATE work_orders SET arrival_at=COALESCE(arrival_at,$1),updated_at=NOW() WHERE id=$2`,[eventAt,workOrderId]);summary="Serviser je evidentirao dolazak";}
+            else if(data.event_type==="start"){await connection.query(`UPDATE work_orders SET arrival_at=COALESCE(arrival_at,$1),start_date=COALESCE(start_date,DATE($1)),status=CASE WHEN status IN ('New','Open','On Hold','Planned') THEN 'In Progress' ELSE status END,updated_at=NOW() WHERE id=$2`,[eventAt,workOrderId]);summary="Serviser je pokrenuo rad";}
+            else if(data.event_type==="stop"){
+                const started=(await connection.query(`SELECT event_at FROM work_order_mobile_events WHERE work_order_id=$1 AND user_id=$2 AND event_type='start' AND event_at<=$3 ORDER BY event_at DESC LIMIT 1`,[workOrderId,userId,eventAt])).rows[0]?.event_at;
+                await connection.query(`UPDATE work_orders SET departure_at=$1,updated_at=NOW() WHERE id=$2`,[eventAt,workOrderId]);
+                if(started){const duration=Math.max(Math.round((eventAt-new Date(started))/60000),0);await connection.query(`INSERT INTO work_order_activities(work_order_id,user_id,activity_type,description,started_at,ended_at,duration_minutes,created_at) VALUES($1,$2,'work','Rad evidentiran mobilnom aplikacijom',$3,$4,$5,NOW())`,[workOrderId,userId,started,eventAt,duration]);}
+                summary="Serviser je zaustavio rad";
+            }else if(data.event_type==="field_update")await connection.query(`UPDATE work_orders SET field_notes=COALESCE($1,field_notes),odometer_start=COALESCE($2,odometer_start),odometer_end=COALESCE($3,odometer_end),travel_distance_km=COALESCE($4,travel_distance_km),updated_at=NOW() WHERE id=$5`,[data.payload?.field_notes??null,data.payload?.odometer_start||null,data.payload?.odometer_end||null,data.payload?.travel_distance_km||null,workOrderId]);
+            await connection.query(`INSERT INTO audit_logs(user_id,client_id,entity_type,entity_id,action,summary,changes,created_at) VALUES($1,$2,'work_order',$3,$4,$5,$6,NOW())`,[userId,order.client_id,String(workOrderId),`mobile_${data.event_type}`,summary,JSON.stringify({event_key:data.event_key,event_at:eventAt.toISOString()})]);
+            const updated=(await connection.query(`SELECT * FROM work_orders WHERE id=$1`,[workOrderId])).rows[0];await connection.query("COMMIT");return {order:updated,event,duplicate:false};
+        }catch(error){await connection.query("ROLLBACK");throw error;}finally{connection.release();}
+    }
     const connection = await pool.connect();
     try {
         await connection.query("BEGIN");
@@ -353,6 +401,29 @@ export const getWorkOrderById = async (id, clientId = null) => {
 };
 
 export const getWorkOrderHistory = async (id) => {
+    if (mysqlMode) {
+        const result = await pool.query(
+            `SELECT event_key,action,summary,changes,created_at,user_name FROM (
+                SELECT CONCAT('audit-',log.id) event_key,log.action,log.summary,log.changes,log.created_at,NULLIF(TRIM(CONCAT(u.firstname,' ',u.lastname)),'') user_name
+                FROM audit_logs log LEFT JOIN users u ON u.id=log.user_id
+                WHERE BINARY log.entity_type=BINARY 'work_order' AND BINARY log.entity_id=BINARY CAST($1 AS CHAR)
+                UNION ALL
+                SELECT CONCAT('activity-',activity.id),'activity_added',CONCAT('Evidentiran rad: ',activity.description),JSON_OBJECT('duration_minutes',activity.duration_minutes),activity.created_at,NULLIF(TRIM(CONCAT(u.firstname,' ',u.lastname)),'')
+                FROM work_order_activities activity LEFT JOIN users u ON u.id=activity.user_id WHERE activity.work_order_id=$1
+                UNION ALL
+                SELECT CONCAT('material-',material.id),'material_added',CONCAT('Evidentiran materijal: ',material.item_name),JSON_OBJECT('quantity',material.quantity,'unit',material.unit),material.created_at,NULL
+                FROM work_order_materials material WHERE material.work_order_id=$1
+                UNION ALL
+                SELECT CONCAT('checklist-',item.id),'checklist_completed',CONCAT('Dovršena checklista: ',item.label),JSON_OBJECT(),item.completed_at,NULLIF(TRIM(CONCAT(u.firstname,' ',u.lastname)),'')
+                FROM work_order_checklist_items item LEFT JOIN users u ON u.id=item.completed_by WHERE item.work_order_id=$1 AND item.completed=TRUE
+                UNION ALL
+                SELECT CONCAT('created-',wo.id),'created','Radni nalog je kreiran',JSON_OBJECT('status',wo.status),wo.created_at,NULL
+                FROM work_orders wo WHERE wo.id=$1
+             ) history ORDER BY created_at DESC,event_key DESC`,
+            [Number(id)]
+        );
+        return result.rows;
+    }
     const result = await pool.query(
         `SELECT event_key, action, summary, changes, created_at, user_name
          FROM (
@@ -633,6 +704,16 @@ export const updateChecklistItem = async (workOrderId, itemId, data, userId) => 
 };
 
 export const updateWorkOrderFieldData = async (id, data, userId, clientId = null) => {
+    if(mysqlMode){
+        const values=[data.arrival_at||null,data.departure_at||null,data.odometer_start===""?null:data.odometer_start,data.odometer_end===""?null:data.odometer_end,data.travel_distance_km===""?null:data.travel_distance_km,data.travel_time_minutes===""?null:data.travel_time_minutes,data.field_notes??null,data.completion_notes??null,data.customer_signature_name??null,data.customer_signature_data??null,Boolean(data.report_generated),id];
+        let scope="";if(clientId){values.push(clientId);scope=`AND p.client_id=$${values.length}`;}
+        const connection=await pool.connect();try{await connection.query("BEGIN");
+            await connection.query(`UPDATE work_orders wo JOIN projects p ON p.id=COALESCE(wo.station_id,wo.project_id) SET wo.arrival_at=COALESCE($1,wo.arrival_at),wo.departure_at=COALESCE($2,wo.departure_at),wo.odometer_start=COALESCE($3,wo.odometer_start),wo.odometer_end=COALESCE($4,wo.odometer_end),wo.travel_distance_km=COALESCE($5,CASE WHEN $4 IS NOT NULL AND COALESCE($3,wo.odometer_start) IS NOT NULL THEN GREATEST($4-COALESCE($3,wo.odometer_start),0) ELSE wo.travel_distance_km END),wo.travel_time_minutes=COALESCE($6,wo.travel_time_minutes),wo.field_notes=COALESCE($7,wo.field_notes),wo.completion_notes=COALESCE($8,wo.completion_notes),wo.customer_signature_name=COALESCE($9,wo.customer_signature_name),wo.customer_signature_data=COALESCE($10,wo.customer_signature_data),wo.customer_signed_at=CASE WHEN $10 IS NOT NULL AND NOT (BINARY $10<=>BINARY wo.customer_signature_data) THEN CASE WHEN $10='' THEN NULL ELSE NOW() END ELSE wo.customer_signed_at END,wo.report_generated_at=CASE WHEN $11 THEN NOW() ELSE wo.report_generated_at END,wo.updated_at=NOW() WHERE wo.id=$12 ${scope}`,values);
+            const order=(await connection.query(`SELECT wo.* FROM work_orders wo JOIN projects p ON p.id=COALESCE(wo.station_id,wo.project_id) WHERE wo.id=$1 ${clientId?"AND p.client_id=$2":""}`,[id,...(clientId?[clientId]:[])])).rows[0];
+            if(order)await connection.query(`INSERT INTO audit_logs(user_id,client_id,entity_type,entity_id,action,summary,changes,created_at) SELECT $1,p.client_id,'work_order',$2,'field_data_updated','Ažuriran terenski servisni zapisnik',$3,NOW() FROM projects p WHERE p.id=COALESCE($4,$5)`,[userId,String(id),JSON.stringify({arrival_at:data.arrival_at,departure_at:data.departure_at,odometer_start:data.odometer_start,odometer_end:data.odometer_end,travel_distance_km:data.travel_distance_km,travel_time_minutes:data.travel_time_minutes,signature_updated:Boolean(data.customer_signature_data)}),order.station_id,order.project_id]);
+            await connection.query("COMMIT");return order;
+        }catch(error){await connection.query("ROLLBACK");throw error;}finally{connection.release();}
+    }
     const values = [
         data.arrival_at || null,
         data.departure_at || null,

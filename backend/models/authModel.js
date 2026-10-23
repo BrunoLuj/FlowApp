@@ -8,7 +8,7 @@ export const findUserByEmail = async (email) => {
              FROM users u
              JOIN roles r ON r.id=u.roles_id
              LEFT JOIN clients c ON c.id=u.client_id
-             WHERE LOWER(u.email) = LOWER($1)`,
+             WHERE LOWER(u.email) = LOWER($1) OR LOWER(u.username) = LOWER($1)`,
       values: [email],
   });
 

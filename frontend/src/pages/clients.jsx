@@ -41,7 +41,7 @@ const Clients = () => {
   };
 
   const getStatusText = (status) => {
-    return status ? 'Active' : 'Inactive';
+    return status ? 'Aktivan' : 'Neaktivan';
   }
 
   const removeClient = async (client) => {
@@ -55,73 +55,63 @@ const Clients = () => {
 
   return (
 
-    <div className="bg-gray-100 min-h-screen p-4 mt-14 sm:ml-16">
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-        <h1 className="text-3xl font-bold text-gray-800">Clients</h1>
+    <div className="min-h-screen bg-slate-100 px-4 pb-10 pt-24 sm:px-7">
+      <div className="mx-auto max-w-7xl">
+      <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        <div><p className="text-sm font-black uppercase tracking-widest text-orange-600">Organizacija</p><h1 className="text-3xl font-black text-slate-900">Klijenti</h1><p className="mt-2 text-slate-500">Centralni registar poslovnih korisnika i kontakata.</p></div>
         {permissions.includes('create_clients') && (
           <button
             onClick={() => navigate('/client/')}
-            className="mb-6 px-6 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold shadow-lg hover:scale-105 transition transform"
+            className="rounded-xl bg-orange-500 px-5 py-3 font-bold text-white shadow-lg shadow-orange-200 hover:bg-orange-600"
           >
-            Add Client
+            + Novi klijent
           </button>
         )}
       </div>
 
       {/* Search & Filter */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+      <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row">
         <div className="relative flex-1">
           <input
             type="text"
-            placeholder="Search by client name"
+            placeholder="Pretraži naziv klijenta…"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full p-3 rounded-xl border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 pl-10 transition"
+            className="w-full rounded-xl border border-slate-300 py-3 pl-10 pr-3"
           />
           <FaSearch className="absolute left-3 top-3 text-gray-400"/>
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="p-3 rounded-xl border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition w-full sm:w-48"
+          className="w-full rounded-xl border border-slate-300 p-3 sm:w-48"
         >
-          <option value="all">All</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
+          <option value="all">Svi statusi</option>
+          <option value="active">Aktivni</option>
+          <option value="inactive">Neaktivni</option>
         </select>
       </div>
 
       {/* Clients Table */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white rounded-2xl shadow-xl overflow-hidden">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="overflow-x-auto">
+        <table className="min-w-full">
           <thead className="bg-gray-50">
             <tr>
-              <th className="py-3 px-4 text-left text-gray-600">Company Name</th>
-              <th className="py-3 px-4 text-left text-gray-600">Address</th>
-              <th className="py-3 px-4 text-left text-gray-600">ID Number</th>
-              <th className="py-3 px-4 text-left text-gray-600">PDV Number</th>
-              <th className="py-3 px-4 text-left text-gray-600">Contact Person</th>
-              <th className="py-3 px-4 text-left text-gray-600">Phone</th>
-              <th className="py-3 px-4 text-left text-gray-600">Email</th>
-              <th className="py-3 px-4 text-left text-gray-600">Status</th>
-              <th className="py-3 px-4 text-left text-gray-600">Actions</th>
+              <th>Klijent</th><th>Lokacija</th><th>Identifikacija</th><th>Kontakt</th><th>Status</th><th>Akcije</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={9} className="text-center py-6 text-gray-500">Loading...</td></tr>
+              <tr><td colSpan={6} className="py-12 text-center text-slate-400">Učitavanje klijenata…</td></tr>
             ) : error ? (
-              <tr><td colSpan={9} className="text-center py-6 text-red-500">{error.message}</td></tr>
+              <tr><td colSpan={6} className="text-center py-6 text-red-500">{error.message}</td></tr>
             ) : (
               filteredClients.map(client => (
                 <tr key={client.id} className="hover:bg-gray-50 cursor-pointer transition" onClick={() => startEditing(client)}>
-                  <td className="py-3 px-4 border-b">{client.company_name}</td>
-                  <td className="py-3 px-4 border-b">{client.address}</td>
-                  <td className="py-3 px-4 border-b">{client.idbroj}</td>
-                  <td className="py-3 px-4 border-b">{client.pdvbroj}</td>
-                  <td className="py-3 px-4 border-b">{client.contact_person}</td>
-                  <td className="py-3 px-4 border-b">{client.phone}</td>
-                  <td className="py-3 px-4 border-b">{client.email}</td>
+                  <td><div className="font-black text-slate-900">{client.company_name}</div><div className="mt-1 text-xs text-slate-400">{client.contact_person || "Kontakt osoba nije unesena"}</div></td>
+                  <td><div>{client.address || "—"}</div></td>
+                  <td><div className="text-xs text-slate-500">ID: <b className="text-slate-700">{client.idbroj || "—"}</b></div><div className="mt-1 text-xs text-slate-500">PDV: <b className="text-slate-700">{client.pdvbroj || "—"}</b></div></td>
+                  <td><div>{client.phone || "—"}</div><div className="mt-1 text-xs text-slate-500">{client.email || "E-mail nije unesen"}</div></td>
                   <td className="py-3 px-4 border-b text-center">
                     <span className={`px-3 py-1 rounded-full font-semibold ${getStatusClass(client.status)}`}>
                       {getStatusText(client.status)}
@@ -133,7 +123,7 @@ const Clients = () => {
                         onClick={(e) => { e.stopPropagation(); startEditing(client); }}
                         className="bg-yellow-400 text-white px-4 py-1 rounded-lg shadow hover:bg-yellow-500 transition"
                       >
-                        Edit
+                        Uredi
                       </button>
                     )}
                     {permissions.includes('delete_clients') && (
@@ -141,7 +131,7 @@ const Clients = () => {
                         onClick={(e) => { e.stopPropagation(); removeClient(client); }}
                         className="bg-red-500 text-white px-4 py-1 rounded-lg shadow hover:bg-red-600 transition"
                       >
-                        Remove
+                        Izbriši
                       </button>
                     )}
                   </td>
@@ -150,7 +140,7 @@ const Clients = () => {
             )}
           </tbody>
         </table>
-      </div>
+      </div></div></div>
     </div>
   );
 };

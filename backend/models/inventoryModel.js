@@ -1,6 +1,17 @@
-import { pool } from "../libs/database.js";
+import { pool, mysqlMode } from "../libs/database.js";
 
 export const getInventoryOverview = async () => {
+    if (mysqlMode) {
+        const [items,warehouses,movements,summary]=await Promise.all([
+            pool.query(`SELECT i.*,COALESCE((SELECT SUM(s.quantity) FROM inventory_stock s WHERE s.item_id=i.id),0) total_quantity,
+                COALESCE((SELECT JSON_ARRAYAGG(JSON_OBJECT('warehouse_id',w.id,'warehouse_name',w.name,'quantity',s.quantity)) FROM inventory_stock s JOIN warehouse_locations w ON w.id=s.warehouse_id WHERE s.item_id=i.id),JSON_ARRAY()) stock
+                FROM inventory_items i ORDER BY i.active DESC,i.name`),
+            pool.query(`SELECT w.*,COUNT(s.item_id) stocked_items,COALESCE(SUM(s.quantity),0) total_units FROM warehouse_locations w LEFT JOIN inventory_stock s ON s.warehouse_id=w.id GROUP BY w.id ORDER BY w.name`),
+            pool.query(`SELECT m.*,i.sku,i.name item_name,i.unit,w.name warehouse_name,CONCAT(u.firstname,' ',u.lastname) created_by_name FROM inventory_movements m JOIN inventory_items i ON i.id=m.item_id JOIN warehouse_locations w ON w.id=m.warehouse_id LEFT JOIN users u ON u.id=m.created_by ORDER BY m.created_at DESC LIMIT 100`),
+            pool.query(`SELECT (SELECT COUNT(*) FROM inventory_items WHERE active=TRUE) active_items,(SELECT COUNT(*) FROM inventory_items i WHERE i.active=TRUE AND COALESCE((SELECT SUM(s.quantity) FROM inventory_stock s WHERE s.item_id=i.id),0)<=i.minimum_quantity) low_stock_items,(SELECT COALESCE(SUM(s.quantity*COALESCE(i.purchase_price,0)),0) FROM inventory_stock s JOIN inventory_items i ON i.id=s.item_id) stock_value,(SELECT COUNT(*) FROM warehouse_locations WHERE active=TRUE) warehouses`),
+        ]);
+        return {items:items.rows,warehouses:warehouses.rows,movements:movements.rows,summary:summary.rows[0]};
+    }
     const [items, warehouses, movements, summary] = await Promise.all([
         pool.query(
             `SELECT i.*,

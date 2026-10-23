@@ -24,7 +24,7 @@ import {
 
 export const menu = [
   {
-    title: "Dashboard",
+    title: "Početak",
     items: [
       { label: "Pregled", link: "/overview", icon: <FaTachometerAlt />, permission: "view_dashboard" },
       { label: "Obavijesti", link: "/notifications", icon: <FaBell />, permission: "view_dashboard" },
@@ -45,10 +45,15 @@ export const menu = [
       { label: "Radni nalozi", link: "/work-order", icon: <FaTasks />, permission: "view_work_orders" },
       { label: "Moji nalozi", link: "/mobile-work-orders", icon: <FaMobileAlt />, permission: "use_mobile_work_orders" },
       { label: "Dokumentni centar", link: "/documents", icon: <FaFolderOpen />, permission: "view_document_center" },
-      { label: "Mjeriteljski centar", link: "/metrology", icon: <FaFlask />, permission: "view_metrology_center" },
-      { label: "Predmeti inspekcije", link: "/metrology-cases", icon: <FaClipboardList />, permission: "view_metrology_cases" },
-      { label: "Dispatch servisera", link: "/dispatch", icon: <FaRoute />, permission: "view_dispatch" },
+      { label: "Raspored servisera", link: "/dispatch", icon: <FaRoute />, permission: "view_dispatch" },
       { label: "Preventivno održavanje", link: "/maintenance", icon: <FaCalendarCheck />, permission: "view_maintenance_plans" },
+    ],
+  },
+  {
+    title: "Mjeriteljski centar",
+    items: [
+      { label: "Zahtjevi i predmeti", link: "/metrology-cases", icon: <FaClipboardList />, permission: "view_metrology_cases" },
+      { label: "Pregledi opreme i rokovi", link: "/metrology", icon: <FaFlask />, permission: "view_metrology_center" },
     ],
   },
   {
@@ -65,7 +70,7 @@ export const menu = [
     title: "Administracija",
     items: [
       { label: "Korisnici", link: "/users", icon: <FaUserFriends />, permission: "view_users" },
-      { label: "Role i permisije", link: "/roles", icon: <FaShieldAlt />, permission: "view_roles" },
+      { label: "Uloge i prava pristupa", link: "/roles", icon: <FaShieldAlt />, permission: "view_roles" },
       { label: "Postavke", link: "/settings", icon: <FaCog />, permission: "view_settings" },
     ],
   },

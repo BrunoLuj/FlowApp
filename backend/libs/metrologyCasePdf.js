@@ -38,16 +38,22 @@ const heading = (doc, value) => {
     doc.moveDown(0.2).strokeColor("#111827").lineWidth(0.7)
         .moveTo(48, doc.y).lineTo(doc.page.width - 48, doc.y).stroke().moveDown(0.35);
 };
-const field = (doc, label, value) => {
-    const width = doc.page.width - 96;
-    ensure(doc, 25);
-    const y = doc.y;
-    doc.rect(48, y, width, 23).strokeColor("#cbd5e1").stroke();
-    doc.font("Bold").fontSize(7.2).fillColor("#111827").text(label, 54, y + 6, { width: 145 });
-    doc.font("Regular").fontSize(7.5).text(show(value), 202, y + 6, { width: width - 160 });
-    doc.y = y + 23;
+const field = (doc,label,value) => {
+    const width=doc.page.width-96;
+    doc.font('Regular').fontSize(7.5);
+    const textHeight=doc.heightOfString(show(value),{width:width-160});
+    doc.font('Bold').fontSize(7.2);
+    const labelHeight=doc.heightOfString(label,{width:145});
+    const height=Math.max(23,textHeight+12,labelHeight+12);
+    if(height>doc.page.height-200){heading(doc,label);doc.font('Regular').fontSize(8).text(show(value),48,doc.y,{width});doc.moveDown();return;}
+    ensure(doc,height);const y=doc.y;
+    doc.rect(48,y,width,height).strokeColor('#cbd5e1').stroke();
+    doc.font('Bold').fontSize(7.2).fillColor('#111827').text(label,54,y+6,{width:145});
+    doc.font('Regular').fontSize(7.5).text(show(value),202,y+6,{width:width-160});doc.y=y+height;
 };
 const table = (doc, headers, rows, widths, fontSize = 6.4) => {
+    const scale=Math.min(1,(doc.page.width-96)/widths.reduce((sum,width)=>sum+width,0));
+    widths=widths.map(width=>width*scale);
     const total = widths.reduce((sum, width) => sum + width, 0);
     const x0 = 48;
     const renderHeader = () => {
@@ -100,7 +106,7 @@ const officialHeader = (doc, title, code, record, version) => {
         width: 106, align: "center",
     });
     doc.fontSize(8.5).text(code, 48 + width - 112, 76, { width: 106, align: "center" });
-    doc.fontSize(7.2).text(`Broj dokumenta: ${record.case_number} / v${version}`, 54, 108, {
+    doc.fontSize(7.2).text(`Broj dokumenta: ${record.document_number||record.case_number} / v${version}`, 54, 108, {
         width: width * 0.58,
     });
     doc.text("Imenovana laboratorija: Čaljkušić d.o.o.", 48 + width * 0.55, 108, {
@@ -117,7 +123,7 @@ const genericMeasurements = (record) => record.items.flatMap((item) =>
         item.serial_number || item.apparatus_serial_number || item.tank_reference,
         measurement.measurement_group,
         Object.entries(measurement.values || {}).map(([key,value]) => `${key}: ${value}`).join(" · "),
-        measurement.passed === null ? "-" : measurement.passed ? "DA" : "NE",
+        measurement.passed === null ? "-" : measurement.passed==null ? "—" : measurement.passed ? "DA" : "NE",
     ])
 );
 
@@ -255,6 +261,8 @@ export const buildMetrologyCasePdf = async (record,type,version) => {
         renderServiceReport(doc,record);
     }
     if (["inspection_certificate","verification_certificate"].includes(type)) {
+        field(doc,'Oznaka verifikacijskog žiga',record.items.map(item=>item.verification_mark||'—').join(', '));
+        field(doc,'Broj plombe',record.items.map(item=>item.seal_number||'—').join(', '));
         heading(doc,"Rezultati inspekcije");
         table(doc,["Mjerilo","Skupina","Izmjerene vrijednosti","Zadovoljava"],
             genericMeasurements(record),[110,90,230,70],6);
@@ -272,7 +280,7 @@ export const buildMetrologyCasePdf = async (record,type,version) => {
         heading(doc,"Izjava o usklađenosti i valjanost");
         field(doc,"Rezultat",record.result === "passed" ? "ZADOVOLJAVA" : "NE ZADOVOLJAVA");
         field(doc,"Metode izvođenja postupka",`${rules.method}; ${rules.standard}; ${record.procedure_reference}`);
-        field(doc,"Izjava o usklađenosti",record.conformity_statement || `Mjerilo zadovoljava tehničke zahtjeve: ${rules.standard}.`);
+        field(doc,"Izjava o usklađenosti",record.conformity_statement || (record.result==='passed'?`Mjerilo zadovoljava tehničke zahtjeve: ${rules.standard}.`:`Mjerilo ne zadovoljava tehničke zahtjeve: ${rules.standard}.`));
         field(doc,"Period verifikacije",`${record.verification_period_months} mjeseci`);
         field(doc,"Naredna verifikacija",date(record.next_verification_date));
         field(doc,"Datum inspekcije / odobravanja",`${date(record.inspection_date)} / ${date(record.approval_date)}`);

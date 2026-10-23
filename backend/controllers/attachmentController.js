@@ -4,7 +4,7 @@ import {
     resolveUploadedFile,
 } from "../middleware/uploadMiddleware.js";
 
-const allowedTypes = new Set(["service-request", "work-order"]);
+const allowedTypes = new Set(["service-request", "work-order", "inspection-project"]);
 
 export const uploadAttachment = async (req, res) => {
     if (!allowedTypes.has(req.params.type)) {
@@ -66,6 +66,7 @@ export const removeAttachment = async (req, res) => {
         await removeUploadedFile(attachment.storage_key);
         res.json({ message: "Attachment deleted" });
     } catch (error) {
+        if(error.status)return res.status(error.status).json({error:error.message});
         console.error("Error deleting attachment:", error);
         res.status(500).json({ error: "Error deleting attachment" });
     }

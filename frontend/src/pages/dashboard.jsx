@@ -49,11 +49,11 @@ const Dashboard = () => {
 
   const stats = data?.stats || {};
   const cards = [
-    { label: "Klijenti", value: stats.clients || 0, icon: FaBuilding, color: "bg-indigo-600" },
+    { label: "Klijenti", value: stats.clients || 0, icon: FaBuilding, color: "bg-slate-900" },
     { label: "Benzinske stanice", value: stats.stations || 0, icon: FaGasPump, color: "bg-cyan-600" },
     { label: "Evidentirana oprema", value: stats.assets || 0, icon: FaTools, color: "bg-emerald-600" },
     { label: "Otvoreni zahtjevi", value: stats.openRequests || 0, icon: FaWrench, color: "bg-amber-500" },
-    { label: "Aktivni radni nalozi", value: stats.activeWorkOrders || 0, icon: FaWrench, color: "bg-violet-600" },
+    { label: "Aktivni radni nalozi", value: stats.activeWorkOrders || 0, icon: FaWrench, color: "bg-orange-500" },
     { label: "Istekli rokovi", value: stats.overdueDeadlines || 0, icon: FaExclamationTriangle, color: "bg-red-600" },
   ];
 
@@ -62,7 +62,7 @@ const Dashboard = () => {
       <div className="mx-auto max-w-7xl">
         <div className="mb-7 flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
-            <p className="mb-1 text-sm font-semibold uppercase tracking-widest text-indigo-600">
+            <p className="mb-1 text-sm font-black uppercase tracking-[.18em] text-orange-600">
               FlowApp servisni centar
             </p>
             <h1 className="text-3xl font-bold text-slate-900">Operativni pregled</h1>
@@ -72,7 +72,7 @@ const Dashboard = () => {
           </div>
           <button
             onClick={() => navigate("/service-center?newRequest=true")}
-            className="rounded-xl bg-indigo-600 px-5 py-3 font-semibold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-700"
+            className="rounded-xl bg-orange-500 px-5 py-3 font-bold text-white shadow-lg shadow-orange-200 transition hover:bg-orange-600"
           >
             + Novi servisni zahtjev
           </button>
@@ -97,7 +97,7 @@ const Dashboard = () => {
                 <h2 className="font-bold text-slate-900">Rokovi i isteci</h2>
                 <p className="text-sm text-slate-500">Umjeravanja, ovjere i dokumenti</p>
               </div>
-              <button onClick={() => navigate("/service-center")} className="text-sm font-semibold text-indigo-600">
+              <button onClick={() => navigate("/service-center")} className="text-sm font-semibold text-orange-600">
                 Prikaži sve
               </button>
             </div>

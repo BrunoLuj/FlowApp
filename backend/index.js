@@ -6,6 +6,8 @@ import {
 } from "./models/emailNotificationModel.js";
 import { generateDuePlans } from "./models/maintenanceModel.js";
 import { generateDueMetrologyOrders } from "./models/metrologyModel.js";
+import { mysqlMode } from "./libs/database.js";
+import { startDesktopSyncWorker } from "./libs/desktopSyncWorker.js";
 
 const PORT = process.env.PORT || 5000;
 if(!process.env.JWT_SECRET){
@@ -18,6 +20,8 @@ app.listen(PORT, () =>{
     console.log(`Server running on ${PORT}`);
 });
 
+startDesktopSyncWorker();
+
 const runEmailWorker = async () => {
     try {
         await generateScheduledEmails();
@@ -26,9 +30,11 @@ const runEmailWorker = async () => {
         console.error("Email worker failed:", error);
     }
 };
-const emailWorker = setInterval(runEmailWorker, 5 * 60 * 1000);
-emailWorker.unref();
-setTimeout(runEmailWorker, 15 * 1000).unref();
+if (!mysqlMode) {
+    const emailWorker = setInterval(runEmailWorker, 5 * 60 * 1000);
+    emailWorker.unref();
+    setTimeout(runEmailWorker, 15 * 1000).unref();
+}
 
 const runMaintenanceWorker = async () => {
     try {
@@ -38,8 +44,10 @@ const runMaintenanceWorker = async () => {
         console.error("Preventive maintenance worker failed:", error);
     }
 };
-const maintenanceWorker = setInterval(runMaintenanceWorker, 60 * 60 * 1000);
-maintenanceWorker.unref();
-setTimeout(runMaintenanceWorker, 30 * 1000).unref();
+if (!mysqlMode) {
+    const maintenanceWorker = setInterval(runMaintenanceWorker, 60 * 60 * 1000);
+    maintenanceWorker.unref();
+    setTimeout(runMaintenanceWorker, 30 * 1000).unref();
+}
 
 

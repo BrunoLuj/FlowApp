@@ -1,8 +1,16 @@
-import { pool } from "../libs/database.js";
+import { pool, mysqlMode } from "../libs/database.js";
 import { refreshSlaEscalations } from "./serviceRequestModel.js";
 
 export const getNotifications = async (user) => {
     await refreshSlaEscalations(user.clientId);
+    if (mysqlMode) {
+        const values=user.clientId?[user.userId,user.clientId]:[user.userId];const scope=user.clientId?"AND client_id=$2":"";
+        const result=await pool.query(`SELECT n.*,EXISTS(SELECT 1 FROM notification_reads nr WHERE nr.notification_key=n.notification_key AND nr.user_id=$1) is_read FROM (
+          SELECT CONCAT('deadline:',id) notification_key,'deadline' type,IF(due_date<CURRENT_DATE,'danger','warning') severity,title,CONCAT('Rok: ',DATE_FORMAT(due_date,'%d.%m.%Y')) message,due_date event_at,CONCAT('/service-center/stations/',station_id) target_url FROM compliance_deadlines WHERE status='active' AND due_date<=DATE_ADD(CURRENT_DATE,INTERVAL 60 DAY) ${scope}
+          UNION ALL SELECT CONCAT('request:',id),'service_request',IF(priority='urgent','danger','info'),subject,CONCAT(request_number,' · status: ',status),created_at,'/service-center' FROM service_requests WHERE status NOT IN ('resolved','cancelled') ${scope}
+          UNION ALL SELECT CONCAT('work-order:',wo.id),'work_order',IF(wo.planned_date<CURRENT_DATE,'danger','info'),wo.title,COALESCE(wo.work_order_number,CONCAT('WO-',wo.id)),COALESCE(wo.planned_date,wo.created_at),CONCAT('/work-orders/',wo.id) FROM work_orders wo JOIN projects p ON p.id=COALESCE(wo.station_id,wo.project_id) WHERE wo.status NOT IN ('Completed','Cancelled') ${user.clientId?"AND p.client_id=$2":""}
+        ) n ORDER BY is_read,event_at LIMIT 100`,values);return result.rows;
+    }
     const clientValues = user.clientId ? [user.userId, user.clientId] : [user.userId];
     const clientDeadline = user.clientId ? "AND d.client_id = $2" : "";
     const clientRequest = user.clientId ? "AND sr.client_id = $2" : "";
@@ -170,6 +178,7 @@ export const getNotifications = async (user) => {
 };
 
 export const markNotificationRead = async (userId, notificationKey) => {
+    if(mysqlMode){await pool.query(`INSERT INTO notification_reads(user_id,notification_key,read_at) VALUES($1,$2,NOW()) ON DUPLICATE KEY UPDATE read_at=NOW()`,[userId,notificationKey]);return;}
     await pool.query(
         `INSERT INTO notification_reads(user_id, notification_key)
          VALUES ($1, $2)
@@ -181,6 +190,7 @@ export const markNotificationRead = async (userId, notificationKey) => {
 
 export const markAllNotificationsRead = async (userId, keys) => {
     if (!keys.length) return;
+    if(mysqlMode){for(const key of keys)await pool.query(`INSERT INTO notification_reads(user_id,notification_key,read_at) VALUES($1,$2,NOW()) ON DUPLICATE KEY UPDATE read_at=NOW()`,[userId,key]);return;}
     await pool.query(
         `INSERT INTO notification_reads(user_id, notification_key)
          SELECT $1, UNNEST($2::varchar[])

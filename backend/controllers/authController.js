@@ -2,6 +2,18 @@ import { comparePassword, createJWT} from "../libs/index.js";
 import { findUserByEmail, findUserById } from "../models/authModel.js";
 import { normalizeEmail,validEmail } from "../libs/validation.js";
 import {recordAuthEvent} from "../models/securityModel.js";
+import crypto from "crypto";
+
+const verifyPassword = async (password, user) => {
+    if (user.password_scheme === "pbkdf2-sha256" || String(user.password).startsWith("PBKDF2$")) {
+        const parts = String(user.password).split("$");
+        if (parts.length !== 4) return false;
+        const expected = Buffer.from(parts[3], "base64");
+        const actual = crypto.pbkdf2Sync(password, Buffer.from(parts[2], "base64"), Number(parts[1]), expected.length, "sha256");
+        return expected.length === actual.length && crypto.timingSafeEqual(actual, expected);
+    }
+    return comparePassword(password, user.password);
+};
 
 export const signinUser = async(req, res) =>{
     try{
@@ -26,7 +38,7 @@ export const signinUser = async(req, res) =>{
             });
         }
 
-        const isMatch = await comparePassword(password, user?.password);
+        const isMatch = await verifyPassword(password, user);
 
         if(!isMatch){
             await recordAuthEvent({email,userId:user.id,success:false,reason:"invalid_credentials",req});

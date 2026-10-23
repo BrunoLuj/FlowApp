@@ -115,6 +115,9 @@ export const getStations = async (clientId = null) => {
     const stationScope = scope(clientId, "p");
     const result = await pool.query(
         `SELECT p.*, c.company_name AS client_name,
+                COALESCE(NULLIF(p.phone, ''), c.phone) AS phone,
+                COALESCE(c.tax_id, c.idbroj) AS tax_id,
+                c.email AS client_email,
                 COUNT(ea.id)::int AS registered_assets
          FROM projects p
          JOIN clients c ON c.id = p.client_id

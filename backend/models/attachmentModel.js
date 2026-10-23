@@ -1,3 +1,4 @@
+import {readWorkflow} from './metrologyWorkflowStore.js';
 import { pool } from "../libs/database.js";
 
 const getParent = async (type, id, clientId = null) => {
@@ -30,6 +31,20 @@ const getParent = async (type, id, clientId = null) => {
         return result.rows[0];
     }
 
+    if (type === "inspection-project") {
+        const result = await pool.query(
+            `SELECT wo.id, p.client_id, p.id AS station_id
+             FROM inspection_projects ip
+             JOIN projects p ON p.id=ip.station_id
+             JOIN work_orders wo ON wo.inspection_project_id=ip.id
+             WHERE ip.id=$1
+             ${clientId ? `AND p.client_id=$${values.length}` : ""}
+             ORDER BY wo.id DESC LIMIT 1`,
+            values
+        );
+        return result.rows[0];
+    }
+
     return null;
 };
 
@@ -48,7 +63,7 @@ export const createAttachment = async (type, parentId, data, user) => {
             parent.client_id,
             parent.station_id,
             type === "service-request" ? parent.id : null,
-            type === "work-order" ? parent.id : null,
+            type === "work-order" || type === "inspection-project" ? parent.id : null,
             data.title || data.file_name,
             data.file_name,
             data.storage_key,
@@ -76,6 +91,11 @@ export const getAttachmentById = async (id, clientId = null) => {
 };
 
 export const deleteAttachment = async (id, clientId = null) => {
+    const existing=await getAttachmentById(id,clientId);
+    if(existing?.metrology_case_id){
+        const state=await readWorkflow(existing.metrology_case_id);
+        if(state.closed_at||state.files.some(file=>Number(file.id)===Number(id)))throw Object.assign(new Error('Arhivirani prilozi mjeriteljskog predmeta ne brišu se kroz opće priloge.'),{status:409});
+    }
     const values = [id];
     let clientCondition = "";
     if (clientId) {

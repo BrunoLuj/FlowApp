@@ -1,4 +1,4 @@
-import { pool } from "../libs/database.js";
+import { pool, mysqlMode } from "../libs/database.js";
 
 const buildFilters = (filters, clientId) => {
     const values = [];
@@ -33,6 +33,16 @@ const buildFilters = (filters, clientId) => {
 };
 
 export const getDocumentCenter = async (filters = {}, clientId = null) => {
+    if (mysqlMode) {
+        const values=clientId?[clientId]:[];const scope=clientId?"AND d.client_id=$1":"";
+        const [documents,summary,types,clients,stations]=await Promise.all([
+            pool.query(`SELECT d.*,c.company_name client_name,p.name station_name,ea.name asset_name,CASE WHEN d.valid_until<CURRENT_DATE THEN 'expired' WHEN d.valid_until<=DATE_ADD(CURRENT_DATE,INTERVAL 60 DAY) THEN 'expiring' ELSE 'valid' END validity_status,DATEDIFF(d.valid_until,CURRENT_DATE) days_remaining FROM documents d JOIN clients c ON c.id=d.client_id LEFT JOIN projects p ON p.id=d.station_id LEFT JOIN equipment_assets ea ON ea.id=d.asset_id WHERE d.is_current=TRUE ${scope} ORDER BY d.valid_until,d.created_at DESC LIMIT 500`,values),
+            pool.query(`SELECT SUM(is_current=TRUE) total,SUM(is_current=TRUE AND valid_until<CURRENT_DATE) expired,SUM(is_current=TRUE AND valid_until BETWEEN CURRENT_DATE AND DATE_ADD(CURRENT_DATE,INTERVAL 60 DAY)) expiring,SUM(is_current=TRUE AND visible_to_client=TRUE) client_visible FROM documents ${clientId?"WHERE client_id=$1":""}`,values),
+            pool.query(`SELECT DISTINCT document_type FROM documents WHERE is_current=TRUE ${clientId?"AND client_id=$1":""} ORDER BY document_type`,values),
+            pool.query(`SELECT id,company_name FROM clients ${clientId?"WHERE id=$1":""} ORDER BY company_name`,values),
+            pool.query(`SELECT id,name,client_id FROM projects ${clientId?"WHERE client_id=$1":""} ORDER BY name`,values),
+        ]);return {documents:documents.rows,summary:summary.rows[0],filters:{types:types.rows.map(r=>r.document_type),clients:clients.rows,stations:stations.rows}};
+    }
     const { values, where } = buildFilters(filters, clientId);
     const [documents, summary, types, clients, stations] = await Promise.all([
         pool.query(

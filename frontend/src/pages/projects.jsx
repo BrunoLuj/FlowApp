@@ -50,58 +50,50 @@ const Projects = () => {
   };
 
   const getStatusText = (active) => {
-    return active ? 'Active' : 'Inactive';
+    return active ? 'Aktivna' : 'Neaktivna';
   };
 
-  if (loading) return <div className="text-center py-6 text-gray-500">Loading...</div>;
-  if (error) return <div className="text-center py-6 text-red-500">{error.message || 'Error loading projects'}</div>;
+  if (loading) return <div className="min-h-screen bg-slate-100 pt-28 text-center text-slate-500">Učitavanje benzinskih stanica…</div>;
+  if (error) return <div className="min-h-screen bg-slate-100 pt-28 text-center text-red-600">{error.message || 'Stanice nije moguće učitati.'}</div>;
 
   return (
-    <div className="bg-gray-100 min-h-screen p-4 mt-14 sm:ml-16">
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-        <h1 className="text-3xl font-bold text-gray-800">Projects (Locations)</h1>
+    <div className="min-h-screen bg-slate-100 px-4 pb-10 pt-24 sm:px-7"><div className="mx-auto max-w-7xl">
+      <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        <div><p className="text-sm font-black uppercase tracking-widest text-orange-600">Lokacije i oprema</p><h1 className="text-3xl font-black text-slate-900">Benzinske stanice</h1><p className="mt-2 text-slate-500">Pregled lokacija, STTN oznaka i statusa stanica.</p></div>
 
         {permissions.includes('create_projects') && (
           <button
             onClick={() => navigate('/project')}
-            className="px-6 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold shadow-lg hover:scale-105 transition transform"
+            className="rounded-xl bg-orange-500 px-5 py-3 font-bold text-white shadow-lg shadow-orange-200 hover:bg-orange-600"
           >
-            Add Project
+            + Nova stanica
           </button>
         )}
       </div>
 
       {/* Search */}
-      <div className="relative mb-6 w-full sm:w-96">
+      <div className="relative mb-6 w-full rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:max-w-xl">
         <input
           type="text"
-          placeholder="Search by name or city"
+          placeholder="Pretraži naziv, grad ili lokaciju…"
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
-          className="w-full p-3 rounded-xl border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 pl-10 transition"
+          className="w-full rounded-xl border border-slate-300 py-3 pl-10 pr-3"
         />
         <FaSearch className="absolute left-3 top-3 text-gray-400"/>
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white rounded-2xl shadow-xl overflow-hidden">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="overflow-x-auto"><table className="min-w-full">
           <thead className="bg-gray-50">
             <tr>
-              <th className="p-3 text-left text-gray-600">Client</th>
-              <th className="p-3 text-left text-gray-600">Name</th>
-              <th className="p-3 text-left text-gray-600">Address</th>
-              <th className="p-3 text-left text-gray-600">City</th>
-              <th className="p-3 text-left text-gray-600">STTN</th>
-              <th className="p-3 text-left text-gray-600">Active</th>
-              <th className="p-3 text-left text-gray-600">Created</th>
-              <th className="p-3 text-left text-gray-600">Actions</th>
+              <th>Stanica i vlasnik</th><th>Lokacija</th><th>FMT / STTN</th><th>Status</th><th>Akcije</th>
             </tr>
           </thead>
           <tbody>
             {filteredProjects.length === 0 ? (
               <tr>
-                <td colSpan={8} className="text-center py-6 text-gray-500">No projects found</td>
+                <td colSpan={5} className="py-12 text-center text-slate-400">Nema pronađenih benzinskih stanica.</td>
               </tr>
             ) : (
               filteredProjects.map(project => (
@@ -110,24 +102,22 @@ const Projects = () => {
                   className="hover:bg-gray-50 cursor-pointer transition"
                   onClick={() => openProject(project)}
                 >
-                  <td className="p-3 border-b">{project.client_name}</td>
-                  <td className="p-3 border-b font-medium">{project.name}</td>
-                  <td className="p-3 border-b">{project.address}</td>
-                  <td className="p-3 border-b">{project.city}</td>
-                  <td className="p-3 border-b">{project.sttn}</td>
-                  <td className="p-3 border-b text-center">
+                  <td><div className="font-black text-slate-900">{project.name}</div><div className="mt-1 text-xs text-slate-500">{project.client_name}</div></td>
+                  <td><div>{project.address || "—"}</div><div className="mt-1 text-xs text-slate-500">{project.city || "Grad nije unesen"}</div></td>
+                  <td className="font-bold text-slate-700">{project.sttn || "—"}</td>
+                  <td>
                     <span className={`px-3 py-1 rounded-full font-semibold ${getStatusClass(project.active)}`}>
                       {getStatusText(project.active)}
                     </span>
+                    <div className="mt-2 text-xs text-slate-400">{project.created_at ? new Date(project.created_at).toLocaleDateString("hr-HR") : "—"}</div>
                   </td>
-                  <td className="p-3 border-b">{new Date(project.created_at).toLocaleDateString()}</td>
                   <td className="p-3 border-b flex gap-2 flex-wrap">
                     {permissions.includes('update_projects') && (
                       <button
                         onClick={(e) => { e.stopPropagation(); startEditing(project); }}
                         className="bg-yellow-400 text-white px-4 py-1 rounded-lg shadow hover:bg-yellow-500 transition"
                       >
-                        Edit
+                        Uredi
                       </button>
                     )}
                     {permissions.includes('delete_projects') && (
@@ -135,7 +125,7 @@ const Projects = () => {
                         onClick={(e) => { e.stopPropagation(); removeProject(project); }}
                         className="bg-red-500 text-white px-4 py-1 rounded-lg shadow hover:bg-red-600 transition"
                       >
-                        Remove
+                        Izbriši
                       </button>
                     )}
                   </td>
@@ -144,8 +134,7 @@ const Projects = () => {
             )}
           </tbody>
         </table>
-      </div>
-    </div>
+      </div></div></div></div>
   );
 };
 

@@ -31,7 +31,7 @@ const d=value=>value?new Date(value).toLocaleDateString("hr-HR"):"";
 const group=(item,name)=>(item.measurements||[]).filter(row=>row.measurement_group===name);
 const yesNo=(item,code)=>{
     const row=(item.checks||[]).find(check=>check.check_code===code);
-    return row?.passed?"DA":"NE";
+    return row?.passed==null?"":row.passed?"DA":"NE";
 };
 const commonFirstPage=(page,font,record,type)=>{
     text(page,font,record.case_number,145,487,7);
